@@ -1,0 +1,35 @@
+{
+  "_comment": [
+    "MCP server registry for GitHub Copilot CLI and VS Code.",
+    "",
+    "To use: merge the 'mcpServers' entries below into your existing config.",
+    "",
+    "  VS Code:       .vscode/mcp.json  (workspace) or User Settings → 'mcp.servers'",
+    "  Copilot CLI:    ~/.copilot/mcp-config.json",
+    "",
+    "For the Fabric Data Agent URL, create a Data Agent in Microsoft Fabric,",
+    "enable its MCP endpoint, and paste the URL into 'wwi-sales-data.url'.",
+    "",
+    "See src/cli/README.md for full setup instructions."
+  ],
+
+  "mcpServers": {
+    "wwi-sales-data": {
+      "type": "http",
+      "url": "<PASTE_YOUR_FABRIC_DATA_AGENT_MCP_URL_HERE>",
+      "description": "Wide World Importers sales data via Fabric Data Agent"
+    },
+    "researcher-agent": {
+      "command": "python",
+      "args": ["-m", "src.agents.researcher.mcp_server"],
+      "type": "stdio",
+      "description": "Research companies on the web — news, earnings, strategy"
+    },
+    "sharepoint-agent": {
+      "command": "python",
+      "args": ["-m", "src.agents.sharepoint.mcp_server"],
+      "type": "stdio",
+      "description": "Search and retrieve internal SharePoint documents"
+    }
+  }
+}

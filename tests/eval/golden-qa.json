@@ -1,0 +1,153 @@
+[
+  {
+    "question": "Who are our top 5 customers by total revenue?",
+    "expected_contains": ["Tailspin Toys", "Wingtip Toys"],
+    "category": "top-n"
+  },
+  {
+    "question": "What were the top 3 best-selling stock items by quantity sold?",
+    "expected_contains": ["USB"],
+    "category": "top-n"
+  },
+  {
+    "question": "Which 5 cities generated the most sales revenue?",
+    "expected_contains": ["New York", "Los Angeles"],
+    "category": "top-n"
+  },
+  {
+    "question": "Who are the top 3 salespersons by total sales amount?",
+    "expected_contains": ["Salesperson"],
+    "category": "top-n"
+  },
+  {
+    "question": "What are the top 10 customers in the Midwest territory by revenue?",
+    "expected_contains": ["Tailspin Toys", "Wingtip Toys"],
+    "category": "top-n"
+  },
+  {
+    "question": "What was the total sales revenue in 2016?",
+    "expected_contains": ["2016"],
+    "category": "aggregation"
+  },
+  {
+    "question": "How many total orders were placed in 2015?",
+    "expected_contains": ["2015"],
+    "category": "aggregation"
+  },
+  {
+    "question": "What is the average order value across all sales?",
+    "expected_contains": ["average"],
+    "category": "aggregation"
+  },
+  {
+    "question": "What was the total quantity of items sold in 2016?",
+    "expected_contains": ["2016"],
+    "category": "aggregation"
+  },
+  {
+    "question": "How many distinct customers made purchases in 2016?",
+    "expected_contains": ["customer"],
+    "category": "aggregation"
+  },
+  {
+    "question": "What was the total tax collected across all sales?",
+    "expected_contains": ["tax"],
+    "category": "aggregation"
+  },
+  {
+    "question": "Show me all sales for Tailspin Toys (Head Office)",
+    "expected_contains": ["Tailspin Toys"],
+    "category": "filter"
+  },
+  {
+    "question": "What were the sales in New York City?",
+    "expected_contains": ["New York"],
+    "category": "filter"
+  },
+  {
+    "question": "Show me all transactions where the profit margin was negative",
+    "expected_contains": ["profit", "margin"],
+    "expected_not_contains": ["no data"],
+    "category": "filter"
+  },
+  {
+    "question": "List all sales of USB novelty items",
+    "expected_contains": ["USB"],
+    "category": "filter"
+  },
+  {
+    "question": "What were the sales for Wingtip Toys in 2016?",
+    "expected_contains": ["Wingtip Toys", "2016"],
+    "category": "filter"
+  },
+  {
+    "question": "Show me sales where quantity exceeded 500 units in a single order",
+    "expected_contains": ["500"],
+    "category": "filter"
+  },
+  {
+    "question": "How did total sales change month over month in 2016?",
+    "expected_contains": ["January", "February"],
+    "category": "trend"
+  },
+  {
+    "question": "What is the quarterly sales trend for 2015?",
+    "expected_contains": ["Q1", "Q2"],
+    "category": "trend"
+  },
+  {
+    "question": "Compare sales revenue between 2015 and 2016",
+    "expected_contains": ["2015", "2016"],
+    "category": "trend"
+  },
+  {
+    "question": "How did Tailspin Toys purchasing volume change over time?",
+    "expected_contains": ["Tailspin Toys"],
+    "category": "trend"
+  },
+  {
+    "question": "What is the year-over-year growth rate in total revenue?",
+    "expected_contains": ["growth"],
+    "category": "trend"
+  },
+  {
+    "question": "What is the total revenue from Tailspin Toys across all locations?",
+    "expected_contains": ["Tailspin Toys"],
+    "category": "lookup"
+  },
+  {
+    "question": "How many buying groups are in the customer dimension?",
+    "expected_contains": ["buying group"],
+    "category": "lookup"
+  },
+  {
+    "question": "What category does the stock item 'USB food flash drive - pizza slice' belong to?",
+    "expected_contains": ["USB"],
+    "category": "lookup"
+  },
+  {
+    "question": "Which employee is assigned as the primary salesperson for Contoso Ltd?",
+    "expected_contains": ["Contoso"],
+    "category": "lookup"
+  },
+  {
+    "question": "What are our best-selling stock items by total revenue?",
+    "expected_contains": ["stock item"],
+    "category": "top-n"
+  },
+  {
+    "question": "Which salesperson had the highest total sales in 2016?",
+    "expected_contains": ["2016"],
+    "category": "top-n"
+  },
+  {
+    "question": "What is the revenue breakdown by product category?",
+    "expected_contains": ["category"],
+    "category": "aggregation"
+  },
+  {
+    "question": "What were total sales for the Southeast sales territory?",
+    "expected_contains": ["Southeast"],
+    "category": "filter"
+  }
+]

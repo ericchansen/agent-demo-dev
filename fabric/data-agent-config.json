@@ -1,0 +1,37 @@
+{
+  "agent_instructions": "You are an AI sales assistant for Wide World Importers. Your job is to help sales users query the sales pipeline, analyze customer trends, and prepare account plans. You have access to the Wide World Importers data warehouse through a Fabric SQL analytics endpoint. Always write correct T-SQL for Fabric. Be concise, use tables for multi-row results, and proactively surface insights the user might not have asked for.",
+  "data_sources": [
+    {
+      "name": "fact_Sale",
+      "description": "Transactional fact table containing every invoice line item. Grain: one row per sale line. Key measures: Quantity, Unit Price, Total Including Tax, Tax Amount, Profit.",
+      "schema": "dbo"
+    },
+    {
+      "name": "dimension_Customer",
+      "description": "Customer dimension with attributes such as Customer name, Bill To Customer, Category, Buying Group, and Primary Contact.",
+      "schema": "dbo"
+    },
+    {
+      "name": "dimension_Stock_Item",
+      "description": "Product dimension with Stock Item name, Color, Selling Price, Tax Rate, Brand, Size, Lead Time Days, and Stock Item categories (e.g., Clothing, Computing, Novelty).",
+      "schema": "dbo"
+    },
+    {
+      "name": "dimension_City",
+      "description": "Geography dimension with City, State Province, Country, Continent, Sales Territory, and Latest Recorded Population.",
+      "schema": "dbo"
+    },
+    {
+      "name": "dimension_Employee",
+      "description": "Employee/salesperson dimension with Employee name, Preferred Name, and Is Salesperson flag.",
+      "schema": "dbo"
+    }
+  ],
+  "key_terminology": {
+    "buying_groups": "Organizations that purchase on behalf of member customers (e.g., Tailspin Toys, Wingtip Toys). Found in dimension_Customer.[Buying Group].",
+    "stock_categories": "Product groupings in dimension_Stock_Item (Clothing, Computing Novelties, Furry Footwear, Mugs, Novelty Items, Packaging Materials, Toys, T-Shirts, USB Novelties).",
+    "customer_categories": "Customer type classifications in dimension_Customer.[Category] (e.g., Computer Store, Corporate, Gift Store, Novelty Shop, Supermarket, Warehouse).",
+    "sales_territories": "Geographic sales regions in dimension_City.[Sales Territory] (e.g., Southeast, Mideast, Great Lakes, Plains, Far West, New England, Rocky Mountain, Southwest)."
+  },
+  "response_guidelines": "Use markdown tables for any result with more than one row. Include column headers. Round all currency values to 2 decimal places. Include totals or averages where appropriate. When comparing time periods, show both absolute values and percentage change. If a query returns no results, explain possible reasons and suggest alternative queries."
+}
