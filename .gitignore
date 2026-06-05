@@ -54,3 +54,4 @@ docs/diagrams/*.png
 website/node_modules/
 website/.docusaurus/
 website/build/
+output/

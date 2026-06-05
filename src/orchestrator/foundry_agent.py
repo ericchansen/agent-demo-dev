@@ -1,13 +1,21 @@
-"""Azure AI Foundry orchestrator built on the Azure AI Projects SDK."""
+"""Azure AI Foundry sales orchestrator combining Fabric IQ, WorkIQ, and local tools.
+
+This module defines the WWI prompt-agent used by the demo. The agent runs in Azure AI
+Foundry, queries structured sales data through Fabric IQ, optionally enriches account context
+with WorkIQ, and can invoke local Python tools for quota forecasting and DOCX report generation.
+Local tools use strict JSON schemas so the model can call them reliably without exposing Python
+stack traces back to the conversation.
+"""
 
 from __future__ import annotations
 
 import json
+import logging
 import re
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import (
@@ -15,18 +23,23 @@ from azure.ai.projects.models import (
     FunctionTool,
     MCPTool,
     PromptAgentDefinition,
+    Tool,
     WorkIQPreviewTool,
 )
-from azure.core.exceptions import HttpResponseError, ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 
 from src.orchestrator.config import OrchestratorConfig
 
-AGENT_NAME = "WWISalesAgent"
-DEFAULT_REPORT_TEMPLATE = "account_plan.md"
-MAX_FUNCTION_CALL_ROUNDS = 8
+if TYPE_CHECKING:
+    from src.agents.report_generator.generator import ForecastData, ForecastItem
 
-AGENT_INSTRUCTIONS = """You are a sales analyst for Wide World Importers (WWI), a wholesale novelty goods company.
+logger = logging.getLogger(__name__)
+
+_AGENT_NAME = "WWISalesAgent"
+_DEFAULT_REPORT_TEMPLATE = "account_plan.md"
+_MAX_FUNCTION_CALL_ROUNDS = 8
+
+_AGENT_INSTRUCTIONS = """You are a sales analyst for Wide World Importers (WWI), a wholesale novelty goods company.
 
 Your capabilities:
 1. SALES DATA: Query the WWI data warehouse via Fabric IQ for sales transactions,
@@ -44,8 +57,120 @@ Guidelines:
 - Proactively surface insights the user might not have asked for
 - When comparing time periods, show both absolute values and percentage change"""
 
+ACCOUNT_ACTIVITY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "customer_name": {
+            "type": "string",
+            "description": "Customer or prospect account name.",
+        }
+    },
+    "required": ["customer_name"],
+    "additionalProperties": False,
+}
+
+FORECAST_QUOTA_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "customer_name": {
+            "type": "string",
+            "description": "Customer or prospect account name.",
+        }
+    },
+    "required": ["customer_name"],
+    "additionalProperties": False,
+}
+
+_FORECAST_ITEM_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "category": {"type": "string", "description": "Forecast category name."},
+        "current_fy_revenue": {"type": "number", "description": "Current fiscal year revenue."},
+        "growth_rate": {"type": "number", "description": "Projected growth rate as a decimal."},
+        "projected_fy_revenue": {"type": "number", "description": "Projected fiscal year revenue."},
+    },
+    "required": ["category", "current_fy_revenue", "growth_rate", "projected_fy_revenue"],
+    "additionalProperties": False,
+}
+
+_FORECAST_DATA_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "description": "Optional quota forecast payload to render in the DOCX report.",
+    "properties": {
+        "current_fy_total": {"type": "number", "description": "Current fiscal year total revenue."},
+        "projected_fy_total": {"type": "number", "description": "Projected fiscal year total revenue."},
+        "overall_growth_rate": {"type": "number", "description": "Overall projected growth rate."},
+        "methodology": {"type": "string", "description": "Short description of the forecast methodology."},
+        "items": {
+            "type": "array",
+            "description": "Forecast line items by category.",
+            "items": _FORECAST_ITEM_SCHEMA,
+        },
+    },
+    "required": ["current_fy_total", "projected_fy_total", "overall_growth_rate", "methodology", "items"],
+    "additionalProperties": False,
+}
+
+_REPORT_SECTION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "deal_name": {"type": "string", "description": "Opportunity or deal name."},
+        "value": {"type": "number", "description": "Opportunity value in customer currency."},
+        "stage": {"type": "string", "description": "Current sales stage."},
+        "close_date": {"type": "string", "description": "Expected close date."},
+    },
+    "required": ["deal_name", "value", "stage", "close_date"],
+    "additionalProperties": False,
+}
+
+GENERATE_REPORT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "title": {"type": "string", "description": "Title for the generated report."},
+        "customer_name": {
+            "type": "string",
+            "description": "Customer or prospect account name.",
+        },
+        "sections": {
+            "type": "array",
+            "description": "Deprecated alias for pipeline_data.",
+            "items": _REPORT_SECTION_SCHEMA,
+        },
+        "pipeline_data": {
+            "type": "array",
+            "description": "Pipeline rows to include in the report.",
+            "items": _REPORT_SECTION_SCHEMA,
+        },
+        "research_data": {
+            "type": "object",
+            "description": "Customer research payload with summary and article metadata.",
+            "additionalProperties": True,
+        },
+        "sharepoint_docs": {
+            "type": "array",
+            "description": "Referenced SharePoint documents with name, url, and excerpt.",
+            "items": {"type": "object", "additionalProperties": True},
+        },
+        "forecast_data": {
+            "anyOf": [
+                _FORECAST_DATA_SCHEMA,
+                {"type": "null"},
+            ],
+            "description": "Optional quota forecast payload to render in the DOCX report.",
+        },
+        "additional_context": {
+            "type": "string",
+            "description": "Additional notes to append to the report.",
+        },
+    },
+    "required": ["title", "customer_name"],
+    "additionalProperties": False,
+}
+
 ToolDefinition = FabricIQPreviewTool | WorkIQPreviewTool | FunctionTool | MCPTool
 ToolHandler = Callable[[dict[str, Any]], dict[str, Any]]
+PromptAgent = Any  # Azure AI Projects prompt-agent models are SDK-generated and do not ship precise stubs.
+ResponsePayload = Any  # Responses API payloads are dynamic SDK objects without complete public typings.
 
 
 def mock_workiq_func(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -86,7 +211,7 @@ def mock_workiq_func(arguments: dict[str, Any]) -> dict[str, Any]:
 
 
 def forecast_quota_func(arguments: dict[str, Any]) -> dict[str, Any]:
-    """Generate FY quota forecast stub with structured data."""
+    """Return a demo fiscal-year quota forecast with structured category data."""
     customer = arguments.get("customer_name", "Unknown")
     items = [
         {
@@ -124,52 +249,78 @@ def forecast_quota_func(arguments: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _parse_forecast_data(raw: object, customer_name: str) -> ForecastData | None:
+    """Parse LLM-produced forecast payload into ForecastData, tolerating imperfect JSON."""
+    from src.agents.report_generator.generator import ForecastData, ForecastItem
+
+    if not isinstance(raw, dict):
+        return None
+
+    raw_items = raw.get("items", [])
+    if not isinstance(raw_items, list):
+        raw_items = []
+
+    items: list[ForecastItem] = []
+    for entry in raw_items:
+        if not isinstance(entry, dict):
+            continue
+        try:
+            items.append(
+                ForecastItem(
+                    category=str(entry.get("category", "Unknown")),
+                    current_fy_revenue=float(str(entry.get("current_fy_revenue", 0))),
+                    growth_rate=float(str(entry.get("growth_rate", 0))),
+                    projected_fy_revenue=float(str(entry.get("projected_fy_revenue", 0))),
+                )
+            )
+        except (TypeError, ValueError):
+            continue
+
+    if not items:
+        return None
+
+    def _safe_float(value: object) -> float:
+        try:
+            return float(str(value))
+        except (TypeError, ValueError):
+            return 0.0
+
+    return ForecastData(
+        customer_name=customer_name,
+        current_fy_total=_safe_float(raw.get("current_fy_total", 0)),
+        projected_fy_total=_safe_float(raw.get("projected_fy_total", 0)),
+        overall_growth_rate=_safe_float(raw.get("overall_growth_rate", 0)),
+        methodology=str(raw.get("methodology", "Not specified")),
+        items=items,
+    )
+
+
 def generate_report_func(arguments: dict[str, Any]) -> dict[str, Any]:
-    """Generate a DOCX report using the real report generator."""
-    from src.agents.report_generator.generator import (
-        ForecastData,
-        ForecastItem,
-        ReportData,
-        generate_docx,
-    )
+    """Generate a DOCX sales report and return the resolved file metadata."""
+    from src.agents.report_generator.generator import _build_report_data, generate_docx
 
-    title = arguments.get("title", "Sales Report")
-    customer = arguments.get("customer_name", "Unknown")
-    sections = arguments.get("sections", [])
-    forecast_raw = arguments.get("forecast_data")
+    report_arguments = dict(arguments)
+    if "pipeline_data" not in report_arguments and isinstance(report_arguments.get("sections"), list):
+        report_arguments["pipeline_data"] = report_arguments["sections"]
 
-    forecast = None
-    if isinstance(forecast_raw, dict):
-        forecast = ForecastData(
-            customer_name=customer,
-            current_fy_total=forecast_raw.get("current_fy_total", 0),
-            projected_fy_total=forecast_raw.get("projected_fy_total", 0),
-            overall_growth_rate=forecast_raw.get("overall_growth_rate", 0),
-            methodology=forecast_raw.get("methodology", ""),
-            items=[ForecastItem(**item) for item in forecast_raw.get("items", [])],
-        )
-
-    data = ReportData(
-        title=title,
-        customer_name=customer,
-        generated_at=datetime.now(),
-        pipeline_data=sections if isinstance(sections, list) else [],
-        forecast_data=forecast,
-    )
+    data = _build_report_data(report_arguments)
+    generated_at = datetime.now()
 
     output_dir = Path("output")
-    output_dir.mkdir(exist_ok=True)
-    output_path = output_dir / f"{_slugify_filename(title)}.docx"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    safe_title = _slugify_filename(data.title)
+    output_path = output_dir / f"{safe_title}_{generated_at:%Y%m%d_%H%M%S}.docx"
+    resolved_output_path = output_path.resolve()
 
-    generate_docx(data, DEFAULT_REPORT_TEMPLATE, str(output_path))
+    generate_docx(data, _DEFAULT_REPORT_TEMPLATE, resolved_output_path)
 
     return {
         "status": "generated",
-        "file_path": str(output_path),
+        "file_path": str(resolved_output_path),
         "format": "docx",
-        "title": title,
-        "has_forecast": forecast is not None,
-        "has_chart": forecast is not None,
+        "title": data.title,
+        "has_forecast": data.forecast_data is not None,
+        "has_chart": data.forecast_data is not None,
     }
 
 
@@ -180,7 +331,7 @@ def _slugify_filename(value: str) -> str:
 
 
 def _build_function_tool(name: str, description: str, parameters: dict[str, Any]) -> FunctionTool:
-    """Create a strongly validated function tool definition."""
+    """Create a strict function-tool definition for local Python handlers."""
     return FunctionTool(name=name, description=description, parameters=parameters, strict=True)
 
 
@@ -204,17 +355,7 @@ def _build_tools(config: OrchestratorConfig) -> tuple[list[ToolDefinition], dict
             _build_function_tool(
                 name="get_account_activity",
                 description="Retrieve recent M365 activity signals for a customer account.",
-                parameters={
-                    "type": "object",
-                    "properties": {
-                        "customer_name": {
-                            "type": "string",
-                            "description": "Customer or prospect account name.",
-                        }
-                    },
-                    "required": ["customer_name"],
-                    "additionalProperties": False,
-                },
+                parameters=ACCOUNT_ACTIVITY_SCHEMA,
             )
         )
         handlers["get_account_activity"] = mock_workiq_func
@@ -224,43 +365,12 @@ def _build_tools(config: OrchestratorConfig) -> tuple[list[ToolDefinition], dict
             _build_function_tool(
                 name="forecast_quota",
                 description="Generate an FY quota projection for a named customer account.",
-                parameters={
-                    "type": "object",
-                    "properties": {
-                        "customer_name": {
-                            "type": "string",
-                            "description": "Customer or prospect account name.",
-                        }
-                    },
-                    "required": ["customer_name"],
-                    "additionalProperties": False,
-                },
+                parameters=FORECAST_QUOTA_SCHEMA,
             ),
             _build_function_tool(
                 name="generate_report",
                 description="Generate a formatted DOCX sales report for a customer account.",
-                parameters={
-                    "type": "object",
-                    "properties": {
-                        "title": {"type": "string", "description": "Title for the generated report."},
-                        "customer_name": {
-                            "type": "string",
-                            "description": "Customer or prospect account name.",
-                        },
-                        "sections": {
-                            "type": "array",
-                            "description": "List of section dictionaries to include in the report.",
-                            "items": {"type": "object", "additionalProperties": True},
-                        },
-                        "forecast_data": {
-                            "type": "object",
-                            "description": "Optional quota forecast payload to render in the DOCX report.",
-                            "additionalProperties": True,
-                        },
-                    },
-                    "required": ["customer_name"],
-                    "additionalProperties": False,
-                },
+                parameters=GENERATE_REPORT_SCHEMA,
             ),
         ]
     )
@@ -268,29 +378,21 @@ def _build_tools(config: OrchestratorConfig) -> tuple[list[ToolDefinition], dict
     return tools, handlers
 
 
-def _create_agent(project_client: AIProjectClient, config: OrchestratorConfig) -> Any:
-    """Create a new prompt agent version backed by the configured tools."""
+def _get_or_create_agent(project_client: AIProjectClient, config: OrchestratorConfig) -> PromptAgent:
+    """Create a fresh agent version so config and tool changes are always applied."""
+    logger.info(
+        "Creating fresh version of agent %s; clean up unused historical versions in Azure AI Foundry as needed.",
+        _AGENT_NAME,
+    )
     tools, handlers = _build_tools(config)
     agent = project_client.agents.create_version(
-        agent_name=AGENT_NAME,
+        agent_name=_AGENT_NAME,
         definition=PromptAgentDefinition(
             model=config.model_deployment_name,
-            instructions=AGENT_INSTRUCTIONS,
-            tools=tools,
+            instructions=_AGENT_INSTRUCTIONS,
+            tools=cast(list[Tool], tools),
         ),
     )
-    setattr(agent, "_local_function_handlers", handlers)
-    return agent
-
-
-def _get_or_create_agent(project_client: AIProjectClient, config: OrchestratorConfig) -> Any:
-    """Get the latest agent definition or create it if it does not exist yet."""
-    try:
-        agent = project_client.agents.get(AGENT_NAME)
-    except (HttpResponseError, ResourceNotFoundError):
-        return _create_agent(project_client, config)
-
-    _, handlers = _build_tools(config)
     setattr(agent, "_local_function_handlers", handlers)
     return agent
 
@@ -302,8 +404,8 @@ def _item_value(item: Any, field: str, default: Any = None) -> Any:
     return getattr(item, field, default)
 
 
-def _execute_local_functions(agent: Any, response: Any) -> list[dict[str, str]]:
-    """Execute any local function calls requested by the response."""
+def _execute_local_functions(agent: PromptAgent, response: ResponsePayload) -> list[dict[str, str]]:
+    """Execute local function calls requested by the Foundry response payload."""
     handlers: dict[str, ToolHandler] = getattr(agent, "_local_function_handlers", {})
     tool_outputs: list[dict[str, str]] = []
 
@@ -324,7 +426,15 @@ def _execute_local_functions(agent: Any, response: Any) -> list[dict[str, str]]:
         if handler is None:
             result = {"error": f"Unknown function: {name}"}
         else:
-            result = handler(arguments if isinstance(arguments, dict) else {})
+            try:
+                result = handler(arguments if isinstance(arguments, dict) else {})
+            except Exception as exc:  # noqa: BLE001 - local tool failures must not bubble into the model runtime.
+                logger.exception("Local function %s failed", name)
+                result = {
+                    "error": "tool_execution_failed",
+                    "function": name,
+                    "message": str(exc),
+                }
 
         if call_id:
             tool_outputs.append(
@@ -338,10 +448,10 @@ def _execute_local_functions(agent: Any, response: Any) -> list[dict[str, str]]:
     return tool_outputs
 
 
-def _extract_output_text(response: Any) -> str:
+def _extract_output_text(response: ResponsePayload) -> str:
     """Return the text content from a responses API payload."""
     output_text = getattr(response, "output_text", "")
-    if output_text:
+    if isinstance(output_text, str) and output_text:
         return output_text
 
     chunks: list[str] = []
@@ -361,35 +471,43 @@ def _extract_output_text(response: Any) -> str:
 
 
 def run_query(question: str, config: OrchestratorConfig | None = None) -> str:
-    """Send a question to the agent and return the response."""
+    """Run a user question through the Foundry sales agent and return the final response text."""
     if config is None:
         config = OrchestratorConfig.from_env()
 
-    credential = DefaultAzureCredential()
-    project_client = AIProjectClient(
-        endpoint=config.foundry_project_endpoint,
-        credential=credential,
-        allow_preview=True,
-    )
-    openai_client = project_client.get_openai_client()
+    with DefaultAzureCredential() as credential:
+        with AIProjectClient(
+            endpoint=config.foundry_project_endpoint,
+            credential=credential,
+            allow_preview=True,
+        ) as project_client:
+            openai_client = project_client.get_openai_client()
+            agent = _get_or_create_agent(project_client, config)
+            extra_body = {"agent_reference": {"name": agent.name, "type": "agent_reference"}}
 
-    agent = _get_or_create_agent(project_client, config)
-    extra_body = {"agent_reference": {"name": agent.name, "type": "agent_reference"}}
+            response = openai_client.responses.create(
+                input=question,
+                extra_body=extra_body,
+            )
 
-    response = openai_client.responses.create(
-        input=question,
-        extra_body=extra_body,
-    )
+            tool_outputs: list[dict[str, str]] = []
+            round_num = 0
+            for round_num in range(1, _MAX_FUNCTION_CALL_ROUNDS + 1):
+                tool_outputs = _execute_local_functions(agent, response)
+                if not tool_outputs:
+                    break
 
-    for _ in range(MAX_FUNCTION_CALL_ROUNDS):
-        tool_outputs = _execute_local_functions(agent, response)
-        if not tool_outputs:
-            break
+                response = openai_client.responses.create(
+                    input=cast(Any, tool_outputs),
+                    previous_response_id=response.id,
+                    extra_body=extra_body,
+                )
 
-        response = openai_client.responses.create(
-            input=tool_outputs,
-            previous_response_id=response.id,
-            extra_body=extra_body,
-        )
+            if round_num >= _MAX_FUNCTION_CALL_ROUNDS and tool_outputs:
+                logger.warning("Agent exceeded %d tool-calling rounds", _MAX_FUNCTION_CALL_ROUNDS)
+                return (
+                    "The agent exceeded the maximum number of tool-calling rounds. "
+                    "Please simplify your request or try again."
+                )
 
-    return _extract_output_text(response)
+            return _extract_output_text(response)

@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
+from typing import Any, TypedDict, cast
 
 import matplotlib
 from docx import Document
@@ -13,6 +14,8 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt
 from pptx import Presentation
+from pptx.slide import Slide
+from pptx.util import Emu
 from pptx.util import Inches as PptxInches
 from pptx.util import Pt as PptxPt
 
@@ -29,6 +32,35 @@ _DEFAULT_DOCX_TEMPLATE = "account_plan.md"
 # ---------------------------------------------------------------------------
 # Data model
 # ---------------------------------------------------------------------------
+
+
+class PipelineRow(TypedDict, total=False):
+    deal_name: str
+    value: float
+    stage: str
+    close_date: str
+    customer: str
+
+
+class ResearchArticle(TypedDict, total=False):
+    title: str
+    source: str
+    url: str
+    snippet: str
+    summary: str
+    date: str
+
+
+class ResearchData(TypedDict, total=False):
+    company_name: str
+    summary: str
+    articles: list[ResearchArticle]
+
+
+class SharePointDoc(TypedDict, total=False):
+    name: str
+    url: str
+    excerpt: str
 
 
 @dataclass
@@ -60,9 +92,9 @@ class ReportData:
     title: str
     customer_name: str
     generated_at: datetime
-    pipeline_data: list[dict] = field(default_factory=list)
-    research_data: dict = field(default_factory=dict)
-    sharepoint_docs: list[dict] = field(default_factory=list)
+    pipeline_data: list[PipelineRow] = field(default_factory=list)
+    research_data: ResearchData = field(default_factory=lambda: cast(ResearchData, {}))
+    sharepoint_docs: list[SharePointDoc] = field(default_factory=list)
     additional_context: str | None = None
     forecast_data: ForecastData | None = None
 
@@ -74,6 +106,155 @@ class ReportData:
 
 def _fmt_timestamp(dt: datetime) -> str:
     return dt.strftime("%Y-%m-%d %H:%M")
+
+
+def _coerce_str(value: object, default: str = "") -> str:
+    if value is None:
+        return default
+    if isinstance(value, str):
+        return value
+    return str(value)
+
+
+def _coerce_float(value: object, default: float = 0.0) -> float:
+    if value is None:
+        return default
+    if isinstance(value, (int, float)):
+        return float(value)
+    try:
+        return float(str(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def _parse_pipeline_data(raw: object) -> list[PipelineRow]:
+    if not isinstance(raw, list):
+        return []
+
+    rows: list[PipelineRow] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        row: PipelineRow = {}
+        if "deal_name" in item:
+            row["deal_name"] = _coerce_str(item.get("deal_name"))
+        if "value" in item:
+            row["value"] = _coerce_float(item.get("value"))
+        if "stage" in item:
+            row["stage"] = _coerce_str(item.get("stage"))
+        if "close_date" in item:
+            row["close_date"] = _coerce_str(item.get("close_date"))
+        if "customer" in item:
+            row["customer"] = _coerce_str(item.get("customer"))
+        rows.append(row)
+    return rows
+
+
+def _parse_research_data(raw: object) -> ResearchData:
+    if not isinstance(raw, dict):
+        return {}
+
+    data: ResearchData = {}
+    if "company_name" in raw:
+        data["company_name"] = _coerce_str(raw.get("company_name"))
+    if "summary" in raw:
+        data["summary"] = _coerce_str(raw.get("summary"))
+
+    raw_articles = raw.get("articles")
+    if isinstance(raw_articles, list):
+        articles: list[ResearchArticle] = []
+        for item in raw_articles:
+            if not isinstance(item, dict):
+                continue
+            article: ResearchArticle = {}
+            if "title" in item:
+                article["title"] = _coerce_str(item.get("title"))
+            if "source" in item:
+                article["source"] = _coerce_str(item.get("source"))
+            if "url" in item:
+                article["url"] = _coerce_str(item.get("url"))
+            if "date" in item:
+                article["date"] = _coerce_str(item.get("date"))
+            summary = item.get("summary", item.get("snippet"))
+            if summary is not None:
+                article["summary"] = _coerce_str(summary)
+                article["snippet"] = _coerce_str(summary)
+            articles.append(article)
+        data["articles"] = articles
+
+    return data
+
+
+def _parse_sharepoint_docs(raw: object) -> list[SharePointDoc]:
+    if not isinstance(raw, list):
+        return []
+
+    docs: list[SharePointDoc] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        doc: SharePointDoc = {}
+        if "name" in item:
+            doc["name"] = _coerce_str(item.get("name"))
+        if "url" in item:
+            doc["url"] = _coerce_str(item.get("url"))
+        if "excerpt" in item:
+            doc["excerpt"] = _coerce_str(item.get("excerpt"))
+        docs.append(doc)
+    return docs
+
+
+def _parse_forecast_data(raw: object, customer_name: str) -> ForecastData | None:
+    if not isinstance(raw, dict):
+        return None
+
+    items: list[ForecastItem] = []
+    raw_items = raw.get("items")
+    if isinstance(raw_items, list):
+        for item in raw_items:
+            if not isinstance(item, dict):
+                continue
+            items.append(
+                ForecastItem(
+                    category=_coerce_str(item.get("category")),
+                    current_fy_revenue=_coerce_float(item.get("current_fy_revenue")),
+                    growth_rate=_coerce_float(item.get("growth_rate")),
+                    projected_fy_revenue=_coerce_float(item.get("projected_fy_revenue")),
+                )
+            )
+
+    return ForecastData(
+        customer_name=_coerce_str(raw.get("customer_name"), customer_name) or customer_name,
+        current_fy_total=_coerce_float(raw.get("current_fy_total")),
+        projected_fy_total=_coerce_float(raw.get("projected_fy_total")),
+        overall_growth_rate=_coerce_float(raw.get("overall_growth_rate")),
+        methodology=_coerce_str(raw.get("methodology")),
+        items=items,
+    )
+
+
+def _build_report_data(arguments: dict[str, Any]) -> ReportData:
+    """Construct a typed ReportData payload from loosely typed tool arguments."""
+    title = _coerce_str(arguments.get("title"), "Sales Report") or "Sales Report"
+    customer_name = _coerce_str(arguments.get("customer_name"), "Unknown") or "Unknown"
+    pipeline_raw = arguments.get("pipeline_data", arguments.get("sections", []))
+    context_value = arguments.get("additional_context")
+
+    return ReportData(
+        title=title,
+        customer_name=customer_name,
+        generated_at=datetime.now(),
+        pipeline_data=_parse_pipeline_data(pipeline_raw),
+        research_data=_parse_research_data(arguments.get("research_data", {})),
+        sharepoint_docs=_parse_sharepoint_docs(arguments.get("sharepoint_docs", [])),
+        additional_context=None if context_value in (None, "") else _coerce_str(context_value),
+        forecast_data=_parse_forecast_data(arguments.get("forecast_data"), customer_name),
+    )
+
+
+def _add_doc_page_break(document: Any) -> None:
+    """Call python-docx's untyped page break helper from typed code."""
+    document.add_page_break()
 
 
 def _build_citations(data: ReportData) -> list[str]:
@@ -184,7 +365,7 @@ def generate_docx(
     date_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
     date_para.add_run(_fmt_timestamp(data.generated_at)).font.size = Pt(12)
 
-    doc.add_page_break()
+    _add_doc_page_break(doc)
 
     # -- Pipeline Overview ---------------------------------------------------
     doc.add_heading("Pipeline Overview", level=1)
@@ -224,7 +405,7 @@ def generate_docx(
             title = article.get("title", "Untitled")
             source = article.get("source", "")
             date = article.get("date", "")
-            article_summary = article.get("summary", "")
+            article_summary = article.get("summary") or article.get("snippet", "")
             url = article.get("url", "")
             bullet_text = f"{title}"
             if source:
@@ -300,7 +481,7 @@ def generate_docx(
         doc.add_paragraph(f"Methodology: {forecast.methodology}", style="Intense Quote")
 
     # -- Sources & Citations -------------------------------------------------
-    doc.add_page_break()
+    _add_doc_page_break(doc)
     doc.add_heading("Sources & Citations", level=1)
 
     for citation in _build_citations(data):
@@ -327,7 +508,7 @@ def generate_docx(
 # ---------------------------------------------------------------------------
 
 
-def generate_pptx(data: ReportData, template_name: str, output_path: str) -> str:
+def generate_pptx(data: ReportData, template_name: str | Path, output_path: str | Path) -> str:
     """Create a PowerPoint deck from *data* and return the resolved output path.
 
     Parameters
@@ -339,22 +520,22 @@ def generate_pptx(data: ReportData, template_name: str, output_path: str) -> str
     output_path:
         Destination file path for the ``.pptx`` file.
     """
-    _ = _load_template(template_name)
+    _ = _load_template(str(template_name))
 
     prs = Presentation()
-    prs.slide_width = Inches(13.333)
-    prs.slide_height = Inches(7.5)
+    slide_width = PptxInches(13.333)
+    slide_height = PptxInches(7.5)
+    prs.slide_width = slide_width
+    prs.slide_height = slide_height
 
     footer_stamp = f"{_FOOTER_TEXT} — {_fmt_timestamp(data.generated_at)}"
 
-    def _add_footer(slide: object) -> None:  # type: ignore[override]
-        """Add a small footer text box to the bottom of *slide*."""
-        from pptx.util import Emu as _Emu
-
-        txbox = slide.shapes.add_textbox(  # type: ignore[attr-defined]
-            _Emu(0),
-            prs.slide_height - PptxInches(0.4),
-            prs.slide_width,
+    def _add_footer(slide: Slide) -> None:
+        """python-pptx lacks precise stubs here; use the concrete Slide type for footer placement."""
+        txbox = slide.shapes.add_textbox(
+            Emu(0),
+            Emu(slide_height - PptxInches(0.4)),
+            slide_width,
             PptxInches(0.4),
         )
         tf = txbox.text_frame
