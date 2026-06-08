@@ -32,9 +32,21 @@ An AI sales agent accelerator for **Wide World Importers** that shows how to pai
 Same Data Agent backend. Same business logic. Different distribution.
 ```
 
-## Quick Start
+## Quick Start (CLI)
 
-Start with the [setup guide](docs/setup-guide.md) for infrastructure, Fabric Data Agent configuration, and CLI wiring.
+```bash
+git clone https://github.com/ericchansen/agent-demo.git && cd agent-demo
+uv sync              # or: python -m venv .venv && pip install -e ".[dev]"
+```
+
+Edit `.mcp.json` in the repo root — replace `<your-workspace-id>` with your Fabric workspace GUID. Then:
+
+```bash
+copilot
+# > What were Tailspin Toys' total sales last quarter?
+```
+
+See the [full setup guide](https://ericchansen.github.io/agent-demo/docs/setup) for all options (uv, pip+venv, `copilot mcp add`, Foundry surface).
 
 ## Tech Stack
 

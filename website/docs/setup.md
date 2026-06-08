@@ -5,30 +5,96 @@ title: Setup Guide
 
 # Setup Guide
 
-See the full [setup guide](https://github.com/ericchansen/agent-demo/blob/main/docs/setup-guide.md) in the repository.
-
 ## Quick Start (CLI Surface)
 
-1. Clone the repo and install dependencies:
-   ```bash
-   git clone https://github.com/ericchansen/agent-demo.git
-   cd agent-demo
-   pip install -r requirements.txt
-   ```
+### 1. Clone and install
 
-2. Add the Fabric Data Agent MCP server to your Copilot CLI config (`~/.copilot/mcp-config.json`):
-   ```json
-   {
-     "mcpServers": {
-       "wwi-sales-data": {
-         "type": "http",
-         "url": "https://api.fabric.microsoft.com/v1/mcp/workspaces/<your-workspace-id>/dataagent"
-       }
-     }
-   }
-   ```
+<details>
+<summary><strong>Option A: uv (recommended)</strong></summary>
 
-3. Start asking questions in Copilot CLI.
+[uv](https://docs.astral.sh/uv/) manages Python versions and virtual environments automatically -- no global installs, no manual venv activation.
+
+```bash
+# Install uv if you don't have it
+curl -LsSf https://astral.sh/uv/install.sh | sh   # macOS/Linux
+# or: powershell -c "irm https://astral.sh/uv/install.ps1 | iex"   # Windows
+
+# Clone and install
+git clone https://github.com/ericchansen/agent-demo.git
+cd agent-demo
+uv sync                   # creates .venv, installs all deps from pyproject.toml
+```
+
+Run commands with `uv run`:
+```bash
+uv run pytest tests/unit/
+uv run python -m src.orchestrator
+```
+
+</details>
+
+<details>
+<summary><strong>Option B: pip + venv</strong></summary>
+
+```bash
+git clone https://github.com/ericchansen/agent-demo.git
+cd agent-demo
+python -m venv .venv
+
+# Activate the virtual environment
+# macOS/Linux:
+source .venv/bin/activate
+# Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+
+# Install
+pip install -e ".[dev]"
+```
+
+</details>
+
+### 2. Connect the Fabric Data Agent
+
+The repo includes a workspace `.mcp.json` that Copilot CLI auto-discovers. You just need to set your Fabric workspace ID.
+
+**Option A: Edit `.mcp.json`** (zero-config)
+
+Open `.mcp.json` in the repo root and replace `<your-workspace-id>` with your Fabric workspace GUID:
+
+```json
+{
+  "mcpServers": {
+    "wwi-sales-data": {
+      "type": "http",
+      "url": "https://api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagent"
+    }
+  }
+}
+```
+
+Copilot CLI loads this automatically when you run from the project directory.
+
+**Option B: `copilot mcp add`** (one-liner, saved to your user config)
+
+```bash
+copilot mcp add --transport http wwi-sales-data \
+  "https://api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagent"
+```
+
+**Option C: Inline for a single session**
+
+```bash
+copilot --additional-mcp-config '{"wwi-sales-data":{"type":"http","url":"https://api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagent"}}'
+```
+
+### 3. Start asking questions
+
+```bash
+copilot
+# > What were Tailspin Toys' total sales last quarter?
+```
+
+Copilot CLI authenticates to Fabric via OAuth -- you'll get a browser prompt on first use.
 
 ## Foundry Surface Setup
 

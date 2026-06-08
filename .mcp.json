@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "wwi-sales-data": {
+      "type": "http",
+      "url": "https://api.fabric.microsoft.com/v1/mcp/workspaces/<your-workspace-id>/dataagent"
+    },
+    "report-generator": {
+      "command": "python",
+      "args": ["-m", "src.agents.report_generator.mcp_server"],
+      "type": "stdio"
+    }
+  }
+}
