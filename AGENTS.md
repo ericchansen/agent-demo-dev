@@ -34,7 +34,7 @@ This demo is scoped to **two delivery surfaces** that share the same WWI sales s
 CI runs on every PR to `main`. Run these locally before pushing:
 
 ```bash
-pip install -e ".[dev]"            # install project + dev tools (or: uv sync)
+uv sync --extra dev                # install project + dev tools (or: pip install -e ".[dev]")
 ruff check .                       # lint
 ruff format --check .              # formatting (run `ruff format .` to auto-fix)
 mypy src/                          # type checking

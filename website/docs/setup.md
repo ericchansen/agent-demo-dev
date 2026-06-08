@@ -22,7 +22,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh   # macOS/Linux
 # Clone and install
 git clone https://github.com/ericchansen/agent-demo.git
 cd agent-demo
-uv sync                   # creates .venv, installs all deps from pyproject.toml
+uv sync --extra dev        # creates .venv, installs all deps + dev tools
 ```
 
 Run commands with `uv run`:

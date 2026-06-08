@@ -36,7 +36,7 @@ Same Data Agent backend. Same business logic. Different distribution.
 
 ```bash
 git clone https://github.com/ericchansen/agent-demo.git && cd agent-demo
-uv sync              # or: python -m venv .venv && pip install -e ".[dev]"
+uv sync --extra dev              # or: python -m venv .venv && pip install -e ".[dev]"
 ```
 
 Edit `.github/mcp.json` — replace `<your-workspace-id>` with your Fabric workspace GUID. Then:
