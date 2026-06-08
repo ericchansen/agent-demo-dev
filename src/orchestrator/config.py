@@ -51,7 +51,7 @@ class OrchestratorConfig:
         if missing:
             raise ConfigurationError(
                 f"Missing required environment variables: {', '.join(missing)}. "
-                f"Copy .env.example to .env and fill in the values. "
+                f"Create a .env file in the project root and set the missing values. "
                 f"See docs/setup-guide.md for details."
             )
 

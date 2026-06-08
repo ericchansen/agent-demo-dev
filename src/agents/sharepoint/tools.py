@@ -55,6 +55,7 @@ _MOCK_CONTENT: dict[str, Any] = {
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _get_mode() -> str:
     return os.environ.get("SHAREPOINT_MODE", "mock").lower()
 
@@ -97,6 +98,7 @@ async def _graph_request(method: str, url: str, *, json_body: dict[str, Any] | N
 # Public tools
 # ---------------------------------------------------------------------------
 
+
 async def search_documents(query: str, site_id: str | None = None) -> list[dict[str, Any]]:
     """Search SharePoint for documents matching *query*.
 
@@ -107,7 +109,8 @@ async def search_documents(query: str, site_id: str | None = None) -> list[dict[
     if mode == "mock":
         query_lower = query.lower()
         results = [
-            doc for doc in _MOCK_DOCUMENTS
+            doc
+            for doc in _MOCK_DOCUMENTS
             if query_lower in doc["name"].lower() or query_lower in doc["excerpt"].lower()
         ]
         return results if results else []
@@ -138,12 +141,14 @@ async def search_documents(query: str, site_id: str | None = None) -> list[dict[
         for hit_container in response_value.get("hitsContainers", []):
             for hit in hit_container.get("hits", []):
                 resource = hit.get("resource", {})
-                hits.append({
-                    "name": resource.get("name", ""),
-                    "url": resource.get("webUrl", ""),
-                    "excerpt": hit.get("summary", ""),
-                    "last_modified": resource.get("lastModifiedDateTime", ""),
-                })
+                hits.append(
+                    {
+                        "name": resource.get("name", ""),
+                        "url": resource.get("webUrl", ""),
+                        "excerpt": hit.get("summary", ""),
+                        "last_modified": resource.get("lastModifiedDateTime", ""),
+                    }
+                )
     return hits
 
 

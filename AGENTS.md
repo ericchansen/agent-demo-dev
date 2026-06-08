@@ -29,6 +29,21 @@ This demo is scoped to **two delivery surfaces** that share the same WWI sales s
 - **IaC:** Bicep (Azure-native). Modules in `infra/modules/`.
 - **Commits:** Conventional commits (`feat:`, `fix:`, `docs:`, `infra:`, `test:`)
 
+## CI Checks
+
+CI runs on every PR to `main`. Run these locally before pushing:
+
+```bash
+pip install -r requirements.txt            # runtime deps
+pip install ruff mypy pytest pytest-asyncio # dev tools
+ruff check .                               # lint
+ruff format --check .                      # formatting (run `ruff format .` to auto-fix)
+mypy src/                                  # type checking
+pytest tests/unit/                         # unit tests
+```
+
+All four must pass. The Bicep template is also validated (`az bicep build --file infra/main.bicep`).
+
 ## Key Directories
 
 | Directory | Purpose |

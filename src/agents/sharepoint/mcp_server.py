@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+from typing import Any
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 server = Server("sharepoint-agent")
 
 
-@server.list_tools()
+@server.list_tools()  # type: ignore[no-untyped-call, untyped-decorator]
 async def list_tools() -> list[Tool]:
     """Advertise available tools to the MCP client."""
     return [
@@ -70,8 +71,8 @@ async def list_tools() -> list[Tool]:
     ]
 
 
-@server.call_tool()
-async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+@server.call_tool()  # type: ignore[untyped-decorator]
+async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     """Dispatch MCP tool calls to the appropriate handler."""
     import json  # noqa: PLC0415
 
@@ -93,6 +94,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 # ---------------------------------------------------------------------------
 # Entrypoint
 # ---------------------------------------------------------------------------
+
 
 async def main() -> None:
     """Run the SharePoint MCP server over stdio."""

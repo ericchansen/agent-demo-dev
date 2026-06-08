@@ -13,7 +13,7 @@ The important idea is not two separate products. It is **one business flow** tha
 |---|---|---|---|
 | Fabric sales data | `wwi-sales-data` MCP server | `FabricIQPreviewTool` | Same Fabric Data Agent backend and business questions |
 | M365 activity context | `workiq` MCP server (**mocked in demo**) | `WorkIQPreviewTool` | Production target is WorkIQ with OBO auth; demo tenant uses sample activity payloads |
-| Report generation | `quota-forecast` skill returns inline markdown / summary | Custom function tool generates DOCX and returns a OneDrive link | Same reporting logic, different delivery format |
+| Report generation | `quota-forecast` skill returns inline markdown / summary | Custom function tool generates DOCX locally (deploy with OneDrive upload for sharing links) | Same reporting logic, different delivery format |
 | Tool bridging during migration | Existing MCP servers | `MCPTool` | Useful when you want to reuse an MCP endpoint before converting it to a native platform tool or custom function |
 | Agent packaging | CLI skill + local MCP config | `PromptAgentDefinition` + Agent Application publish | Same instructions can move from prototype prompt to managed agent definition |
 
@@ -72,35 +72,45 @@ from azure.ai.projects.models import (
     WorkIQPreviewTool,
 )
 
-project_client = AIProjectClient.from_connection_string(
-    conn_str=foundry_project_connection,
-    credential=credential,
-)
+with (
+    DefaultAzureCredential() as credential,
+    AIProjectClient(
+        endpoint=foundry_project_endpoint,
+        credential=credential,
+        allow_preview=True,
+    ) as project_client,
+):
+    openai_client = project_client.get_openai_client()
 
-report_tool = build_report_function_tool()
+    agent = project_client.agents.create_version(
+        agent_name="WWISalesAgent",
+        definition=PromptAgentDefinition(
+            model="gpt-4o",
+            instructions=(
+                "Use Fabric IQ for WWI sales data, WorkIQ for M365 activity, "
+                "and the report tool when the user asks for a formatted deliverable."
+            ),
+            tools=[
+                FabricIQPreviewTool(
+                    project_connection_id=fabric_iq_connection_id,
+                    require_approval="never",
+                ),
+                WorkIQPreviewTool(
+                    project_connection_id=workiq_connection_id,
+                ),
+                report_function_tool,
+            ],
+        ),
+    )
 
-agent_definition = PromptAgentDefinition(
-    name="WWI Sales Agent",
-    instructions=(
-        "Use Fabric IQ for WWI sales data, WorkIQ for M365 activity, "
-        "and the report tool when the user asks for a formatted deliverable."
-    ),
-    tools=[
-        FabricIQPreviewTool(connection_id=fabric_connection_id),
-        WorkIQPreviewTool(),
-        report_tool,
-    ],
-)
-
-thread = project_client.agents.threads.create()
-project_client.agents.messages.create(
-    thread_id=thread.id,
-    role="user",
-    content=(
-        "Find WWI accounts with high pipeline value but low recent activity, "
-        "then create a quota forecast report."
-    ),
-)
+    response = openai_client.responses.create(
+        input=(
+            "Find WWI accounts with high pipeline value but low recent activity, "
+            "then create a quota forecast report."
+        ),
+        extra_body={"agent_reference": {"name": agent.name, "type": "agent_reference"}},
+    )
+    print(response.output_text)
 ```
 
 If you want an intermediate migration step, `MCPTool` can bridge an existing MCP endpoint into Foundry before you replace it with a native platform tool or custom function.

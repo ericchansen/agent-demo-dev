@@ -15,7 +15,7 @@ import re
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import (
@@ -29,9 +29,6 @@ from azure.ai.projects.models import (
 from azure.identity import DefaultAzureCredential
 
 from src.orchestrator.config import OrchestratorConfig
-
-if TYPE_CHECKING:
-    from src.agents.report_generator.generator import ForecastData, ForecastItem
 
 logger = logging.getLogger(__name__)
 
@@ -249,52 +246,6 @@ def forecast_quota_func(arguments: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _parse_forecast_data(raw: object, customer_name: str) -> ForecastData | None:
-    """Parse LLM-produced forecast payload into ForecastData, tolerating imperfect JSON."""
-    from src.agents.report_generator.generator import ForecastData, ForecastItem
-
-    if not isinstance(raw, dict):
-        return None
-
-    raw_items = raw.get("items", [])
-    if not isinstance(raw_items, list):
-        raw_items = []
-
-    items: list[ForecastItem] = []
-    for entry in raw_items:
-        if not isinstance(entry, dict):
-            continue
-        try:
-            items.append(
-                ForecastItem(
-                    category=str(entry.get("category", "Unknown")),
-                    current_fy_revenue=float(str(entry.get("current_fy_revenue", 0))),
-                    growth_rate=float(str(entry.get("growth_rate", 0))),
-                    projected_fy_revenue=float(str(entry.get("projected_fy_revenue", 0))),
-                )
-            )
-        except (TypeError, ValueError):
-            continue
-
-    if not items:
-        return None
-
-    def _safe_float(value: object) -> float:
-        try:
-            return float(str(value))
-        except (TypeError, ValueError):
-            return 0.0
-
-    return ForecastData(
-        customer_name=customer_name,
-        current_fy_total=_safe_float(raw.get("current_fy_total", 0)),
-        projected_fy_total=_safe_float(raw.get("projected_fy_total", 0)),
-        overall_growth_rate=_safe_float(raw.get("overall_growth_rate", 0)),
-        methodology=str(raw.get("methodology", "Not specified")),
-        items=items,
-    )
-
-
 def generate_report_func(arguments: dict[str, Any]) -> dict[str, Any]:
     """Generate a DOCX sales report and return the resolved file metadata."""
     from src.agents.report_generator.generator import _build_report_data, generate_docx
@@ -321,6 +272,9 @@ def generate_report_func(arguments: dict[str, Any]) -> dict[str, Any]:
         "title": data.title,
         "has_forecast": data.forecast_data is not None,
         "has_chart": data.forecast_data is not None,
+        "note": (
+            "File written locally. In a deployed M365 agent, upload to OneDrive/SharePoint and return a sharing link."
+        ),
     }
 
 
@@ -402,6 +356,11 @@ def _item_value(item: Any, field: str, default: Any = None) -> Any:
     if isinstance(item, dict):
         return item.get(field, default)
     return getattr(item, field, default)
+
+
+def _has_pending_tool_calls(response: ResponsePayload) -> bool:
+    """Check whether a response still requests function calls, without executing them."""
+    return any(_item_value(item, "type") == "function_call" for item in getattr(response, "output", []) or [])
 
 
 def _execute_local_functions(agent: PromptAgent, response: ResponsePayload) -> list[dict[str, str]]:
@@ -503,7 +462,8 @@ def run_query(question: str, config: OrchestratorConfig | None = None) -> str:
                     extra_body=extra_body,
                 )
 
-            if round_num >= _MAX_FUNCTION_CALL_ROUNDS and tool_outputs:
+            # Check if the final response still requests tool calls after max rounds
+            if round_num >= _MAX_FUNCTION_CALL_ROUNDS and _has_pending_tool_calls(response):
                 logger.warning("Agent exceeded %d tool-calling rounds", _MAX_FUNCTION_CALL_ROUNDS)
                 return (
                     "The agent exceeded the maximum number of tool-calling rounds. "

@@ -45,93 +45,52 @@ _MOCK_ANSWERS: dict[str, str] = {
         "2. USB food flash drive - hamburger (38K units), "
         "3. Novelty chilli chocolate (31K units)."
     ),
-    "cities generated the most": (
-        "Top cities by sales: New York, Los Angeles, Chicago, Houston, Phoenix."
-    ),
+    "cities generated the most": ("Top cities by sales: New York, Los Angeles, Chicago, Houston, Phoenix."),
     "top 3 salespersons": (
-        "The top 3 salespersons by total sales are: "
-        "Salesperson #1 Amy, Salesperson #2 Archer, Salesperson #3 Hudson."
+        "The top 3 salespersons by total sales are: Salesperson #1 Amy, Salesperson #2 Archer, Salesperson #3 Hudson."
     ),
     "top 10 customers in the midwest": (
-        "Top Midwest customers: Tailspin Toys, Wingtip Toys, Contoso Ltd, "
-        "Fabrikam Inc, Northwind Traders (and 5 more)."
+        "Top Midwest customers: Tailspin Toys, Wingtip Toys, Contoso Ltd, Fabrikam Inc, Northwind Traders (and 5 more)."
     ),
     "total sales revenue in 2016": "Total sales revenue in 2016 was $14.3M.",
     "total orders were placed in 2015": "There were 31,247 orders placed in 2015.",
     "average order value": "The average order value across all sales is $247.50.",
-    "total quantity of items sold in 2016": (
-        "Total quantity of items sold in 2016 was 1,045,832 units."
-    ),
-    "distinct customers made purchases in 2016": (
-        "402 distinct customers made purchases in 2016."
-    ),
+    "total quantity of items sold in 2016": ("Total quantity of items sold in 2016 was 1,045,832 units."),
+    "distinct customers made purchases in 2016": ("402 distinct customers made purchases in 2016."),
     "total tax collected": "The total tax collected across all sales is $2.1M.",
-    "tailspin toys (head office)": (
-        "Tailspin Toys (Head Office) has 4,321 transactions totalling $1.2M."
-    ),
+    "tailspin toys (head office)": ("Tailspin Toys (Head Office) has 4,321 transactions totalling $1.2M."),
     "sales in new york": "Sales in New York totalled $890K across 2,100 orders.",
-    "profit margin was negative": (
-        "There are 47 transactions where the profit margin was negative."
-    ),
+    "profit margin was negative": ("There are 47 transactions where the profit margin was negative."),
     "sales of usb novelty": "USB novelty items generated $320K in revenue across 8,400 units.",
-    "wingtip toys in 2016": (
-        "Wingtip Toys total sales in 2016: $540K across 1,200 orders."
-    ),
-    "quantity exceeded 500": (
-        "There are 12 orders where quantity exceeded 500 units in a single order."
-    ),
+    "wingtip toys in 2016": ("Wingtip Toys total sales in 2016: $540K across 1,200 orders."),
+    "quantity exceeded 500": ("There are 12 orders where quantity exceeded 500 units in a single order."),
     "month over month in 2016": (
         "Monthly sales in 2016: January $1.1M, February $1.0M, March $1.2M, "
         "April $1.15M, May $1.3M, June $1.1M, July $1.2M, August $1.25M, "
         "September $1.1M, October $1.3M, November $1.35M, December $1.4M."
     ),
-    "quarterly sales trend for 2015": (
-        "2015 quarterly sales: Q1 $3.2M, Q2 $3.5M, Q3 $3.4M, Q4 $3.8M."
-    ),
+    "quarterly sales trend for 2015": ("2015 quarterly sales: Q1 $3.2M, Q2 $3.5M, Q3 $3.4M, Q4 $3.8M."),
     "compare sales revenue between 2015 and 2016": (
         "2015 total: $13.9M, 2016 total: $14.3M — a 2.9% year-over-year increase."
     ),
-    "tailspin toys purchasing volume": (
-        "Tailspin Toys purchasing volume increased 15% from 2015 to 2016."
-    ),
-    "year-over-year growth": (
-        "Year-over-year revenue growth rate is 2.9% (2015 to 2016)."
-    ),
-    "growth rate": (
-        "The year-over-year growth rate in total revenue is approximately 2.9%."
-    ),
-    "total revenue from tailspin toys": (
-        "Total revenue from Tailspin Toys across all locations: $2.4M."
-    ),
-    "buying group": (
-        "There are 2 buying groups in the customer dimension: "
-        "Tailspin Toys and Wingtip Toys."
-    ),
-    "how many buying": (
-        "There are 2 buying group entries in the customer dimension: "
-        "Tailspin Toys and Wingtip Toys."
-    ),
+    "tailspin toys purchasing volume": ("Tailspin Toys purchasing volume increased 15% from 2015 to 2016."),
+    "year-over-year growth": ("Year-over-year revenue growth rate is 2.9% (2015 to 2016)."),
+    "growth rate": ("The year-over-year growth rate in total revenue is approximately 2.9%."),
+    "total revenue from tailspin toys": ("Total revenue from Tailspin Toys across all locations: $2.4M."),
+    "buying group": ("There are 2 buying groups in the customer dimension: Tailspin Toys and Wingtip Toys."),
+    "how many buying": ("There are 2 buying group entries in the customer dimension: Tailspin Toys and Wingtip Toys."),
     "usb food flash drive - pizza slice": (
-        "The stock item 'USB food flash drive - pizza slice' belongs to the "
-        "USB Novelties category."
+        "The stock item 'USB food flash drive - pizza slice' belongs to the USB Novelties category."
     ),
-    "salesperson for contoso": (
-        "The primary salesperson assigned to Contoso Ltd is Archer Lamble."
-    ),
+    "salesperson for contoso": ("The primary salesperson assigned to Contoso Ltd is Archer Lamble."),
     "best-selling stock items by total revenue": (
-        "Best-selling stock items by revenue: "
-        "1. DBA joke mug, 2. USB food flash drive, 3. Novelty chilli chocolate."
+        "Best-selling stock items by revenue: 1. DBA joke mug, 2. USB food flash drive, 3. Novelty chilli chocolate."
     ),
-    "highest total sales in 2016": (
-        "The salesperson with the highest total sales in 2016 was Amy Trefl."
-    ),
+    "highest total sales in 2016": ("The salesperson with the highest total sales in 2016 was Amy Trefl."),
     "revenue breakdown by product category": (
-        "Revenue by category: Novelty goods $5.2M, USB novelties $3.8M, "
-        "Clothing $2.9M, Packaging materials $2.4M."
+        "Revenue by category: Novelty goods $5.2M, USB novelties $3.8M, Clothing $2.9M, Packaging materials $2.4M."
     ),
-    "southeast sales territory": (
-        "Total sales for the Southeast territory: $2.1M across 5,400 orders."
-    ),
+    "southeast sales territory": ("Total sales for the Southeast territory: $2.1M across 5,400 orders."),
 }
 
 
@@ -152,6 +111,7 @@ def _mock_answer(question: str) -> str:
 
 # ── Data Agent client ───────────────────────────────────────────────────────
 
+
 def _live_answer(question: str) -> str:
     """Send a question to the Fabric Data Agent and return its answer."""
     try:
@@ -169,6 +129,7 @@ def _live_answer(question: str) -> str:
 
 # ── Scoring ─────────────────────────────────────────────────────────────────
 
+
 @dataclass
 class EvalResult:
     question: str
@@ -182,16 +143,8 @@ class EvalResult:
 def score_answer(qa: dict, answer: str) -> EvalResult:
     """Score a single answer against expected_contains / expected_not_contains."""
     answer_lower = answer.lower()
-    missing = [
-        term
-        for term in qa.get("expected_contains", [])
-        if term.lower() not in answer_lower
-    ]
-    unexpected = [
-        term
-        for term in qa.get("expected_not_contains", [])
-        if term.lower() in answer_lower
-    ]
+    missing = [term for term in qa.get("expected_contains", []) if term.lower() not in answer_lower]
+    unexpected = [term for term in qa.get("expected_not_contains", []) if term.lower() in answer_lower]
     passed = len(missing) == 0 and len(unexpected) == 0
     return EvalResult(
         question=qa["question"],
@@ -204,6 +157,7 @@ def score_answer(qa: dict, answer: str) -> EvalResult:
 
 
 # ── Main ────────────────────────────────────────────────────────────────────
+
 
 def load_golden_qa(path: Path, category: str | None = None) -> list[dict]:
     with open(path, encoding="utf-8") as f:
@@ -295,9 +249,7 @@ def print_summary(results: list[EvalResult], min_pass_rate: float) -> bool:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Run golden-QA evaluation against the Fabric Data Agent"
-    )
+    parser = argparse.ArgumentParser(description="Run golden-QA evaluation against the Fabric Data Agent")
     parser.add_argument(
         "--mock",
         action="store_true",
@@ -322,7 +274,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Run only questions in this category",
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Show failure details inline during evaluation",
     )
@@ -356,4 +309,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

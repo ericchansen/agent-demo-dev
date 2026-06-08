@@ -20,10 +20,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-BASE_URL = (
-    "https://fabrictutorialdata.blob.core.windows.net/"
-    "sampledata/WideWorldImportersDW/parquet"
-)
+BASE_URL = "https://fabrictutorialdata.blob.core.windows.net/sampledata/WideWorldImportersDW/parquet"
 
 TABLES: list[str] = [
     "fact_Sale",
@@ -72,7 +69,7 @@ def download_table(table: str, output_dir: Path, *, retries: int = 3) -> Path:
             except urllib.error.HTTPError as exc:
                 last_error = exc
                 if exc.code == 404:
-                    print(f" 404 — trying next URL pattern")
+                    print(" 404 — trying next URL pattern")
                     break  # skip remaining retries for this URL
                 print(f" HTTP {exc.code} — retrying")
             except urllib.error.URLError as exc:
@@ -83,9 +80,7 @@ def download_table(table: str, output_dir: Path, *, retries: int = 3) -> Path:
                 print(f" I/O error — retrying ({exc})")
             time.sleep(2**attempt)  # exponential back-off
 
-    raise RuntimeError(
-        f"Failed to download {table} after trying all URL patterns"
-    ) from last_error
+    raise RuntimeError(f"Failed to download {table} after trying all URL patterns") from last_error
 
 
 def download_all(output_dir: Path) -> list[Path]:
@@ -148,9 +143,7 @@ def print_upload_instructions(output_dir: Path) -> None:
     )
 
 
-def try_fabric_upload(
-    workspace_id: str, lakehouse_id: str, parquet_files: list[Path]
-) -> bool:
+def try_fabric_upload(workspace_id: str, lakehouse_id: str, parquet_files: list[Path]) -> bool:
     """Attempt to upload files via the Fabric SDK. Returns True on success."""
     try:
         from sempy import fabric  # type: ignore[import-untyped]
@@ -161,10 +154,9 @@ def try_fabric_upload(
         for path in parquet_files:
             table_name = path.stem
             print(f"  ↑ {table_name} …", end="", flush=True)
-            with open(path, "rb") as f:
+            with open(path, "rb"):
                 response = client.post(
-                    f"/v1/workspaces/{workspace_id}/lakehouses/{lakehouse_id}"
-                    f"/tables/{table_name}/load",
+                    f"/v1/workspaces/{workspace_id}/lakehouses/{lakehouse_id}/tables/{table_name}/load",
                     json={
                         "relativePath": f"Files/{path.name}",
                         "pathType": "File",
@@ -187,9 +179,7 @@ def try_fabric_upload(
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Download Wide World Importers DW sample data for Fabric demo"
-    )
+    parser = argparse.ArgumentParser(description="Download Wide World Importers DW sample data for Fabric demo")
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -235,9 +225,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Attempt Fabric SDK upload if IDs provided
     if args.workspace_id and args.lakehouse_id:
-        uploaded = try_fabric_upload(
-            args.workspace_id, args.lakehouse_id, parquet_files
-        )
+        uploaded = try_fabric_upload(args.workspace_id, args.lakehouse_id, parquet_files)
         if uploaded:
             print("\n✓ Data uploaded to Fabric Lakehouse successfully!")
             return 0

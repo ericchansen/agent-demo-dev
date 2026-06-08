@@ -43,13 +43,13 @@ _RESEARCH_TOOL = types.Tool(
 )
 
 
-@server.list_tools()
+@server.list_tools()  # type: ignore[no-untyped-call, untyped-decorator]
 async def handle_list_tools() -> list[types.Tool]:
     """Advertise available tools."""
     return [_RESEARCH_TOOL]
 
 
-@server.call_tool()
+@server.call_tool()  # type: ignore[untyped-decorator]
 async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextContent]:
     """Dispatch tool calls."""
     if name == "research_company":

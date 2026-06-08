@@ -1,4 +1,5 @@
 """Unit tests for the Foundry orchestrator."""
+
 from __future__ import annotations
 
 import importlib
@@ -12,11 +13,11 @@ import pytest
 
 
 def _load_module(module_name: str) -> Any:
-    """Import a module or skip when concurrent refactors make it temporarily unavailable."""
+    """Import a module or skip only when it is genuinely missing."""
     try:
         return importlib.import_module(module_name)
-    except Exception as exc:  # pragma: no cover - defensive for concurrent edits
-        pytest.skip(f"Unable to import {module_name}: {exc}")
+    except ModuleNotFoundError:
+        pytest.skip(f"Module not installed: {module_name}")
 
 
 def _load_attr(module_name: str, attr_name: str) -> Any:
@@ -204,9 +205,7 @@ def test_generate_report_forecast_missing_fields(tmp_path: Path, monkeypatch: py
     assert Path(result["file_path"]).exists()
 
 
-def test_generate_report_non_mapping_forecast_items_are_stable(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_generate_report_non_mapping_forecast_items_are_stable(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Non-mapping forecast items either raise a clear error or are handled gracefully."""
     generate_report_func = _load_attr("src.orchestrator.foundry_agent", "generate_report_func")
     monkeypatch.chdir(tmp_path)
@@ -304,9 +303,7 @@ def test_execute_local_functions_serializes_outputs() -> None:
     execute_local_functions = _load_attr("src.orchestrator.foundry_agent", "_execute_local_functions")
 
     agent = SimpleNamespace(
-        _local_function_handlers={
-            "forecast_quota": lambda args: {"customer": args["customer_name"], "status": "ok"}
-        }
+        _local_function_handlers={"forecast_quota": lambda args: {"customer": args["customer_name"], "status": "ok"}}
     )
     response = SimpleNamespace(
         output=[
@@ -447,11 +444,8 @@ async def test_mcp_rejects_invalid_format(tmp_path: Path, monkeypatch: pytest.Mo
 
     assert len(result) == 1
     response = json.loads(result[0].text)
-    if "error" in response:
-        assert "format" in response["error"].lower() or "unsupported" in response["error"].lower()
-    else:
-        assert response.get("status") == "success"
-        assert Path(response["file_path"]).exists()
+    assert "error" in response, f"Expected error for unsupported format 'pdf', got: {response}"
+    assert "format" in response["error"].lower() or "unsupported" in response["error"].lower()
 
 
 @pytest.mark.asyncio

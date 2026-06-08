@@ -1,20 +1,33 @@
 import os
+
 os.environ["PATH"] = r"C:\Program Files\Graphviz\bin;" + os.environ["PATH"]
 
-from diagrams import Diagram, Cluster, Edge
-from diagrams.azure.analytics import DataLakeStoreGen1, SynapseAnalytics
+from diagrams import Cluster, Diagram, Edge
 from diagrams.azure.aimachinelearning import BotServices, CognitiveServices
+from diagrams.azure.analytics import DataLakeStoreGen1, SynapseAnalytics
 from diagrams.azure.identity import ActiveDirectory
 from diagrams.azure.web import AppServices
-from diagrams.azure.security import KeyVaults
 from diagrams.generic.storage import Storage
 
-output_dir = os.path.join(os.environ["USERPROFILE"], "repos", "fabric-sales-agent-accelerator-scaffold", "docs", "diagrams")
+output_dir = os.path.join(
+    os.environ["USERPROFILE"],
+    "repos",
+    "fabric-sales-agent-accelerator-scaffold",
+    "docs",
+    "diagrams",
+)
 output_file = os.path.join(output_dir, "architecture")
 
 graph_attr = {"fontsize": "22", "bgcolor": "white", "pad": "1.0", "ranksep": "1.2", "nodesep": "0.8"}
 
-with Diagram("Fabric Sales Agent Accelerator", show=False, direction="LR", filename=output_file, outformat="png", graph_attr=graph_attr):
+with Diagram(
+    "Fabric Sales Agent Accelerator",
+    show=False,
+    direction="LR",
+    filename=output_file,
+    outformat="png",
+    graph_attr=graph_attr,
+):
     with Cluster("User Interfaces"):
         m365 = CognitiveServices("M365\nCopilot")
         webapp = AppServices("Custom\nWeb App")
