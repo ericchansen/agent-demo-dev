@@ -55,11 +55,11 @@ pip install -e ".[dev]"
 
 ### 2. Connect the Fabric Data Agent
 
-The repo includes a workspace `.mcp.json` that Copilot CLI auto-discovers. You just need to set your Fabric workspace ID.
+The repo includes a workspace `.github/mcp.json` that Copilot CLI auto-discovers. You just need to set your Fabric workspace ID.
 
-**Option A: Edit `.mcp.json`** (zero-config)
+**Option A: Edit `.github/mcp.json`** (zero-config)
 
-Open `.mcp.json` in the repo root and replace `<your-workspace-id>` with your Fabric workspace GUID:
+Open `.github/mcp.json` in the repo and replace `<your-workspace-id>` with your Fabric workspace GUID:
 
 ```json
 {

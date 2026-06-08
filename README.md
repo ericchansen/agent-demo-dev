@@ -39,7 +39,7 @@ git clone https://github.com/ericchansen/agent-demo.git && cd agent-demo
 uv sync              # or: python -m venv .venv && pip install -e ".[dev]"
 ```
 
-Edit `.mcp.json` in the repo root — replace `<your-workspace-id>` with your Fabric workspace GUID. Then:
+Edit `.github/mcp.json` — replace `<your-workspace-id>` with your Fabric workspace GUID. Then:
 
 ```bash
 copilot
