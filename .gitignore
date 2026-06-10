@@ -41,6 +41,9 @@ coverage.xml
 # Build artifacts
 *.whl
 
+# Compiled Bicep (regenerate with `bicep build`; pipeline deploys main.bicep directly)
+infra/main.json
+
 # Fabric
 *.pbix
 
