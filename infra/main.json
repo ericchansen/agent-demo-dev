@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "13489497723397159688"
+      "templateHash": "6019550603085813915"
     }
   },
   "parameters": {
@@ -422,6 +422,9 @@
           "location": {
             "value": "[parameters('location')]"
           },
+          "customSubDomainName": {
+            "value": "[parameters('cogServicesName')]"
+          },
           "tags": {
             "value": "[parameters('tags')]"
           }
@@ -433,7 +436,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.41.2.15936",
-              "templateHash": "18363519892624419388"
+              "templateHash": "13931221009824002923"
             }
           },
           "parameters": {
@@ -470,6 +473,13 @@
                 "description": "SKU name."
               }
             },
+            "customSubDomainName": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Custom subdomain name (required when updating existing accounts that already have one)."
+              }
+            },
             "tags": {
               "type": "object",
               "defaultValue": {},
@@ -481,7 +491,7 @@
           "resources": [
             {
               "type": "Microsoft.CognitiveServices/accounts",
-              "apiVersion": "2024-04-01-preview",
+              "apiVersion": "2023-05-01",
               "name": "[parameters('name')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
@@ -495,6 +505,7 @@
               "properties": {
                 "disableLocalAuth": true,
                 "publicNetworkAccess": "Disabled",
+                "customSubDomainName": "[if(empty(parameters('customSubDomainName')), null(), parameters('customSubDomainName'))]",
                 "networkAcls": {
                   "defaultAction": "Deny",
                   "ipRules": [],
@@ -516,7 +527,7 @@
               "metadata": {
                 "description": "Principal ID of the system-assigned managed identity."
               },
-              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('name')), '2024-04-01-preview', 'full').identity.principalId]"
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('name')), '2023-05-01', 'full').identity.principalId]"
             }
           }
         }
@@ -538,6 +549,9 @@
           "location": {
             "value": "[parameters('location')]"
           },
+          "customSubDomainName": {
+            "value": "[parameters('foundryHubCogServicesName')]"
+          },
           "tags": {
             "value": "[parameters('tags')]"
           }
@@ -549,7 +563,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.41.2.15936",
-              "templateHash": "18363519892624419388"
+              "templateHash": "13931221009824002923"
             }
           },
           "parameters": {
@@ -586,6 +600,13 @@
                 "description": "SKU name."
               }
             },
+            "customSubDomainName": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Custom subdomain name (required when updating existing accounts that already have one)."
+              }
+            },
             "tags": {
               "type": "object",
               "defaultValue": {},
@@ -597,7 +618,7 @@
           "resources": [
             {
               "type": "Microsoft.CognitiveServices/accounts",
-              "apiVersion": "2024-04-01-preview",
+              "apiVersion": "2023-05-01",
               "name": "[parameters('name')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
@@ -611,6 +632,7 @@
               "properties": {
                 "disableLocalAuth": true,
                 "publicNetworkAccess": "Disabled",
+                "customSubDomainName": "[if(empty(parameters('customSubDomainName')), null(), parameters('customSubDomainName'))]",
                 "networkAcls": {
                   "defaultAction": "Deny",
                   "ipRules": [],
@@ -632,7 +654,7 @@
               "metadata": {
                 "description": "Principal ID of the system-assigned managed identity."
               },
-              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('name')), '2024-04-01-preview', 'full').identity.principalId]"
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('name')), '2023-05-01', 'full').identity.principalId]"
             }
           }
         }
@@ -932,7 +954,7 @@
     "foundryHubPrincipalId": {
       "type": "string",
       "metadata": {
-        "description": "Principal ID of the Foundry Hub system-assigned managed identity (needed for RBAC step)."
+        "description": "Principal ID of the Foundry Hub system-assigned managed identity."
       },
       "value": "[reference(resourceId('Microsoft.Resources/deployments', 'aiFoundry'), '2025-04-01').outputs.hubPrincipalId.value]"
     }

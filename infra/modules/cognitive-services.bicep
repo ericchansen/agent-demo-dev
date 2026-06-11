@@ -27,10 +27,13 @@ param kind string = 'AIServices'
 @allowed(['S0', 'S1', 'S2', 'S3', 'F0'])
 param skuName string = 'S0'
 
+@description('Custom subdomain name (required when updating existing accounts that already have one).')
+param customSubDomainName string = ''
+
 @description('Resource tags.')
 param tags object = {}
 
-resource cogAccount 'Microsoft.CognitiveServices/accounts@2024-04-01-preview' = {
+resource cogAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   name: name
   location: location
   tags: tags
@@ -45,6 +48,7 @@ resource cogAccount 'Microsoft.CognitiveServices/accounts@2024-04-01-preview' = 
     // Block API-key (local) auth; callers must present an Entra token.
     disableLocalAuth: true
     publicNetworkAccess: 'Disabled'
+    customSubDomainName: empty(customSubDomainName) ? null : customSubDomainName
     networkAcls: {
       defaultAction: 'Deny'
       ipRules: []

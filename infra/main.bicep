@@ -76,6 +76,7 @@ module cogServices './modules/cognitive-services.bicep' = {
   params: {
     name: cogServicesName
     location: location
+    customSubDomainName: cogServicesName
     tags: tags
   }
 }
@@ -85,6 +86,7 @@ module foundryHubCogServices './modules/cognitive-services.bicep' = {
   params: {
     name: foundryHubCogServicesName
     location: location
+    customSubDomainName: foundryHubCogServicesName
     tags: tags
   }
 }
@@ -127,5 +129,5 @@ output storageAccountId string = storage.outputs.storageAccountId
 @description('Resource ID of the AI Foundry Hub.')
 output foundryHubId string = aiFoundry.outputs.hubId
 
-@description('Principal ID of the Foundry Hub system-assigned managed identity (needed for RBAC step).')
+@description('Principal ID of the Foundry Hub system-assigned managed identity.')
 output foundryHubPrincipalId string = aiFoundry.outputs.hubPrincipalId
