@@ -1,0 +1,948 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.41.2.15936",
+      "templateHash": "13342880531995803646"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Azure region for all resources."
+      }
+    },
+    "fabricCapacitySku": {
+      "type": "string",
+      "defaultValue": "F2",
+      "allowedValues": [
+        "F2",
+        "F4",
+        "F8",
+        "F16",
+        "F32",
+        "F64",
+        "F128",
+        "F256",
+        "F512",
+        "F1024",
+        "F2048"
+      ],
+      "metadata": {
+        "description": "SKU for the Microsoft Fabric capacity (F2 is minimum for Data Agent)."
+      }
+    },
+    "fabricCapacityName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Microsoft Fabric capacity resource."
+      }
+    },
+    "keyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Azure Key Vault."
+      }
+    },
+    "entraAppName": {
+      "type": "string",
+      "metadata": {
+        "description": "Display name for the Entra ID app registration (created out-of-band)."
+      }
+    },
+    "fabricAdminUpn": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "UPN of the Fabric capacity administrator (e.g. admin@contoso.com)."
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Azure Storage account used by AI Foundry."
+      }
+    },
+    "cogServicesName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the primary Cognitive Services / AI Services account (fabricagentai2026)."
+      }
+    },
+    "foundryHubCogServicesName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the AI Foundry Hub Cognitive Services account (fsa-hub-2026)."
+      }
+    },
+    "foundryHubName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the AI Foundry Hub workspace (fabric-agent-hub)."
+      }
+    },
+    "foundryProjectName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the AI Foundry Project inside the hub (fsa-project)."
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {},
+      "metadata": {
+        "description": "Resource tags applied to every resource."
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "fabricCapacity",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[parameters('fabricCapacityName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "sku": {
+            "value": "[parameters('fabricCapacitySku')]"
+          },
+          "adminMemberUpn": {
+            "value": "[parameters('fabricAdminUpn')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.41.2.15936",
+              "templateHash": "7153159908534220519"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Fabric capacity resource."
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region."
+              }
+            },
+            "sku": {
+              "type": "string",
+              "defaultValue": "F2",
+              "allowedValues": [
+                "F2",
+                "F4",
+                "F8",
+                "F16",
+                "F32",
+                "F64",
+                "F128",
+                "F256",
+                "F512",
+                "F1024",
+                "F2048"
+              ],
+              "metadata": {
+                "description": "Fabric capacity SKU. F2 is the minimum tier that supports Data Agent."
+              }
+            },
+            "adminMemberUpn": {
+              "type": "string",
+              "metadata": {
+                "description": "UPN of the Fabric capacity administrator (e.g. admin@contoso.com)."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Fabric/capacities",
+              "apiVersion": "2023-11-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "[parameters('sku')]",
+                "tier": "Fabric"
+              },
+              "properties": {
+                "administration": {
+                  "members": "[if(empty(parameters('adminMemberUpn')), createArray(), createArray(parameters('adminMemberUpn')))]"
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "capacityId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the Fabric capacity."
+              },
+              "value": "[resourceId('Microsoft.Fabric/capacities', parameters('name'))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "keyVault",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[parameters('keyVaultName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.41.2.15936",
+              "templateHash": "10858606819619886201"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Key Vault."
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults",
+              "apiVersion": "2023-07-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "family": "A",
+                  "name": "standard"
+                },
+                "tenantId": "[subscription().tenantId]",
+                "enableRbacAuthorization": true,
+                "enableSoftDelete": true,
+                "softDeleteRetentionInDays": 90,
+                "enablePurgeProtection": true,
+                "accessPolicies": []
+              }
+            }
+          ],
+          "outputs": {
+            "vaultUri": {
+              "type": "string",
+              "metadata": {
+                "description": "URI of the Key Vault (e.g. https://<name>.vault.azure.net/)."
+              },
+              "value": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('name')), '2023-07-01').vaultUri]"
+            },
+            "keyVaultId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the Key Vault."
+              },
+              "value": "[resourceId('Microsoft.KeyVault/vaults', parameters('name'))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "storage",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[parameters('storageAccountName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.41.2.15936",
+              "templateHash": "14703096329102117490"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Storage account."
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region."
+              }
+            },
+            "sku": {
+              "type": "string",
+              "defaultValue": "Standard_LRS",
+              "allowedValues": [
+                "Standard_LRS",
+                "Standard_GRS",
+                "Standard_ZRS",
+                "Premium_LRS"
+              ],
+              "metadata": {
+                "description": "Storage SKU (LRS is sufficient for a demo; use GRS/ZRS for prod)."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2023-05-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "StorageV2",
+              "sku": {
+                "name": "[parameters('sku')]"
+              },
+              "properties": {
+                "defaultToOAuthAuthentication": true,
+                "allowSharedKeyAccess": false,
+                "minimumTlsVersion": "TLS1_2",
+                "supportsHttpsTrafficOnly": true,
+                "publicNetworkAccess": "Disabled",
+                "allowBlobPublicAccess": false,
+                "networkAcls": {
+                  "bypass": "AzureServices",
+                  "defaultAction": "Deny"
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "storageAccountId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the Storage account."
+              },
+              "value": "[resourceId('Microsoft.Storage/storageAccounts', parameters('name'))]"
+            },
+            "storageAccountName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Storage account."
+              },
+              "value": "[parameters('name')]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "cogServices",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[parameters('cogServicesName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.41.2.15936",
+              "templateHash": "18363519892624419388"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Cognitive Services account."
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region."
+              }
+            },
+            "kind": {
+              "type": "string",
+              "defaultValue": "AIServices",
+              "metadata": {
+                "description": "Cognitive Services kind (e.g. AIServices, OpenAI, CognitiveServices)."
+              }
+            },
+            "skuName": {
+              "type": "string",
+              "defaultValue": "S0",
+              "allowedValues": [
+                "S0",
+                "S1",
+                "S2",
+                "S3",
+                "F0"
+              ],
+              "metadata": {
+                "description": "SKU name."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.CognitiveServices/accounts",
+              "apiVersion": "2024-04-01-preview",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "[parameters('kind')]",
+              "sku": {
+                "name": "[parameters('skuName')]"
+              },
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "disableLocalAuth": true,
+                "publicNetworkAccess": "Disabled",
+                "networkAcls": {
+                  "defaultAction": "Deny",
+                  "ipRules": [],
+                  "virtualNetworkRules": []
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "accountId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the Cognitive Services account."
+              },
+              "value": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('name'))]"
+            },
+            "principalId": {
+              "type": "string",
+              "metadata": {
+                "description": "Principal ID of the system-assigned managed identity."
+              },
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('name')), '2024-04-01-preview', 'full').identity.principalId]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "foundryHubCogServices",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[parameters('foundryHubCogServicesName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.41.2.15936",
+              "templateHash": "18363519892624419388"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Cognitive Services account."
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region."
+              }
+            },
+            "kind": {
+              "type": "string",
+              "defaultValue": "AIServices",
+              "metadata": {
+                "description": "Cognitive Services kind (e.g. AIServices, OpenAI, CognitiveServices)."
+              }
+            },
+            "skuName": {
+              "type": "string",
+              "defaultValue": "S0",
+              "allowedValues": [
+                "S0",
+                "S1",
+                "S2",
+                "S3",
+                "F0"
+              ],
+              "metadata": {
+                "description": "SKU name."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.CognitiveServices/accounts",
+              "apiVersion": "2024-04-01-preview",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "[parameters('kind')]",
+              "sku": {
+                "name": "[parameters('skuName')]"
+              },
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "disableLocalAuth": true,
+                "publicNetworkAccess": "Disabled",
+                "networkAcls": {
+                  "defaultAction": "Deny",
+                  "ipRules": [],
+                  "virtualNetworkRules": []
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "accountId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the Cognitive Services account."
+              },
+              "value": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('name'))]"
+            },
+            "principalId": {
+              "type": "string",
+              "metadata": {
+                "description": "Principal ID of the system-assigned managed identity."
+              },
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('name')), '2024-04-01-preview', 'full').identity.principalId]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "aiFoundry",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "hubName": {
+            "value": "[parameters('foundryHubName')]"
+          },
+          "projectName": {
+            "value": "[parameters('foundryProjectName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "keyVaultId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVault'), '2025-04-01').outputs.keyVaultId.value]"
+          },
+          "storageAccountId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'storage'), '2025-04-01').outputs.storageAccountId.value]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.41.2.15936",
+              "templateHash": "1896146898294228260"
+            }
+          },
+          "parameters": {
+            "hubName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the AI Foundry Hub (MachineLearningServices workspace)."
+              }
+            },
+            "projectName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the AI Foundry Project inside the hub."
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region."
+              }
+            },
+            "keyVaultId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the linked Key Vault."
+              }
+            },
+            "storageAccountId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the linked Storage account."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.MachineLearningServices/workspaces",
+              "apiVersion": "2024-04-01",
+              "name": "[parameters('hubName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "Hub",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "keyVault": "[parameters('keyVaultId')]",
+                "storageAccount": "[parameters('storageAccountId')]",
+                "publicNetworkAccess": "Disabled",
+                "systemDatastoresAuthMode": "identity"
+              }
+            },
+            {
+              "type": "Microsoft.MachineLearningServices/workspaces",
+              "apiVersion": "2024-04-01",
+              "name": "[parameters('projectName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "Project",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "hubResourceId": "[resourceId('Microsoft.MachineLearningServices/workspaces', parameters('hubName'))]",
+                "publicNetworkAccess": "Disabled",
+                "systemDatastoresAuthMode": "identity"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.MachineLearningServices/workspaces', parameters('hubName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "hubId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the Foundry Hub."
+              },
+              "value": "[resourceId('Microsoft.MachineLearningServices/workspaces', parameters('hubName'))]"
+            },
+            "hubPrincipalId": {
+              "type": "string",
+              "metadata": {
+                "description": "Principal ID of the hub system-assigned managed identity."
+              },
+              "value": "[reference(resourceId('Microsoft.MachineLearningServices/workspaces', parameters('hubName')), '2024-04-01', 'full').identity.principalId]"
+            },
+            "projectId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the Foundry Project."
+              },
+              "value": "[resourceId('Microsoft.MachineLearningServices/workspaces', parameters('projectName'))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'keyVault')]",
+        "[resourceId('Microsoft.Resources/deployments', 'storage')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "policies",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.41.2.15936",
+              "templateHash": "4211146240879941899"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/policyAssignments",
+              "apiVersion": "2023-04-01",
+              "name": "fsa-storage-no-sharedkey",
+              "properties": {
+                "displayName": "[FSA] Storage — disable shared-key access",
+                "description": "Audit storage accounts that still allow shared-key (access-key) authentication. Entra identity-based auth should be used exclusively.",
+                "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/b2982f36-99f2-4db5-8eff-283140c09693",
+                "parameters": {
+                  "effect": {
+                    "value": "Audit"
+                  }
+                },
+                "enforcementMode": "Default"
+              }
+            },
+            {
+              "type": "Microsoft.Authorization/policyAssignments",
+              "apiVersion": "2023-04-01",
+              "name": "fsa-cogsvc-no-localauth",
+              "properties": {
+                "displayName": "[FSA] Cognitive Services — disable local auth",
+                "description": "Audit Cognitive Services accounts that allow API-key (local) authentication. Entra token-based auth should be used exclusively.",
+                "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/71ef260a-8f18-47b7-abcae-2e13a3a99b5f",
+                "parameters": {
+                  "effect": {
+                    "value": "Audit"
+                  }
+                },
+                "enforcementMode": "Default"
+              }
+            },
+            {
+              "type": "Microsoft.Authorization/policyAssignments",
+              "apiVersion": "2023-04-01",
+              "name": "fsa-foundry-no-pubnet",
+              "properties": {
+                "displayName": "[FSA] AI Foundry Hub — disable public network access",
+                "description": "Audit Azure Machine Learning workspaces (Foundry hubs/projects) that allow public network access.",
+                "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/a6fb4358-5bf4-4ad7-ba82-2cd2f41ce5e8",
+                "parameters": {
+                  "effect": {
+                    "value": "Audit"
+                  }
+                },
+                "enforcementMode": "Default"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "entraAppPlaceholder",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "entraAppName": {
+            "value": "[parameters('entraAppName')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.41.2.15936",
+              "templateHash": "18392351841444137135"
+            }
+          },
+          "parameters": {
+            "entraAppName": {
+              "type": "string",
+              "metadata": {
+                "description": "Display name for the Entra ID app registration (informational only)."
+              }
+            }
+          },
+          "resources": [],
+          "outputs": {
+            "setupInstructions": {
+              "type": "string",
+              "metadata": {
+                "description": "Reminder: create the Entra app registration manually (see comments above)."
+              },
+              "value": "[format('Run the az CLI commands in infra/modules/entra-app.bicep to create app \"{0}\".', parameters('entraAppName'))]"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "fabricCapacityId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the provisioned Fabric capacity."
+      },
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'fabricCapacity'), '2025-04-01').outputs.capacityId.value]"
+    },
+    "keyVaultUri": {
+      "type": "string",
+      "metadata": {
+        "description": "URI of the provisioned Key Vault."
+      },
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVault'), '2025-04-01').outputs.vaultUri.value]"
+    },
+    "storageAccountId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the Storage account."
+      },
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'storage'), '2025-04-01').outputs.storageAccountId.value]"
+    },
+    "foundryHubId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the AI Foundry Hub."
+      },
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'aiFoundry'), '2025-04-01').outputs.hubId.value]"
+    },
+    "foundryHubPrincipalId": {
+      "type": "string",
+      "metadata": {
+        "description": "Principal ID of the Foundry Hub system-assigned managed identity (needed for RBAC step)."
+      },
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'aiFoundry'), '2025-04-01').outputs.hubPrincipalId.value]"
+    }
+  }
+}

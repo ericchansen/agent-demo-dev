@@ -31,3 +31,6 @@ resource vault 'Microsoft.KeyVault/vaults@2023-07-01' = {
 
 @description('URI of the Key Vault (e.g. https://<name>.vault.azure.net/).')
 output vaultUri string = vault.properties.vaultUri
+
+@description('Resource ID of the Key Vault.')
+output keyVaultId string = vault.id

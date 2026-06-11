@@ -25,6 +25,21 @@ param entraAppName string
 @description('UPN of the Fabric capacity administrator (e.g. admin@contoso.com).')
 param fabricAdminUpn string = ''
 
+@description('Name of the Azure Storage account used by AI Foundry.')
+param storageAccountName string
+
+@description('Name of the primary Cognitive Services / AI Services account (fabricagentai2026).')
+param cogServicesName string
+
+@description('Name of the AI Foundry Hub Cognitive Services account (fsa-hub-2026).')
+param foundryHubCogServicesName string
+
+@description('Name of the AI Foundry Hub workspace (fabric-agent-hub).')
+param foundryHubName string
+
+@description('Name of the AI Foundry Project inside the hub (fsa-project).')
+param foundryProjectName string
+
 @description('Resource tags applied to every resource.')
 param tags object = {}
 
@@ -50,6 +65,53 @@ module keyVault './modules/keyvault.bicep' = {
   }
 }
 
+module storage './modules/storage.bicep' = {
+  name: 'storage'
+  params: {
+    name: storageAccountName
+    location: location
+    tags: tags
+  }
+}
+
+module cogServices './modules/cognitive-services.bicep' = {
+  name: 'cogServices'
+  params: {
+    name: cogServicesName
+    location: location
+    tags: tags
+  }
+}
+
+module foundryHubCogServices './modules/cognitive-services.bicep' = {
+  name: 'foundryHubCogServices'
+  params: {
+    name: foundryHubCogServicesName
+    location: location
+    tags: tags
+  }
+}
+
+// ⚠️  PREREQUISITE: Assign "Storage Blob Data Contributor" to the hub's
+// system-assigned MI on the storage account before deploying this module
+// when migrating an existing hub from accesskey → identity auth mode.
+// See infra/modules/ai-foundry.bicep for the full manual-step instructions.
+module aiFoundry './modules/ai-foundry.bicep' = {
+  name: 'aiFoundry'
+  params: {
+    hubName: foundryHubName
+    projectName: foundryProjectName
+    location: location
+    keyVaultId: keyVault.outputs.keyVaultId
+    storageAccountId: storage.outputs.storageAccountId
+    tags: tags
+  }
+}
+
+module policies './modules/policy.bicep' = {
+  name: 'policies'
+}
+
 // Entra ID app registrations cannot be created via Bicep.
 // See ./modules/entra-app.bicep for manual / CLI instructions.
 module entraApp './modules/entra-app.bicep' = {
@@ -66,3 +128,12 @@ output fabricCapacityId string = fabricCapacity.outputs.capacityId
 
 @description('URI of the provisioned Key Vault.')
 output keyVaultUri string = keyVault.outputs.vaultUri
+
+@description('Resource ID of the Storage account.')
+output storageAccountId string = storage.outputs.storageAccountId
+
+@description('Resource ID of the AI Foundry Hub.')
+output foundryHubId string = aiFoundry.outputs.hubId
+
+@description('Principal ID of the Foundry Hub system-assigned managed identity (needed for RBAC step).')
+output foundryHubPrincipalId string = aiFoundry.outputs.hubPrincipalId
