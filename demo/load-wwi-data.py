@@ -24,10 +24,19 @@ BASE_URL = "https://fabrictutorialdata.blob.core.windows.net/sampledata/WideWorl
 
 TABLES: list[str] = [
     "fact_Sale",
+    "fact_Order",
+    "fact_Purchase",
+    "fact_Transaction",
+    "fact_Movement",
+    "fact_Stock_Holding",
     "dimension_Customer",
     "dimension_Stock_Item",
     "dimension_City",
     "dimension_Employee",
+    "dimension_Date",
+    "dimension_Supplier",
+    "dimension_Payment_Method",
+    "dimension_Transaction_Type",
 ]
 
 
@@ -109,7 +118,37 @@ def download_all(output_dir: Path) -> list[Path]:
         for e in errors:
             print(e)
 
+    # Copy custom CSV seed-data tables (e.g., quota targets)
+    csv_files = copy_custom_csv_tables(output_dir)
+    downloaded.extend(csv_files)
+
     return downloaded
+
+
+CUSTOM_CSV_TABLES: list[str] = [
+    "quota_Target",
+]
+
+
+def copy_custom_csv_tables(output_dir: Path) -> list[Path]:
+    """Copy custom CSV seed-data tables into the output directory."""
+    sample_dir = Path(__file__).parent / "sample-data"
+    copied: list[Path] = []
+    for table in CUSTOM_CSV_TABLES:
+        src = sample_dir / f"{table}.csv"
+        dest = output_dir / f"{table}.csv"
+        if not src.exists():
+            print(f"  ⚠ {table}.csv not found in {sample_dir}")
+            continue
+        if dest.exists():
+            print(f"  ✓ {table}.csv — already exists")
+        else:
+            import shutil
+
+            shutil.copy2(src, dest)
+            print(f"  ✓ {table}.csv — copied ({_sizeof_fmt(dest.stat().st_size)})")
+        copied.append(dest)
+    return copied
 
 
 def print_upload_instructions(output_dir: Path) -> None:
@@ -213,10 +252,12 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.skip_download:
         parquet_files = list(args.output_dir.glob("*.parquet"))
+        csv_files = copy_custom_csv_tables(args.output_dir)
+        parquet_files.extend(csv_files)
         if not parquet_files:
-            print(f"No .parquet files found in {args.output_dir}")
+            print(f"No data files found in {args.output_dir}")
             return 1
-        print(f"Found {len(parquet_files)} existing Parquet files")
+        print(f"Found {len(parquet_files)} existing data files")
     else:
         parquet_files = download_all(args.output_dir)
         if not parquet_files:

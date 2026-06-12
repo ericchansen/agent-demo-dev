@@ -25,13 +25,66 @@
       "name": "dimension_Employee",
       "description": "Employee/salesperson dimension with Employee name, Preferred Name, and Is Salesperson flag.",
       "schema": "dbo"
+    },
+    {
+      "name": "fact_Order",
+      "description": "Sales order fact table containing every order line item. Grain: one row per order line. Orders not yet picked (Picked Date Key IS NULL) represent the open pipeline. Key measures: Quantity, Unit Price, Total Including Tax. Includes WWI Backorder ID for backorder tracking.",
+      "schema": "dbo"
+    },
+    {
+      "name": "fact_Purchase",
+      "description": "Purchase order fact table containing every purchase line from suppliers. Grain: one row per purchase line. Key measures: Ordered Quantity, Received Outers, Total Including Tax. Use Is Order Finalized to identify open POs.",
+      "schema": "dbo"
+    },
+    {
+      "name": "fact_Transaction",
+      "description": "Financial transaction fact table covering invoices, payments, and credit notes. Key measures: Amount Including Tax, Outstanding Balance. Use Is Finalized and Outstanding Balance for AR aging.",
+      "schema": "dbo"
+    },
+    {
+      "name": "fact_Movement",
+      "description": "Warehouse stock movement fact table tracking inventory receipts, issues, and adjustments. Grain: one row per stock movement event.",
+      "schema": "dbo"
+    },
+    {
+      "name": "fact_Stock_Holding",
+      "description": "Inventory snapshot fact table with current stock levels, bin quantities, and reorder points. Use for available-to-sell analysis.",
+      "schema": "dbo"
+    },
+    {
+      "name": "dimension_Date",
+      "description": "Date dimension with full calendar hierarchy including Year, Month, Day, Day Number, Calendar Month Label, Calendar Year Label, Fiscal Month Number, Fiscal Year Label, and ISO Week Number. Essential for fiscal year grouping and time intelligence.",
+      "schema": "dbo"
+    },
+    {
+      "name": "dimension_Supplier",
+      "description": "Supplier dimension with Supplier name, Category, Primary Contact, Phone Number, Website URL, and delivery/postal city keys. Used with fact_Purchase for cost analysis.",
+      "schema": "dbo"
+    },
+    {
+      "name": "dimension_Payment_Method",
+      "description": "Payment method dimension with Payment Method name. Used with fact_Transaction for payment mix analysis.",
+      "schema": "dbo"
+    },
+    {
+      "name": "dimension_Transaction_Type",
+      "description": "Transaction type dimension with Transaction Type name. Classifies transactions as Invoice, Payment, Credit Note, etc.",
+      "schema": "dbo"
+    },
+    {
+      "name": "quota_Target",
+      "description": "Synthetic quota target table with fiscal year quota assignments per salesperson and territory. Contains Annual Quota and quarterly breakdowns (Q1-Q4). Use to calculate quota attainment by comparing against fact_Sale actuals.",
+      "schema": "dbo"
     }
   ],
   "key_terminology": {
     "buying_groups": "Organizations that purchase on behalf of member customers (e.g., Tailspin Toys, Wingtip Toys). Found in dimension_Customer.[Buying Group].",
     "stock_categories": "Product groupings in dimension_Stock_Item (Clothing, Computing Novelties, Furry Footwear, Mugs, Novelty Items, Packaging Materials, Toys, T-Shirts, USB Novelties).",
     "customer_categories": "Customer type classifications in dimension_Customer.[Category] (e.g., Computer Store, Corporate, Gift Store, Novelty Shop, Supermarket, Warehouse).",
-    "sales_territories": "Geographic sales regions in dimension_City.[Sales Territory] (e.g., Southeast, Mideast, Great Lakes, Plains, Far West, New England, Rocky Mountain, Southwest)."
+    "sales_territories": "Geographic sales regions in dimension_City.[Sales Territory] (e.g., Southeast, Mideast, Great Lakes, Plains, Far West, New England, Rocky Mountain, Southwest).",
+    "pipeline_status": "Open pipeline = orders in fact_Order where Picked Date Key IS NULL. Backorders = orders where WWI Backorder ID IS NOT NULL. Fulfilled = orders with a Picked Date Key value.",
+    "fiscal_periods": "Fiscal year and quarter boundaries are defined in dimension_Date via Fiscal Month Number and Fiscal Year Label columns. Use these for fiscal-aligned quota reporting.",
+    "quota_attainment": "Quota attainment percentage = (actual revenue from fact_Sale / quota target from quota_Target) × 100. Pipeline coverage ratio = (open pipeline from fact_Order / remaining quota) — healthy is 3-4x."
   },
   "response_guidelines": "Use markdown tables for any result with more than one row. Include column headers. Round all currency values to 2 decimal places. Include totals or averages where appropriate. When comparing time periods, show both absolute values and percentage change. If a query returns no results, explain possible reasons and suggest alternative queries."
 }

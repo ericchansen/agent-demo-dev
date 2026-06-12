@@ -149,5 +149,55 @@
     "question": "What were total sales for the Southeast sales territory?",
     "expected_contains": ["Southeast"],
     "category": "filter"
+  },
+  {
+    "question": "What is our current open pipeline value?",
+    "expected_contains": ["pipeline", "order"],
+    "category": "pipeline"
+  },
+  {
+    "question": "Which salesperson has the most open orders?",
+    "expected_contains": ["order", "salesperson"],
+    "category": "pipeline"
+  },
+  {
+    "question": "Show me all backorders in the pipeline",
+    "expected_contains": ["backorder"],
+    "category": "pipeline"
+  },
+  {
+    "question": "What is the pipeline coverage ratio by salesperson?",
+    "expected_contains": ["coverage", "ratio"],
+    "category": "pipeline"
+  },
+  {
+    "question": "What is the quota attainment for FY2016?",
+    "expected_contains": ["quota", "2016"],
+    "category": "quota"
+  },
+  {
+    "question": "Which salesperson is furthest behind their quota?",
+    "expected_contains": ["quota"],
+    "category": "quota"
+  },
+  {
+    "question": "What are total sales by fiscal quarter for FY2016?",
+    "expected_contains": ["Q1", "Q2"],
+    "category": "quota"
+  },
+  {
+    "question": "Who are our top suppliers by total purchase volume?",
+    "expected_contains": ["supplier"],
+    "category": "cost"
+  },
+  {
+    "question": "What is the gross margin by product category?",
+    "expected_contains": ["margin"],
+    "category": "cost"
+  },
+  {
+    "question": "Which customers have outstanding balances?",
+    "expected_contains": ["outstanding", "balance"],
+    "category": "cost"
   }
 ]
