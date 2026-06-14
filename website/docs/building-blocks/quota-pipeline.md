@@ -25,6 +25,93 @@ M365 Copilot / Teams
   -> .xlsx, .html, .pdf
 ```
 
+## Operator quickstart
+
+This is the fastest path from "I have sales rows" to three artifacts on disk. Everything below is
+copy-pasteable and runs against the shared `src/agents/quota_estimator/` package.
+
+### 1. Shape your input rows
+
+Each sales row is a flat JSON object. The estimator accepts several field aliases (see
+[Customizing for another dataset](#customizing-for-another-dataset)), but the canonical WWI shape is:
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `territory` | string | yes | Sales territory name. Rows are grouped by territory. |
+| `category` | string | no | Product category. Omitted rows are grouped under `All Products`. |
+| `order_date` | string (`YYYY-MM-DD`) | yes | ISO date. Used to split the trailing window into prior vs. recent halves for the trend. |
+| `revenue` | number | yes | Order revenue in dollars. |
+| `quantity` | number | no | Units sold. Defaults to `0` when absent. |
+
+A runnable WWI sample (two territories, two categories, recent + prior orders so a trend can be computed):
+
+```json
+[
+  { "territory": "Northwest", "category": "Novelty Items", "order_date": "2025-07-30", "revenue": 190000, "quantity": 410 },
+  { "territory": "Northwest", "category": "Novelty Items", "order_date": "2026-05-05", "revenue": 260000, "quantity": 520 },
+  { "territory": "Northwest", "category": "Toys",          "order_date": "2025-09-17", "revenue": 90000,  "quantity": 240 },
+  { "territory": "Northwest", "category": "Toys",          "order_date": "2026-05-25", "revenue": 125000, "quantity": 300 },
+  { "territory": "Southwest", "category": "Clothing",      "order_date": "2025-10-07", "revenue": 155000, "quantity": 350 },
+  { "territory": "Southwest", "category": "Clothing",      "order_date": "2026-05-30", "revenue": 165000, "quantity": 360 }
+]
+```
+
+`research_data` and `workiq_activity` are optional. When omitted, the estimator still produces a
+forecast from sales trend alone; in demos use `demo_research_data(...)` and `demo_workiq_activity(...)`
+to populate realistic market and engagement signals.
+
+### 2. Invoke the generator
+
+**Copilot CLI** (after wiring `src/cli/mcp-config.json`):
+
+```text
+Generate an aggressive quota forecast report for Tailspin Toys
+```
+
+**Foundry / M365 Copilot** — the agent calls the `generate_quota_estimation_report` function tool with:
+
+```json
+{
+  "customer_name": "Tailspin Toys",
+  "sales_rows": [ /* the rows above */ ],
+  "scenario": "aggressive",
+  "output_dir": "output/quota-estimates"
+}
+```
+
+**Python (direct)** — also the CI smoke path:
+
+```powershell
+uv run python -c "from src.agents.quota_estimator.pipeline import demo_research_data, demo_sales_rows, demo_workiq_activity, generate_quota_estimation_report; print(generate_quota_estimation_report(customer_name='Tailspin Toys', sales_rows=demo_sales_rows(), research_data=demo_research_data('Tailspin Toys'), workiq_activity=demo_workiq_activity('Tailspin Toys'), scenario='aggressive', output_dir='output/quota-smoke'))"
+```
+
+### 3. Collect the artifacts
+
+Files are named `<customer-slug>_<scenario>_quota_estimate.<ext>` and written to `output_dir`. For the
+command above you get three files in `output/quota-smoke/`:
+
+| Artifact | File | What to check |
+|---|---|---|
+| Excel | `tailspin_toys_aggressive_quota_estimate.xlsx` | Summary, Recommendations, Sales Detail, Methodology, and Assumptions sheets. |
+| HTML | `tailspin_toys_aggressive_quota_estimate.html` | Browser-viewable report with an inline base64 chart (no external assets). |
+| PDF | `tailspin_toys_aggressive_quota_estimate.pdf` | Executive summary plus chart for read-only sharing. |
+
+The function returns a JSON-serializable dict whose `artifacts` field maps each format to its absolute
+path:
+
+```json
+{
+  "artifacts": {
+    "xlsx": ".../tailspin_toys_aggressive_quota_estimate.xlsx",
+    "html": ".../tailspin_toys_aggressive_quota_estimate.html",
+    "pdf":  ".../tailspin_toys_aggressive_quota_estimate.pdf"
+  }
+}
+```
+
+Everything under `output/` is git-ignored. The same end-to-end path runs in CI via
+`tests/unit/test_quota_estimator.py::test_end_to_end_demo_artifacts_smoke`.
+
 ## Architecture decisions
 
 | Decision | Why it matters |
