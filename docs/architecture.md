@@ -26,14 +26,15 @@ A report generation module that produces **DOCX and PPTX deliverables** from Jin
 
 ## Consumption Surfaces
 
-This accelerator supports four architecture options for exposing the agent to end users:
+This accelerator supports five architecture options for exposing the agent to end users:
 
-| Surface | Description |
-|---------|-------------|
-| **GitHub Copilot (VS Code / CLI)** | Full multi-agent workflow via MCP tool calls in your editor or terminal |
-| **M365 Copilot (Direct Publish)** | Zero-code path — publish from Fabric portal directly into M365 Copilot Chat |
-| **Copilot Studio** | Low-code visual designer with connectors for Fabric, SharePoint, and web search |
-| **Azure AI Foundry** | Pro-code Python SDK with full orchestration, report generation, and M365 publish |
+| Surface | Description | Status |
+|---------|-------------|--------|
+| **GitHub Copilot CLI** | Full multi-agent workflow via MCP tool calls in your terminal. Skill-based orchestration chains Fabric, research, and WorkIQ into artifacts (Excel, HTML, DOCX). | ✅ Implemented |
+| **M365 Copilot (Direct Publish)** | Zero-code path — publish from Fabric portal directly into M365 Copilot Chat | ✅ Implemented |
+| **Azure AI Foundry (Prompt Agent)** | Declarative agent with FunctionTools for quota forecasting, web research, attainment computation, and DOCX report generation | ✅ Implemented |
+| **Azure AI Foundry (Hosted Agent)** | Bring-your-own-code container using GitHub Copilot SDK with full tool orchestration | 🔧 Scaffolded |
+| **Cowork** | M365 plugin surface with native WorkIQ access. Maps 1:1 to CLI skill pattern. | 📋 Documented |
 
 See [docs/surfaces/README.md](surfaces/README.md) for a detailed comparison and decision flowchart.
 
@@ -41,15 +42,20 @@ See [docs/surfaces/README.md](surfaces/README.md) for a detailed comparison and 
 
 ## Data Flow
 
-1. **User request** — A user asks a natural language question (e.g., "Prepare an account plan for Tailspin Toys") through any consumption surface.
-2. **Orchestrator** — The orchestrator (CLI agent, Foundry agent, or Copilot Studio flow) decomposes the request into sub-tasks.
-3. **Parallel sub-agent calls** — The orchestrator invokes sub-agents in parallel:
-   - **Fabric Data Agent** → queries pipeline/revenue data from OneLake
-   - **Researcher Agent** → searches the web for customer news, earnings, strategy
-   - **SharePoint Agent** → retrieves internal proposals, playbooks, prior QBR decks
-4. **Synthesis** — The orchestrator combines all sub-agent results into a coherent narrative with citations.
-5. **Report generation** — If a deliverable is requested, the Report Generator renders a DOCX or PPTX from templates, embedding all citations and data.
-6. **Response** — The final answer (text + optional report attachment) is returned to the user.
+1. **User request** — A user asks a natural language question (e.g., "Run a deep analysis for Tailspin Toys") through any consumption surface.
+2. **Orchestrator** — The orchestrator (CLI skill, Foundry Prompt Agent, or Hosted Agent) decomposes the request into sub-tasks.
+3. **Parallel data gathering** — The orchestrator invokes data sources in parallel:
+   - **Fabric Data Agent** → queries revenue, pipeline, and customer data from OneLake
+   - **Web Research** → searches for market trends, customer news, competitive intelligence
+   - **WorkIQ / M365 Activity** → retrieves engagement signals (meetings, emails, contacts)
+4. **Computation** — Derived metrics are computed: quota attainment, pipeline coverage, run rate projection, risk rating, relationship strength.
+5. **Synthesis** — All gathered and computed data is assembled into a **JSON intermediate format** (`schemas/sales-analysis-output.json`) that serves as the single input for all artifact generators.
+6. **Artifact generation** — Based on the requested format:
+   - **Excel** → `src/cli/report-scripts/sales-report-generator.cjs` (multi-tab workbook via ExcelJS)
+   - **HTML** → `src/cli/report-scripts/dashboard-template.html` (Chart.js interactive dashboard)
+   - **DOCX** → `src/agents/report_generator/` (python-docx with charts and citations)
+   - **Markdown** → Inline in chat response
+7. **Response** — The final answer (executive summary + artifact link) is returned to the user.
 
 ---
 
@@ -60,6 +66,7 @@ The system uses three authentication modes depending on the runtime context:
 | Mode | When Used | Details |
 |------|-----------|---------|
 | **Interactive delegated (Entra ID)** | CLI and VS Code users | User signs in; tokens flow to sub-agents via on-behalf-of |
+| **Cross-tenant proxy** | CLI accessing remote Fabric tenant | `src/cli/fabric_mcp_proxy.py` acquires tokens via `az CLI` for the target subscription |
 | **Managed identity** | Azure AI Foundry runtime | System-assigned MI authenticates to Fabric, Graph, and Azure OpenAI |
 | **OIDC federated credential** | GitHub Actions CI/CD | Workload identity federation — no stored secrets |
 
