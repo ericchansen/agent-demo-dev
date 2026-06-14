@@ -23,16 +23,6 @@
       "command": "python",
       "args": ["-m", "src.agents.sharepoint.mcp_server"]
     },
-    "researcher-agent": {
-      "type": "stdio",
-      "command": "python",
-      "args": ["-m", "src.agents.researcher.mcp_server"]
-    },
-    "sharepoint-agent": {
-      "type": "stdio",
-      "command": "python",
-      "args": ["-m", "src.agents.sharepoint.mcp_server"]
-    },
     "report-generator": {
       "type": "stdio",
       "command": "python",
