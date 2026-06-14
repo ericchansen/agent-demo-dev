@@ -145,14 +145,18 @@ function buildSummaryTab(wb, data) {
 
 function buildPipelineTab(wb, data) {
   const ws = wb.addWorksheet("Pipeline");
-  const pipeline = data.pipeline || [];
+  // Support both array format and object-with-customers format
+  const rawPipeline = data.pipeline || [];
+  const pipeline = Array.isArray(rawPipeline)
+    ? rawPipeline
+    : rawPipeline.customers || [];
 
   ws.columns = [
     { header: "Deal / Customer", width: 30 },
-    { header: "Value", width: 15 },
+    { header: "Revenue", width: 15 },
+    { header: "Orders", width: 12 },
     { header: "Stage", width: 18 },
     { header: "Close Date", width: 14 },
-    { header: "Probability", width: 12 },
     { header: "Territory", width: 16 },
     { header: "Rep", width: 18 },
   ];
@@ -160,21 +164,20 @@ function buildPipelineTab(wb, data) {
 
   pipeline.forEach((deal) => {
     const row = ws.addRow([
-      deal.deal_name || deal.customer || "",
-      usd(deal.value),
+      deal.deal_name || deal.name || deal.customer || "",
+      usd(deal.value || deal.revenue || 0),
+      deal.orders || "",
       deal.stage || "",
       deal.close_date || "",
-      deal.probability || "",
       deal.territory || "",
       deal.rep || "",
     ]);
     row.getCell(2).numFmt = "$#,##0";
-    if (typeof deal.probability === "number") row.getCell(5).numFmt = "0%";
   });
 
   // Total row
   if (pipeline.length > 0) {
-    const total = pipeline.reduce((s, d) => s + usd(d.value), 0);
+    const total = pipeline.reduce((s, d) => s + usd(d.value || d.revenue || 0), 0);
     const totalRow = ws.addRow(["TOTAL", total, "", "", "", "", ""]);
     totalRow.getCell(1).font = { bold: true };
     totalRow.getCell(2).font = { bold: true };
