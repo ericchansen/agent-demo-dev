@@ -117,9 +117,9 @@ class TestSECURLConstruction:
         assert url == "https://www.sec.gov/files/dera/data/financial-statement-data-sets/2024q4.zip"
 
     def test_user_agent_set(self, loader):
-        """SEC requires a descriptive User-Agent header."""
+        """SEC requires a descriptive User-Agent header with contact email."""
         assert "FabricSalesAgentAccelerator" in loader._USER_AGENT
-        assert "https://" in loader._USER_AGENT
+        assert "@" in loader._USER_AGENT  # SEC fair access requires email
 
 
 # ---------------------------------------------------------------------------

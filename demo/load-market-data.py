@@ -17,8 +17,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import csv as csv_mod
 import io
-import shutil
 import sys
 import time
 import urllib.error
@@ -29,7 +29,7 @@ from typing import Any
 
 # SEC requires a descriptive User-Agent per their fair access policy.
 # https://www.sec.gov/os/accessing-edgar-data
-_USER_AGENT = "FabricSalesAgentAccelerator/0.1 (open-source demo; https://github.com/ericchansen/agent-demo)"
+_USER_AGENT = "FabricSalesAgentAccelerator/0.1 (demo@example.com)"
 
 # Base URL for SEC EDGAR Financial Statement Data Sets (quarterly ZIPs).
 _EDGAR_BASE = "https://www.sec.gov/files/dera/data/financial-statement-data-sets"
@@ -256,11 +256,14 @@ def load_market_data(quarter: str, output_dir: Path, company_csv: Path) -> list[
     print(f"  ✓ {csv_out} ({_sizeof_fmt(csv_out.stat().st_size)})")
     outputs.append(csv_out)
 
-    # 5. Copy companies.csv to output.
+    # 5. Write clean companies.csv (no comments) for Fabric table load.
     dest_companies = output_dir / "companies.csv"
-    if not dest_companies.exists() or dest_companies.resolve() != company_csv.resolve():
-        shutil.copy2(company_csv, dest_companies)
-        print(f"  ✓ {dest_companies} (copied)")
+    with dest_companies.open("w", newline="", encoding="utf-8") as f:
+        writer = csv_mod.DictWriter(f, fieldnames=["cik", "ticker", "company_name", "sic_code", "industry"])
+        writer.writeheader()
+        for cik, info in sorted(company_map.items(), key=lambda x: x[1]["company_name"]):
+            writer.writerow({"cik": cik, **info})
+    print(f"  ✓ {dest_companies} ({_sizeof_fmt(dest_companies.stat().st_size)})")
     outputs.append(dest_companies)
 
     # 6. Print summary and upload instructions.
