@@ -208,14 +208,14 @@ def check_hosted_runtime() -> str:
 
 
 def check_azure_public_network_access() -> str:
-    if shutil.which("az") is None and shutil.which("az.cmd") is None:
+    if _az_command() is None:
         raise RuntimeError("Azure CLI is not available on PATH.")
 
     hub_pna = _az_json(["resource", "show", "--ids", HUB_RESOURCE_ID, "--query", "properties.publicNetworkAccess"])
     if hub_pna != "Enabled":
         raise ValueError(f"Foundry hub publicNetworkAccess is {hub_pna!r}, expected 'Enabled'.")
 
-    cognitive = _az_json(
+    cognitive_ids = _az_json(
         [
             "resource",
             "list",
@@ -224,19 +224,33 @@ def check_azure_public_network_access() -> str:
             "--resource-type",
             "Microsoft.CognitiveServices/accounts",
             "--query",
-            "[].{name:name,pna:properties.publicNetworkAccess,defaultAction:properties.networkAcls.defaultAction}",
+            "[].id",
         ]
     )
+    cognitive = [
+        _az_json(
+            [
+                "resource",
+                "show",
+                "--ids",
+                resource_id,
+                "--api-version",
+                "2024-10-01",
+                "--query",
+                "{name:name,pna:properties.publicNetworkAccess,defaultAction:properties.networkAcls.defaultAction}",
+            ]
+        )
+        for resource_id in cognitive_ids
+    ]
     storage = _az_json(
         [
-            "resource",
+            "storage",
+            "account",
             "list",
             "-g",
             DEV_RESOURCE_GROUP,
-            "--resource-type",
-            "Microsoft.Storage/storageAccounts",
             "--query",
-            "[].{name:name,pna:properties.publicNetworkAccess,defaultAction:properties.networkAcls.defaultAction}",
+            "[].{name:name,pna:publicNetworkAccess,defaultAction:networkRuleSet.defaultAction}",
         ]
     )
     for resource in [*cognitive, *storage]:
@@ -288,12 +302,28 @@ def _load_json_without_duplicate_keys(path: Path) -> dict[str, Any]:
 
 
 def _az_json(args: list[str]) -> Any:
-    text = _run(["az", *args, "-o", "json"], timeout=120)
+    az_command = _az_command()
+    if az_command is None:
+        raise RuntimeError("Azure CLI is not available on PATH.")
+    text = _run([az_command, *args, "-o", "json"], timeout=120)
     return json.loads(text)
 
 
+def _az_command() -> str | None:
+    return shutil.which("az") or shutil.which("az.cmd")
+
+
 def _run(command: list[str], *, timeout: int) -> str:
-    result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, timeout=timeout, check=False)
+    result = subprocess.run(
+        command,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=timeout,
+        check=False,
+    )
     if result.returncode != 0:
         raise RuntimeError(
             f"{' '.join(command)} failed with exit code {result.returncode}: {(result.stderr or result.stdout).strip()}"
