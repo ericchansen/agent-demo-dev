@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
+from pathlib import Path
 from typing import Any, Protocol
 
 from src.agents.quota_estimator.pipeline import demo_research_data, demo_sales_rows, demo_workiq_activity
@@ -29,6 +31,11 @@ logger = logging.getLogger(__name__)
 MODEL_ENDPOINT = os.environ.get("MODEL_ENDPOINT", "")
 MODEL_DEPLOYMENT = os.environ.get("MODEL_DEPLOYMENT", "gpt-4o")
 _MAX_TOOL_CALL_ROUNDS = 15
+
+_READY_MESSAGE = (
+    "Hosted WWI sales agent is ready. Ask for Fabric sales analysis, market research, "
+    "quota forecasts, quota estimation artifacts, quota attainment, account activity, or report generation."
+)
 
 SYSTEM_PROMPT = """You are a sales analyst for Wide World Importers (WWI).
 
@@ -168,16 +175,61 @@ TOOL_HANDLERS = {
 
 
 def execute_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-    """Execute one hosted tool by name."""
+    """Execute one hosted tool by name with structured, content-free observability."""
     handler = TOOL_HANDLERS.get(name)
     if handler is None:
         raise ValueError(f"Unknown hosted agent tool: {name}")
-    return handler(arguments)
+
+    start = time.perf_counter()
+    try:
+        result = handler(arguments)
+    except Exception as exc:
+        duration_ms = (time.perf_counter() - start) * 1000.0
+        logger.warning(
+            "tool=%s status=error duration_ms=%.1f exception=%s",
+            name,
+            duration_ms,
+            type(exc).__name__,
+        )
+        raise
+
+    duration_ms = (time.perf_counter() - start) * 1000.0
+    logger.info(
+        "tool=%s status=success duration_ms=%.1f %s",
+        name,
+        duration_ms,
+        _artifact_summary(result),
+    )
+    return result
+
+
+def _artifact_summary(result: dict[str, Any]) -> str:
+    """Summarize artifact metadata without logging tool payload content."""
+    if not isinstance(result, dict):
+        return "artifacts=0"
+
+    artifacts = result.get("artifacts")
+    if isinstance(artifacts, dict) and artifacts:
+        names = sorted(Path(str(path)).name for path in artifacts.values())
+        return f"artifacts={len(names)} files={','.join(names)}"
+
+    file_path = result.get("file_path")
+    if isinstance(file_path, str) and file_path:
+        return f"artifacts=1 files={Path(file_path).name}"
+
+    return "artifacts=0"
 
 
 def process_invocation(user_message: str, adapter: HostedChatAdapter | None = None) -> str:
-    """Process a single Foundry hosted-agent invocation."""
+    """Process a single Foundry hosted-agent invocation.
+
+    When no adapter is supplied, the configured adapter factory selects one based on
+    ``HOSTED_AGENT_ADAPTER``. If the factory returns ``None`` (the default in offline and
+    demo environments) the deterministic local runtime is used instead.
+    """
     logger.info("Processing hosted invocation: %s", user_message[:100])
+    if adapter is None:
+        adapter = build_adapter()
     if adapter is not None:
         return _process_with_adapter(user_message, adapter)
     return _process_with_local_runtime(user_message)
@@ -261,10 +313,7 @@ def _process_with_local_runtime(user_message: str) -> str:
         result = handle_fabric_query({"question": user_message})
         return f"Fabric query result:\n\n```json\n{json.dumps(result, indent=2)}\n```"
 
-    return (
-        "Hosted WWI sales agent is ready. Ask for Fabric sales analysis, market research, "
-        "quota forecasts, quota estimation artifacts, quota attainment, account activity, or report generation."
-    )
+    return _READY_MESSAGE
 
 
 def _extract_tool_calls(response: dict[str, Any]) -> list[dict[str, Any]]:
@@ -305,6 +354,192 @@ def _extract_customer_name(user_message: str) -> str:
             if words:
                 return " ".join(word.capitalize() for word in words[:3])
     return "Wide World Importers"
+
+
+class HostedAgentConfigurationError(Exception):
+    """Raised when a hosted chat adapter is requested without required configuration."""
+
+
+def _latest_user_message(messages: list[dict[str, Any]]) -> str:
+    for message in reversed(messages):
+        if message.get("role") == "user":
+            return str(message.get("content", ""))
+    return ""
+
+
+def _route_to_tool_call(user_message: str) -> tuple[str, dict[str, Any]] | None:
+    """Map a natural-language prompt to a single deterministic tool invocation."""
+    message = user_message.lower()
+    customer_name = _extract_customer_name(user_message)
+
+    if "quota" in message and any(term in message for term in ("report", "estimate", "estimation", "artifact")):
+        output_dir = os.environ.get("HOSTED_AGENT_OUTPUT_DIR", "output/hosted-agent")
+        return "generate_quota_estimation_report", {
+            "customer_name": customer_name,
+            "sales_rows": demo_sales_rows(),
+            "research_data": demo_research_data(customer_name),
+            "workiq_activity": demo_workiq_activity(customer_name),
+            "scenario": "base",
+            "output_dir": output_dir,
+            "formats": ["xlsx", "html", "pdf"],
+        }
+
+    if "attainment" in message or "pipeline coverage" in message:
+        return "compute_quota_attainment", {
+            "annual_target": 1_200_000,
+            "ytd_actual": 590_000,
+            "open_pipeline": 950_000,
+            "months_elapsed": 6,
+            "days_elapsed": 180,
+        }
+
+    if "forecast" in message or "quota" in message:
+        return "forecast_quota", {"customer_name": customer_name, "scenario": "base"}
+
+    if "activity" in message or "engagement" in message:
+        return "get_account_activity", {"customer_name": customer_name}
+
+    if "research" in message or "market" in message or "news" in message:
+        return "web_research", {"query": user_message, "customer_name": customer_name}
+
+    if any(term in message for term in ("sales", "revenue", "customer", "product", "territory")):
+        return "fabric_query", {"question": user_message}
+
+    return None
+
+
+class LocalDeterministicAdapter:
+    """Offline ``HostedChatAdapter`` that drives ``_process_with_adapter`` deterministically.
+
+    This adapter requires no model credentials. On the first turn it routes the prompt to a
+    single tool call; once the tool result is appended it returns a final answer. It exists to
+    exercise and test the real adapter tool-calling loop, not to replace the demo local runtime.
+    """
+
+    def complete(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> dict[str, Any]:
+        if messages and messages[-1].get("role") == "tool":
+            return {"content": _final_answer(messages), "tool_calls": []}
+
+        routed = _route_to_tool_call(_latest_user_message(messages))
+        if routed is None:
+            return {"content": _READY_MESSAGE, "tool_calls": []}
+
+        name, arguments = routed
+        return {
+            "content": "",
+            "tool_calls": [
+                {
+                    "id": f"call-{name}",
+                    "function": {"name": name, "arguments": json.dumps(arguments)},
+                }
+            ],
+        }
+
+
+def _final_answer(messages: list[dict[str, Any]]) -> str:
+    tool_message = next((message for message in reversed(messages) if message.get("role") == "tool"), None)
+    if tool_message is None:
+        return _READY_MESSAGE
+    name = str(tool_message.get("name", "tool"))
+    return (
+        f"Completed `{name}` via the hosted deterministic adapter. "
+        "The structured tool output is attached in the conversation for grounding."
+    )
+
+
+class AzureManagedIdentityChatAdapter:
+    """Production ``HostedChatAdapter`` backed by Azure AI Foundry and managed identity.
+
+    Authenticates with :class:`~azure.identity.DefaultAzureCredential` (the managed identity of
+    the hosted container in Azure) and calls the chat-completions API of the model deployment
+    exposed through the Foundry project's OpenAI-compatible client.
+    """
+
+    def __init__(
+        self,
+        *,
+        project_endpoint: str,
+        model_deployment: str,
+        credential: Any | None = None,
+        client: Any | None = None,
+        api_version: str = "2024-10-21",
+    ) -> None:
+        if not project_endpoint:
+            raise HostedAgentConfigurationError("project_endpoint is required for the Azure hosted adapter.")
+        if not model_deployment:
+            raise HostedAgentConfigurationError("model_deployment is required for the Azure hosted adapter.")
+
+        self._model = model_deployment
+        if client is not None:
+            self._client = client
+            return
+
+        from azure.ai.projects import AIProjectClient
+        from azure.identity import DefaultAzureCredential
+
+        resolved_credential = credential or DefaultAzureCredential()
+        project_client = AIProjectClient(endpoint=project_endpoint, credential=resolved_credential)
+        self._client = project_client.get_openai_client(api_version=api_version)
+
+    def complete(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> dict[str, Any]:
+        response = self._client.chat.completions.create(
+            model=self._model,
+            messages=messages,
+            tools=tools,
+            tool_choice="auto",
+        )
+        choice = response.choices[0].message
+        tool_calls: list[dict[str, Any]] = []
+        for tool_call in getattr(choice, "tool_calls", None) or []:
+            tool_calls.append(
+                {
+                    "id": tool_call.id,
+                    "type": "function",
+                    "function": {
+                        "name": tool_call.function.name,
+                        "arguments": tool_call.function.arguments,
+                    },
+                }
+            )
+        return {"content": choice.content or "", "tool_calls": tool_calls}
+
+
+def _azure_env_ready() -> bool:
+    return bool(os.environ.get("MODEL_ENDPOINT")) and bool(os.environ.get("MODEL_DEPLOYMENT"))
+
+
+def _build_azure_adapter() -> AzureManagedIdentityChatAdapter:
+    endpoint = os.environ.get("MODEL_ENDPOINT", "").strip()
+    deployment = os.environ.get("MODEL_DEPLOYMENT", "").strip()
+    missing = [name for name, value in (("MODEL_ENDPOINT", endpoint), ("MODEL_DEPLOYMENT", deployment)) if not value]
+    if missing:
+        raise HostedAgentConfigurationError(
+            f"Azure hosted adapter requires {', '.join(missing)} to be set. "
+            "Set HOSTED_AGENT_ADAPTER=local for the offline deterministic adapter."
+        )
+    return AzureManagedIdentityChatAdapter(project_endpoint=endpoint, model_deployment=deployment)
+
+
+def build_adapter(mode: str | None = None) -> HostedChatAdapter | None:
+    """Select a hosted chat adapter from ``HOSTED_AGENT_ADAPTER`` (``local``/``azure``/``auto``).
+
+    - ``local``: always returns the offline deterministic adapter.
+    - ``azure``: returns the managed-identity adapter, raising if config is missing.
+    - ``auto`` (default): returns the Azure adapter only when ``MODEL_ENDPOINT`` and
+      ``MODEL_DEPLOYMENT`` are set; otherwise returns ``None`` so the local runtime is used.
+    """
+    resolved = (mode or os.environ.get("HOSTED_AGENT_ADAPTER", "auto")).strip().lower()
+    if resolved == "local":
+        return LocalDeterministicAdapter()
+    if resolved == "azure":
+        return _build_azure_adapter()
+    if resolved == "auto":
+        if _azure_env_ready():
+            return _build_azure_adapter()
+        return None
+    raise HostedAgentConfigurationError(
+        f"Unknown HOSTED_AGENT_ADAPTER {resolved!r}; expected one of: local, azure, auto."
+    )
 
 
 if __name__ == "__main__":

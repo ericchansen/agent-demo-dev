@@ -14,7 +14,7 @@ import json
 import logging
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from src.orchestrator.hosted_agent import process_invocation
+from src.orchestrator.hosted_agent import build_adapter, process_invocation
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -57,6 +57,13 @@ class InvocationHandler(BaseHTTPRequestHandler):
 
 def main() -> None:
     """Start the invocation server."""
+    try:
+        adapter = build_adapter()
+        adapter_mode = type(adapter).__name__ if adapter is not None else "local-runtime"
+    except Exception as exc:  # noqa: BLE001 - report config issues without crashing startup
+        adapter_mode = f"unavailable ({type(exc).__name__})"
+    logger.info("Hosted Agent adapter selection: %s", adapter_mode)
+
     server = HTTPServer(("0.0.0.0", PORT), InvocationHandler)
     logger.info("Hosted Agent server starting on port %d", PORT)
     server.serve_forever()
