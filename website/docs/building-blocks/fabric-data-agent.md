@@ -34,7 +34,16 @@ The Data Agent handles:
 ## Key concepts
 
 ### Lakehouse
-A Fabric Lakehouse combines the flexibility of a data lake with the structure of a data warehouse. Tables are stored in Delta Lake format and queryable via Spark SQL. The WWI sample data includes 6 tables covering customers, orders, products, salespeople, and territories.
+A Fabric Lakehouse combines the flexibility of a data lake with the structure of a data warehouse. Tables are stored in Delta Lake format and queryable via Spark SQL.
+
+This accelerator supports **two parallel data paths**, each backed by a separate Data Agent and Lakehouse:
+
+| Path | Lakehouse | Tables | Use case |
+|---|---|---|---|
+| **WWI Sales Data** | WWI Lakehouse | 14 tables | Internal sales, customers, territories |
+| **Market Data** | Market Data Lakehouse | 2 tables | SEC EDGAR company financials |
+
+Both paths use the same technology stack — only the data and skills differ. See the `docs/data-paths.md` in the repo for the full comparison.
 
 > 📖 [What is a Lakehouse?](https://learn.microsoft.com/fabric/data-engineering/lakehouse-overview) · [Delta Lake format](https://learn.microsoft.com/fabric/data-engineering/lakehouse-and-delta-tables)
 

@@ -26,8 +26,11 @@ This means you can write a tool server once and connect it to any MCP-compatible
 
 | Server | Transport | What it does |
 |---|---|---|
-| `wwi-sales-data` | HTTP | Proxies to Fabric Data Agent endpoint |
-| `workiq` | npm (stdio) | Provides M365 activity signals |
+| `wwi-sales-data` | HTTP | Fabric Data Agent — WWI sales Lakehouse |
+| `market-data-agent` | HTTP | Fabric Data Agent — SEC EDGAR financials |
+| `workiq` | npm (stdio) | M365 activity signals |
+| `researcher` | stdio | Web search for market intelligence |
+| `sharepoint-agent` | stdio | SharePoint / Graph document access |
 
 ### Registration
 

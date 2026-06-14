@@ -40,7 +40,7 @@ This workshop follows the progression of building a working agent, layer by laye
 
 ## The scenario
 
-Throughout this workshop, you'll work with the [Wide World Importers](../building-blocks/wwi-dataset) sample dataset — a wholesale novelty goods company. You'll play the role of an account executive preparing for a quarterly business review with a customer. By the end, your agent will be able to:
+Throughout this workshop, you'll work with **two sample data paths**: [Wide World Importers](../building-blocks/wwi-dataset) (internal sales data) and Market Data from SEC EDGAR (external company financials). You'll play the role of an account executive preparing for a quarterly business review with a customer. By the end, your agent will be able to:
 
 - Answer "What were Tailspin Toys' sales by category last quarter?" by querying the Lakehouse
 - Surface recent email and meeting activity with that customer

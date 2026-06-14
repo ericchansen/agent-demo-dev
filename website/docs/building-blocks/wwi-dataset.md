@@ -1,11 +1,15 @@
 ---
 sidebar_position: 7
-title: WWI Dataset
+title: Sample Datasets
 ---
 
-# Wide World Importers Dataset
+# Sample Datasets
 
-This accelerator uses the [Wide World Importers (WWI)](https://learn.microsoft.com/sql/samples/wide-world-importers-what-is) sample dataset — a Microsoft-maintained dataset simulating a wholesale novelty goods company. It's the demo data for all sales queries, forecasts, and reports throughout this workshop.
+This accelerator ships with **two data paths**, each backed by its own Fabric Data Agent and Lakehouse. Together they demonstrate how an agent can combine internal business data with external market intelligence.
+
+## Wide World Importers (WWI)
+
+The [Wide World Importers (WWI)](https://learn.microsoft.com/sql/samples/wide-world-importers-what-is) dataset is a Microsoft-maintained sample simulating a wholesale novelty goods company. It's the primary demo data for sales queries, forecasts, and reports throughout this workshop.
 
 ## Why WWI?
 
@@ -61,9 +65,26 @@ The WWI dataset works well for sales demos. If you want to use your own data:
 
 The rest of the accelerator (MCP servers, skills, report generator) works the same — only the underlying data changes.
 
+## Market Data (SEC EDGAR)
+
+The second data path provides external financial data from SEC EDGAR filings, enabling competitive intelligence and market research scenarios.
+
+| Table | Description | Key columns |
+|---|---|---|
+| `company_filings` | Quarterly/annual SEC filings | CIK, CompanyName, FilingType, FilingDate |
+| `financial_statements` | Extracted financial metrics | CIK, Period, Revenue, NetIncome, TotalAssets |
+
+### Why two data paths?
+
+Most real-world agents need both internal and external data. The dual-path architecture shows how to:
+- Configure **separate Data Agents** with different instructions and few-shot examples
+- Build **skills that combine both** — e.g., "compare our Tailspin Toys revenue against their SEC filings"
+- Keep concerns separated while the agent orchestrates across them
+
 ## Further reading
 
 - [Wide World Importers overview](https://learn.microsoft.com/sql/samples/wide-world-importers-what-is)
 - [WWI database schema](https://learn.microsoft.com/sql/samples/wide-world-importers-oltp-database-catalog)
+- [SEC EDGAR full-text search](https://efts.sec.gov/LATEST/search-index?q=%22annual%20report%22)
 - [Fabric Lakehouse sample data](https://learn.microsoft.com/fabric/data-engineering/lakehouse-sample-data)
 - [Fabric Data Agent setup](https://learn.microsoft.com/fabric/data-engineering/data-agent-create)

@@ -40,6 +40,20 @@ How should results look? Use markdown templates with placeholders for tool outpu
 ### 4. Test with variations
 Try different customer names, date ranges, and edge cases. Skills should degrade gracefully when data is missing.
 
+## Skills in this accelerator
+
+The `src/cli/skills/` directory contains several production-quality skills:
+
+| Skill | What it does | Tools used |
+|---|---|---|
+| `sales-analysis.md` | Deep multi-source customer analysis with Excel output | Fabric (WWI), web research, report generator |
+| `company-financials.md` | SEC EDGAR financial data lookup | Fabric (Market Data) |
+| `competitive-intel.md` | Market intelligence gathering | Fabric (Market Data), web research |
+| `market-overview.md` | Industry and market summary | Web research |
+| `quota-forecast.md` | Quota attainment forecast | Fabric (WWI) |
+
+These demonstrate the progression from single-tool skills (one MCP call) to multi-source skills (parallel data + research + report generation).
+
 ## Skills vs Foundry agent prompts
 
 In the CLI, skills are explicit workflow templates. In Foundry, the same logic lives in the agent's system prompt and tool instructions. When you translate a skill to Foundry:

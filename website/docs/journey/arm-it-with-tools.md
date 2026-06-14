@@ -37,9 +37,13 @@ Some examples of tools in this accelerator:
 
 | Tool | What it does | Surface |
 |---|---|---|
-| `wwi-sales-data` | Queries Lakehouse via Data Agent | CLI (MCP) |
+| `wwi-sales-data` | Queries WWI Lakehouse via Data Agent | CLI (MCP) |
+| `market-data-agent` | Queries Market Data Lakehouse (SEC EDGAR) | CLI (MCP) |
 | `workiq` | Retrieves M365 activity signals | CLI (MCP) |
-| `quota-forecast` | Generates FY quota forecast from sales data | CLI (skill) |
+| `researcher` | Web search for market intelligence | CLI (MCP) |
+| `sharepoint-agent` | SharePoint / Graph document access | CLI (MCP) |
+| `sales-analysis` | Multi-source customer analysis with Excel output | CLI (skill) |
+| `company-financials` | SEC EDGAR financial lookup | CLI (skill) |
 | `FabricIQPreviewTool` | Same as wwi-sales-data, registered as Foundry tool | Foundry |
 | `WorkIQPreviewTool` | Same as workiq, registered as Foundry tool | Foundry |
 | Report generator function | Produces DOCX with charts, uploads to OneDrive | Foundry |

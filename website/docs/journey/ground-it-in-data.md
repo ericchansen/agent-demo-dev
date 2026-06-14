@@ -22,7 +22,12 @@ The chain is: you ask a question → the agent routes it to the [Fabric Data Age
 
 ## The data
 
-The [Wide World Importers](../building-blocks/wwi-dataset) dataset simulates a wholesale novelty goods company. The Lakehouse contains six tables covering customers, orders, products, salespeople, and territories. It's a Microsoft-maintained sample dataset designed for exactly this kind of demo — see the [full schema](../building-blocks/wwi-dataset) for details.
+This accelerator supports **multiple data paths**, each backed by its own Fabric Data Agent and Lakehouse:
+
+- **WWI Sales Data** — [Wide World Importers](../building-blocks/wwi-dataset) simulates a wholesale company with customers, orders, products, and territories. It's the primary demo dataset.
+- **Market Data** — SEC EDGAR filings provide real-world company financials for competitive intelligence and market research.
+
+Each data path gets its own Data Agent with tailored instructions and few-shot examples. You can also [bring your own data](../building-blocks/wwi-dataset#customizing-for-your-scenario).
 
 ## Connecting the Data Agent
 

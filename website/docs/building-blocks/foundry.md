@@ -48,11 +48,21 @@ An Agent Application is a published agent with:
 
 ## How it fits in this accelerator
 
-The Foundry surface (`src/orchestrator/`) registers three tools:
+The accelerator implements **two Foundry agent patterns**:
 
-1. **FabricIQPreviewTool** — wraps the same Fabric Data Agent endpoint used by the CLI's `wwi-sales-data` MCP server
+### Prompt Agent (declarative)
+The primary production path (`src/orchestrator/foundry_agent.py`). Registers tools declaratively:
+
+1. **FabricIQPreviewTool** — wraps the same Fabric Data Agent endpoint used by the CLI
 2. **WorkIQPreviewTool** — wraps WorkIQ with OBO authentication
-3. **Report generator function** — produces DOCX, uploads to OneDrive, returns download link
+3. **Web research function** — searches for market intelligence and competitive data
+4. **Attainment function** — computes quota attainment from Fabric data
+5. **Report generator function** — produces DOCX/PPTX, uploads to OneDrive, returns download link
+
+### Hosted Agent (bring-your-own-code)
+A containerized agent (`src/orchestrator/hosted_agent/`) using the GitHub Copilot SDK with full control over tool orchestration. Deployed as a Docker container in Foundry's managed compute.
+
+> 📖 [Foundry Hosted Agents](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-hosted)
 
 The agent's system prompt encodes the orchestration logic — when to call which tool, how to combine results, and how to format output.
 

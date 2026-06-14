@@ -93,19 +93,19 @@ The agent responds inline (with data tables and summaries) and can attach genera
 
 ## Other surfaces
 
-This accelerator focuses on CLI and Foundry→M365, but the pattern extends to other delivery surfaces:
+This accelerator supports five architecture options for exposing the agent to end users:
 
-| Surface | How it works | Best for |
+| Surface | How it works | Status |
 |---|---|---|
-| **Copilot CLI** | MCP servers + skills | Developers, SEs, prototyping |
-| **M365 Copilot Chat** | Foundry Agent Application | Business users, daily workflow |
-| **Teams** | Same Foundry agent, Teams channel | Team collaboration |
-| **Copilot Studio** | Low-code agent builder | Citizen developers |
-| **Custom web app** | Direct API to Foundry endpoint | Custom UIs, embedded experiences |
+| **Copilot CLI** | MCP servers + skills in your terminal | ✅ Implemented |
+| **M365 Direct Publish** | Zero-code — publish from Fabric portal into M365 Copilot Chat | ✅ Implemented |
+| **Foundry Prompt Agent** | Declarative agent with FunctionTools for forecasting, research, and reports | ✅ Implemented |
+| **Foundry Hosted Agent** | Bring-your-own-code container with GitHub Copilot SDK | 🔨 Scaffolded |
+| **Cowork** | M365 plugin surface with native WorkIQ access | 📋 Documented |
 
 The backend services (Fabric Data Agent, WorkIQ, report generator) don't change. Only the surface does.
 
-> 📖 **Learn more:** [Copilot Studio agents](https://learn.microsoft.com/microsoft-copilot-studio/fundamentals-what-is-copilot-studio) · [Teams AI library](https://learn.microsoft.com/microsoftteams/platform/bots/how-to/teams-conversational-ai/teams-conversation-ai-overview)
+> 📖 **Learn more:** [Copilot Studio agents](https://learn.microsoft.com/microsoft-copilot-studio/fundamentals-what-is-copilot-studio) · [Teams AI library](https://learn.microsoft.com/microsoftteams/platform/bots/how-to/teams-conversational-ai/teams-conversation-ai-overview) · [Foundry Hosted Agents](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-hosted)
 
 ## What you've accomplished
 
