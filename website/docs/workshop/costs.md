@@ -1,0 +1,47 @@
+---
+sidebar_position: 4
+title: Cost Model
+---
+
+# Cost Model
+
+What this accelerator costs to run, and how to minimize it.
+
+## Monthly cost breakdown
+
+| Resource | Monthly Cost | Notes |
+|---|---|---|
+| Fabric F2 capacity | ~$262 | **Pause when not demoing** to save ~70% |
+| Azure OpenAI (gpt-4o) | ~$5–15 | Demo-scale (~50 queries/day) |
+| Foundry Agent Service | Per-call | No standing cost for prompt agents |
+| Key Vault | &lt;$1 | Negligible |
+| Storage | &lt;$1 | Negligible |
+| **Total (active)** | **~$270–280/mo** | |
+| **Total (paused)** | **~$5–15/mo** | Fabric paused |
+
+## Pause & resume
+
+Fabric capacity is the largest cost. Pause it when not in use:
+
+```bash
+# Pause (stops billing immediately)
+az fabric capacity suspend \
+  --resource-group rg-fabric-agent \
+  --capacity-name fabricagentdemo
+
+# Resume (~1-2 min for cold start)
+az fabric capacity resume \
+  --resource-group rg-fabric-agent \
+  --capacity-name fabricagentdemo
+```
+
+> ⚠️ Resume 10-15 minutes before a demo — the first query after resume can be slow (cold start).
+
+## Cost optimization tips
+
+- **Pause Fabric** when not actively demoing — this alone saves ~$200/month
+- **Use F2** (smallest capacity) — sufficient for demo workloads
+- **Share a workspace** — multiple presenters can use the same Fabric capacity
+- **Monitor with Cost Management** — set budget alerts in Azure portal
+
+> 📖 [Fabric capacity pricing](https://learn.microsoft.com/fabric/enterprise/licenses) · [Azure Cost Management](https://learn.microsoft.com/azure/cost-management-billing/costs/quick-acm-cost-analysis) · [Foundry pricing](https://learn.microsoft.com/azure/ai-foundry/concepts/pricing)

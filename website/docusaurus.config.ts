@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'Fabric Sales Agent Accelerator',
   tagline:
-    'Prototype with Copilot CLI. Deploy to M365 Copilot + Teams via Azure AI Foundry.',
+    'A workshop for building AI agents that actually do work — connected to your data, your context, and real tools.',
   favicon: 'img/favicon.ico',
   future: {
     v4: true,
@@ -15,6 +15,10 @@ const config: Config = {
   organizationName: 'ericchansen',
   projectName: 'agent-demo',
   onBrokenLinks: 'throw',
+  markdown: {
+    mermaid: true,
+  },
+  themes: ['@docusaurus/theme-mermaid'],
   i18n: {
     defaultLocale: 'en',
     locales: ['en'],
@@ -25,6 +29,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
+          editUrl: 'https://github.com/ericchansen/agent-demo/edit/main/website/',
         },
         blog: false,
         theme: {
@@ -44,7 +49,7 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'tutorialSidebar',
           position: 'left',
-          label: 'Docs',
+          label: 'Workshop',
         },
         {
           href: 'https://github.com/ericchansen/agent-demo',
@@ -57,28 +62,53 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'Workshop',
           items: [
             {
-              label: 'Overview',
-              to: '/docs/intro',
+              label: 'Start the Journey',
+              to: '/docs/journey/from-chat-to-agent',
+            },
+            {
+              label: 'Building Blocks',
+              to: '/docs/building-blocks/fabric-data-agent',
             },
             {
               label: 'Architecture',
-              to: '/docs/architecture',
+              to: '/docs/architecture/system-overview',
             },
           ],
         },
         {
-          title: 'Project',
+          title: 'Resources',
           items: [
             {
-              label: 'Repository',
-              href: 'https://github.com/ericchansen/agent-demo',
+              label: 'Setup Guide',
+              to: '/docs/workshop/setup',
             },
             {
-              label: 'Setup Guide',
-              to: '/docs/setup',
+              label: 'GitHub Repository',
+              href: 'https://github.com/ericchansen/agent-demo',
+            },
+          ],
+        },
+        {
+          title: 'Microsoft Docs',
+          items: [
+            {
+              label: 'Microsoft Fabric',
+              href: 'https://learn.microsoft.com/fabric/',
+            },
+            {
+              label: 'Azure AI Foundry',
+              href: 'https://learn.microsoft.com/azure/ai-foundry/',
+            },
+            {
+              label: 'GitHub Copilot CLI',
+              href: 'https://docs.github.com/copilot/github-copilot-in-the-cli',
+            },
+            {
+              label: 'MCP Specification',
+              href: 'https://modelcontextprotocol.io/',
             },
           ],
         },
@@ -88,6 +118,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+      additionalLanguages: ['bash', 'json', 'yaml', 'python'],
     },
   } satisfies Preset.ThemeConfig,
 };
