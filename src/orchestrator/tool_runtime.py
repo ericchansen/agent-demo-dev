@@ -1,0 +1,438 @@
+"""Dependency-light local tool runtime shared by Foundry prompt and hosted agents."""
+
+from __future__ import annotations
+
+import re
+from collections.abc import Callable
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+from src.agents.quota_estimator.pipeline import (
+    build_quota_estimate,
+    demo_research_data,
+    demo_sales_rows,
+    demo_workiq_activity,
+    forecast_payload_from_estimate,
+    generate_quota_estimation_report,
+)
+
+_DEFAULT_REPORT_TEMPLATE = "account_plan.md"
+
+ACCOUNT_ACTIVITY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "customer_name": {
+            "type": "string",
+            "description": "Customer or prospect account name.",
+        }
+    },
+    "required": ["customer_name"],
+    "additionalProperties": False,
+}
+
+FORECAST_QUOTA_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "customer_name": {
+            "type": "string",
+            "description": "Customer or prospect account name.",
+        },
+        "scenario": {
+            "type": "string",
+            "enum": ["conservative", "base", "aggressive"],
+            "description": "Deterministic forecast scenario applied to recommended growth (default base).",
+        },
+    },
+    "required": ["customer_name"],
+    "additionalProperties": False,
+}
+
+_QUOTA_SALES_ROW_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "description": "Fabric sales row from SalesOrderHeader joined to SalesTerritory.",
+    "additionalProperties": True,
+}
+
+GENERATE_QUOTA_ESTIMATION_REPORT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "customer_name": {
+            "type": "string",
+            "description": "Customer or prospect account name.",
+        },
+        "sales_rows": {
+            "type": "array",
+            "description": (
+                "Historical WWI sales rows with territory, order_date, revenue, and optional category/quantity."
+            ),
+            "items": _QUOTA_SALES_ROW_SCHEMA,
+        },
+        "research_data": {
+            "type": "object",
+            "description": "Market research payload with summary, articles, and key metrics.",
+            "additionalProperties": True,
+        },
+        "workiq_activity": {
+            "type": "object",
+            "description": "WorkIQ or synthetic M365 activity signals.",
+            "additionalProperties": True,
+        },
+        "scenario": {
+            "type": "string",
+            "enum": ["conservative", "base", "aggressive"],
+            "description": "Deterministic forecast scenario applied to recommended growth (default base).",
+        },
+        "output_dir": {
+            "type": "string",
+            "description": "Directory where XLSX, HTML, and PDF artifacts should be written.",
+        },
+        "formats": {
+            "type": "array",
+            "description": "Artifact formats to generate.",
+            "items": {"type": "string", "enum": ["xlsx", "html", "pdf"]},
+        },
+    },
+    "required": ["customer_name", "sales_rows"],
+    "additionalProperties": False,
+}
+
+_FORECAST_ITEM_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "category": {"type": "string", "description": "Forecast category name."},
+        "current_fy_revenue": {"type": "number", "description": "Current fiscal year revenue."},
+        "growth_rate": {"type": "number", "description": "Projected growth rate as a decimal."},
+        "projected_fy_revenue": {"type": "number", "description": "Projected fiscal year revenue."},
+    },
+    "required": ["category", "current_fy_revenue", "growth_rate", "projected_fy_revenue"],
+    "additionalProperties": False,
+}
+
+_FORECAST_DATA_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "description": "Optional quota forecast payload to render in the DOCX report.",
+    "properties": {
+        "current_fy_total": {"type": "number", "description": "Current fiscal year total revenue."},
+        "projected_fy_total": {"type": "number", "description": "Projected fiscal year total revenue."},
+        "overall_growth_rate": {"type": "number", "description": "Overall projected growth rate."},
+        "methodology": {"type": "string", "description": "Short description of the forecast methodology."},
+        "items": {
+            "type": "array",
+            "description": "Forecast line items by category.",
+            "items": _FORECAST_ITEM_SCHEMA,
+        },
+    },
+    "required": ["current_fy_total", "projected_fy_total", "overall_growth_rate", "methodology", "items"],
+    "additionalProperties": False,
+}
+
+_REPORT_SECTION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "deal_name": {"type": "string", "description": "Opportunity or deal name."},
+        "value": {"type": "number", "description": "Opportunity value in customer currency."},
+        "stage": {"type": "string", "description": "Current sales stage."},
+        "close_date": {"type": "string", "description": "Expected close date."},
+    },
+    "required": ["deal_name", "value", "stage", "close_date"],
+    "additionalProperties": False,
+}
+
+GENERATE_REPORT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "title": {"type": "string", "description": "Title for the generated report."},
+        "customer_name": {
+            "type": "string",
+            "description": "Customer or prospect account name.",
+        },
+        "sections": {
+            "type": "array",
+            "description": "Deprecated alias for pipeline_data.",
+            "items": _REPORT_SECTION_SCHEMA,
+        },
+        "pipeline_data": {
+            "type": "array",
+            "description": "Pipeline rows to include in the report.",
+            "items": _REPORT_SECTION_SCHEMA,
+        },
+        "research_data": {
+            "type": "object",
+            "description": "Customer research payload with summary and article metadata.",
+            "additionalProperties": True,
+        },
+        "sharepoint_docs": {
+            "type": "array",
+            "description": "Referenced SharePoint documents with name, url, and excerpt.",
+            "items": {"type": "object", "additionalProperties": True},
+        },
+        "forecast_data": {
+            "anyOf": [
+                _FORECAST_DATA_SCHEMA,
+                {"type": "null"},
+            ],
+            "description": "Optional quota forecast payload to render in the DOCX report.",
+        },
+        "additional_context": {
+            "type": "string",
+            "description": "Additional notes to append to the report.",
+        },
+    },
+    "required": ["title", "customer_name"],
+    "additionalProperties": False,
+}
+
+WEB_RESEARCH_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "query": {
+            "type": "string",
+            "description": "Search query for market research, customer news, or competitive intelligence.",
+        },
+        "customer_name": {
+            "type": "string",
+            "description": "Optional customer name to contextualize results.",
+        },
+    },
+    "required": ["query"],
+    "additionalProperties": False,
+}
+
+COMPUTE_ATTAINMENT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "annual_target": {
+            "type": "number",
+            "description": "Annual quota target in dollars.",
+        },
+        "ytd_actual": {
+            "type": "number",
+            "description": "Year-to-date actual revenue in dollars.",
+        },
+        "open_pipeline": {
+            "type": "number",
+            "description": "Total value of open pipeline deals.",
+        },
+        "months_elapsed": {
+            "type": "number",
+            "description": "Number of months elapsed in current fiscal year.",
+        },
+        "days_elapsed": {
+            "type": "number",
+            "description": "Number of days elapsed in current fiscal year.",
+        },
+    },
+    "required": ["annual_target", "ytd_actual", "open_pipeline", "months_elapsed", "days_elapsed"],
+    "additionalProperties": False,
+}
+
+ToolHandler = Callable[[dict[str, Any]], dict[str, Any]]
+
+
+def mock_workiq_func(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Return mock M365 activity data when WorkIQ is not available."""
+    customer = arguments.get("customer_name", "Unknown")
+    return {
+        "customer": customer,
+        "source": "mock (WorkIQ not available on this tenant)",
+        "recent_activity": [
+            {
+                "type": "email",
+                "subject": f"Re: FY27 Planning - {customer}",
+                "date": "2026-05-28",
+                "participants": ["AE", "Champion"],
+            },
+            {
+                "type": "meeting",
+                "subject": f"QBR Prep - {customer}",
+                "date": "2026-05-15",
+                "duration_min": 60,
+            },
+            {
+                "type": "email",
+                "subject": f"Updated pricing proposal - {customer}",
+                "date": "2026-05-10",
+                "participants": ["AE", "Procurement"],
+            },
+            {
+                "type": "meeting",
+                "subject": f"Technical deep dive - {customer}",
+                "date": "2026-04-22",
+                "duration_min": 90,
+            },
+        ],
+        "engagement_score": "High",
+        "last_contact": "2026-05-28",
+    }
+
+
+def forecast_quota_func(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Return a legacy FY quota forecast payload using the shared estimator."""
+    customer = arguments.get("customer_name", "Unknown")
+    customer_name = str(customer)
+    scenario = arguments.get("scenario")
+    estimate = build_quota_estimate(
+        customer_name=customer_name,
+        sales_rows=demo_sales_rows(),
+        research_data=demo_research_data(customer_name),
+        workiq_activity=demo_workiq_activity(customer_name),
+        scenario=str(scenario) if scenario is not None else "base",
+    )
+    return forecast_payload_from_estimate(estimate)
+
+
+def generate_quota_estimation_report_func(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Generate quota estimation XLSX, HTML, and PDF artifacts from Fabric sales rows."""
+    customer_name = str(arguments.get("customer_name", "Unknown"))
+    sales_rows = arguments.get("sales_rows")
+    if not isinstance(sales_rows, list) or not all(isinstance(item, dict) for item in sales_rows):
+        raise ValueError("sales_rows must be a list of objects from Fabric IQ.")
+
+    research_data = arguments.get("research_data")
+    if research_data is not None and not isinstance(research_data, dict):
+        raise ValueError("research_data must be an object when provided.")
+
+    workiq_activity = arguments.get("workiq_activity")
+    if workiq_activity is not None and not isinstance(workiq_activity, dict):
+        raise ValueError("workiq_activity must be an object when provided.")
+
+    formats = arguments.get("formats")
+    if formats is not None and not isinstance(formats, list):
+        raise ValueError("formats must be a list of strings when provided.")
+
+    scenario = arguments.get("scenario")
+    if scenario is not None and not isinstance(scenario, str):
+        raise ValueError("scenario must be a string when provided.")
+
+    return generate_quota_estimation_report(
+        customer_name=customer_name,
+        sales_rows=sales_rows,
+        research_data=research_data,
+        workiq_activity=workiq_activity,
+        scenario=scenario if scenario is not None else "base",
+        output_dir=str(arguments.get("output_dir", "output/quota-estimates")),
+        formats=[str(item) for item in formats] if formats is not None else None,
+    )
+
+
+def generate_report_func(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Generate a DOCX sales report and return the resolved file metadata."""
+    from src.agents.report_generator.generator import _build_report_data, generate_docx
+
+    report_arguments = dict(arguments)
+    if "pipeline_data" not in report_arguments and isinstance(report_arguments.get("sections"), list):
+        report_arguments["pipeline_data"] = report_arguments["sections"]
+
+    data = _build_report_data(report_arguments)
+    generated_at = datetime.now()
+
+    output_dir = Path("output")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    safe_title = _slugify_filename(data.title)
+    output_path = output_dir / f"{safe_title}_{generated_at:%Y%m%d_%H%M%S}.docx"
+    resolved_output_path = output_path.resolve()
+
+    generate_docx(data, _DEFAULT_REPORT_TEMPLATE, resolved_output_path)
+
+    return {
+        "status": "generated",
+        "file_path": str(resolved_output_path),
+        "format": "docx",
+        "title": data.title,
+        "has_forecast": data.forecast_data is not None,
+        "has_chart": data.forecast_data is not None,
+        "note": (
+            "File written locally. In a deployed M365 agent, upload to OneDrive/SharePoint and return a sharing link."
+        ),
+    }
+
+
+def web_research_func(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Simulate web research for market intelligence."""
+    query = arguments.get("query", "")
+    customer = arguments.get("customer_name", "the customer")
+    return {
+        "query": query,
+        "source": "demo (simulated web research)",
+        "findings": [
+            {
+                "title": "Wholesale Novelty Market Trends 2026",
+                "url": "https://example.com/market-trends-2026",
+                "source": "Industry Weekly",
+                "date": "2026-05-15",
+                "snippet": (
+                    "The wholesale novelty goods market is projected to grow 8.5% YoY "
+                    "driven by seasonal demand and e-commerce expansion."
+                ),
+                "sales_implication": "Growth tailwind - budget for increased inventory and fulfillment capacity.",
+            },
+            {
+                "title": f"{customer} Expands Distribution Network",
+                "url": "https://example.com/expansion-news",
+                "source": "Business Journal",
+                "date": "2026-06-01",
+                "snippet": (
+                    f"{customer} announced plans to open 3 new regional "
+                    "distribution centers, increasing their total to 15."
+                ),
+                "sales_implication": (
+                    "Upsell opportunity - new DCs need initial inventory stocking across all categories."
+                ),
+            },
+            {
+                "title": "Supply Chain Costs Stabilizing in Q2 2026",
+                "url": "https://example.com/supply-chain",
+                "source": "Logistics Today",
+                "date": "2026-04-20",
+                "snippet": (
+                    "Freight and raw material costs have declined 12% from 2025 peaks, improving wholesale margins."
+                ),
+                "sales_implication": (
+                    "Margin improvement - customers may be receptive to volume commitments at current pricing."
+                ),
+            },
+        ],
+        "tailwinds": ["Market growing 8.5% YoY", "Customer expanding distribution", "Supply costs stabilizing"],
+        "headwinds": ["Increased competition from direct-to-consumer brands", "Seasonal demand uncertainty"],
+    }
+
+
+def compute_attainment_func(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Compute quota attainment metrics from provided sales figures."""
+    annual_target = arguments.get("annual_target", 0)
+    ytd_actual = arguments.get("ytd_actual", 0)
+    open_pipeline = arguments.get("open_pipeline", 0)
+    months_elapsed = arguments.get("months_elapsed", 6)
+    days_elapsed = arguments.get("days_elapsed", 180)
+
+    pro_rata_target = annual_target * (months_elapsed / 12) if annual_target else 0
+    attainment_pct = (ytd_actual / pro_rata_target * 100) if pro_rata_target else 0
+    remaining_quota = max(annual_target - ytd_actual, 0)
+    pipeline_coverage = (open_pipeline / remaining_quota) if remaining_quota else 0
+    daily_rate = (ytd_actual / days_elapsed) if days_elapsed else 0
+    run_rate_projection = daily_rate * 365
+
+    if attainment_pct >= 90 and pipeline_coverage >= 2.0:
+        risk_rating = "Green"
+    elif attainment_pct >= 70 or pipeline_coverage >= 1.5:
+        risk_rating = "Yellow"
+    else:
+        risk_rating = "Red"
+
+    return {
+        "annual_target": annual_target,
+        "ytd_actual": ytd_actual,
+        "attainment_pct": round(attainment_pct, 1),
+        "pipeline_coverage": round(pipeline_coverage, 2),
+        "run_rate_projection": round(run_rate_projection, 0),
+        "risk_rating": risk_rating,
+        "remaining_quota": round(remaining_quota, 0),
+        "daily_rate": round(daily_rate, 0),
+    }
+
+
+def _slugify_filename(value: str) -> str:
+    """Convert a report title into a filesystem-safe stem."""
+    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", value.strip().lower()).strip("._")
+    return cleaned or "sales_report"
