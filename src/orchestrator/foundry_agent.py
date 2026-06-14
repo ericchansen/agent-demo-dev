@@ -2,7 +2,7 @@
 
 This module defines the WWI prompt-agent used by the demo. The agent runs in Azure AI
 Foundry, queries structured sales data through Fabric IQ, optionally enriches account context
-with WorkIQ, and can invoke local Python tools for quota forecasting and DOCX report generation.
+with WorkIQ, and can invoke local Python tools for quota estimation and report generation.
 Local tools use strict JSON schemas so the model can call them reliably without exposing Python
 stack traces back to the conversation.
 """
@@ -28,6 +28,14 @@ from azure.ai.projects.models import (
 )
 from azure.identity import DefaultAzureCredential
 
+from src.agents.quota_estimator.pipeline import (
+    build_quota_estimate,
+    demo_research_data,
+    demo_sales_rows,
+    demo_workiq_activity,
+    forecast_payload_from_estimate,
+    generate_quota_estimation_report,
+)
 from src.orchestrator.config import OrchestratorConfig
 
 logger = logging.getLogger(__name__)
@@ -43,8 +51,11 @@ Your capabilities:
    customers, products, geography, and employees. Write correct T-SQL for Fabric.
 2. ACTIVITY DATA: When WorkIQ is available, retrieve M365 activity signals
    (emails, meetings, engagement) for customer context.
-3. QUOTA FORECAST: Generate FY quota projections based on trailing 12-month sales trends.
-4. REPORTS: Generate formatted DOCX reports with charts and citations.
+3. QUOTA ESTIMATION: For quota report requests, query Fabric IQ first for WWI historical sales rows
+   from SalesOrderHeader joined to SalesTerritory, including territory, product category when available,
+   order date, revenue, and quantity. Use WorkIQPreviewTool when configured; otherwise call
+   get_account_activity for demo-safe synthetic activity.
+4. REPORTS: Generate formatted DOCX account reports or quota estimation artifacts.
 
 New capabilities:
 5. WEB RESEARCH: Search the web for market trends, customer news, and competitive
@@ -59,7 +70,9 @@ Guidelines:
 - Cite data sources with URLs when available
 - Proactively surface insights the user might not have asked for
 - When comparing time periods, show both absolute values and percentage change
-- For deep analyses, gather data from multiple sources before synthesizing"""
+- For deep analyses, gather data from multiple sources before synthesizing
+- To create XLSX, HTML, and PDF quota files, call generate_quota_estimation_report with the Fabric rows,
+  market research context, and WorkIQ activity payload."""
 
 _MARKET_DATA_INSTRUCTIONS = """
 
@@ -78,7 +91,6 @@ def _build_agent_instructions(config: OrchestratorConfig) -> str:
     if config.market_data_connection_id:
         instructions += _MARKET_DATA_INSTRUCTIONS
     return instructions
-
 
 ACCOUNT_ACTIVITY_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -101,6 +113,50 @@ FORECAST_QUOTA_SCHEMA: dict[str, Any] = {
         }
     },
     "required": ["customer_name"],
+    "additionalProperties": False,
+}
+
+_QUOTA_SALES_ROW_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "description": "Fabric sales row from SalesOrderHeader joined to SalesTerritory.",
+    "additionalProperties": True,
+}
+
+GENERATE_QUOTA_ESTIMATION_REPORT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "customer_name": {
+            "type": "string",
+            "description": "Customer or prospect account name.",
+        },
+        "sales_rows": {
+            "type": "array",
+            "description": (
+                "Historical WWI sales rows with territory, order_date, revenue, and optional category/quantity."
+            ),
+            "items": _QUOTA_SALES_ROW_SCHEMA,
+        },
+        "research_data": {
+            "type": "object",
+            "description": "Market research payload with summary, articles, and key metrics.",
+            "additionalProperties": True,
+        },
+        "workiq_activity": {
+            "type": "object",
+            "description": "WorkIQ or synthetic M365 activity signals.",
+            "additionalProperties": True,
+        },
+        "output_dir": {
+            "type": "string",
+            "description": "Directory where XLSX, HTML, and PDF artifacts should be written.",
+        },
+        "formats": {
+            "type": "array",
+            "description": "Artifact formats to generate.",
+            "items": {"type": "string", "enum": ["xlsx", "html", "pdf"]},
+        },
+    },
+    "required": ["customer_name", "sales_rows"],
     "additionalProperties": False,
 }
 
@@ -278,42 +334,45 @@ def mock_workiq_func(arguments: dict[str, Any]) -> dict[str, Any]:
 
 
 def forecast_quota_func(arguments: dict[str, Any]) -> dict[str, Any]:
-    """Return a demo fiscal-year quota forecast with structured category data."""
+    """Return a legacy FY quota forecast payload using the shared estimator."""
     customer = arguments.get("customer_name", "Unknown")
-    items = [
-        {
-            "category": "Novelty Items",
-            "current_fy_revenue": 450000,
-            "growth_rate": 0.12,
-            "projected_fy_revenue": 504000,
-        },
-        {
-            "category": "Clothing",
-            "current_fy_revenue": 320000,
-            "growth_rate": 0.12,
-            "projected_fy_revenue": 358400,
-        },
-        {
-            "category": "Computing Novelties",
-            "current_fy_revenue": 280000,
-            "growth_rate": 0.10,
-            "projected_fy_revenue": 308000,
-        },
-        {
-            "category": "Toys",
-            "current_fy_revenue": 200000,
-            "growth_rate": 0.15,
-            "projected_fy_revenue": 230000,
-        },
-    ]
-    return {
-        "customer": customer,
-        "current_fy_total": sum(item["current_fy_revenue"] for item in items),
-        "projected_fy_total": sum(item["projected_fy_revenue"] for item in items),
-        "overall_growth_rate": 0.12,
-        "methodology": "Trailing 12-month sales trend with category-specific growth rates (demo data)",
-        "items": items,
-    }
+    customer_name = str(customer)
+    estimate = build_quota_estimate(
+        customer_name=customer_name,
+        sales_rows=demo_sales_rows(),
+        research_data=demo_research_data(customer_name),
+        workiq_activity=demo_workiq_activity(customer_name),
+    )
+    return forecast_payload_from_estimate(estimate)
+
+
+def generate_quota_estimation_report_func(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Generate quota estimation XLSX, HTML, and PDF artifacts from Fabric sales rows."""
+    customer_name = str(arguments.get("customer_name", "Unknown"))
+    sales_rows = arguments.get("sales_rows")
+    if not isinstance(sales_rows, list) or not all(isinstance(item, dict) for item in sales_rows):
+        raise ValueError("sales_rows must be a list of objects from Fabric IQ.")
+
+    research_data = arguments.get("research_data")
+    if research_data is not None and not isinstance(research_data, dict):
+        raise ValueError("research_data must be an object when provided.")
+
+    workiq_activity = arguments.get("workiq_activity")
+    if workiq_activity is not None and not isinstance(workiq_activity, dict):
+        raise ValueError("workiq_activity must be an object when provided.")
+
+    formats = arguments.get("formats")
+    if formats is not None and not isinstance(formats, list):
+        raise ValueError("formats must be a list of strings when provided.")
+
+    return generate_quota_estimation_report(
+        customer_name=customer_name,
+        sales_rows=sales_rows,
+        research_data=research_data,
+        workiq_activity=workiq_activity,
+        output_dir=str(arguments.get("output_dir", "output/quota-estimates")),
+        formats=[str(item) for item in formats] if formats is not None else None,
+    )
 
 
 def generate_report_func(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -459,6 +518,7 @@ def _build_tools(config: OrchestratorConfig) -> tuple[list[ToolDefinition], dict
     ]
     handlers: dict[str, ToolHandler] = {
         "forecast_quota": forecast_quota_func,
+        "generate_quota_estimation_report": generate_quota_estimation_report_func,
         "generate_report": generate_report_func,
         "web_research": web_research_func,
         "compute_quota_attainment": compute_attainment_func,
@@ -494,8 +554,16 @@ def _build_tools(config: OrchestratorConfig) -> tuple[list[ToolDefinition], dict
         [
             _build_function_tool(
                 name="forecast_quota",
-                description="Generate an FY quota projection for a named customer account.",
+                description="Compatibility wrapper that returns a structured FY quota projection payload.",
                 parameters=FORECAST_QUOTA_SCHEMA,
+            ),
+            _build_function_tool(
+                name="generate_quota_estimation_report",
+                description=(
+                    "Generate XLSX, HTML, and PDF quota estimation artifacts from Fabric sales rows, "
+                    "market research, and WorkIQ activity context."
+                ),
+                parameters=GENERATE_QUOTA_ESTIMATION_REPORT_SCHEMA,
             ),
             _build_function_tool(
                 name="generate_report",

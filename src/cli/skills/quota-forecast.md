@@ -1,41 +1,37 @@
 ---
 name: quota-forecast
-description: Generate an FY quota forecast for a customer based on trailing sales data and pipeline
+description: Generate FY quota estimation artifacts from WWI sales, market research, and WorkIQ activity
 ---
 
-# Quota Forecast Generator
+# Quota Estimation Report Generator
 
-You are generating a fiscal year quota forecast for a Wide World Importers customer.
+You are generating a fiscal year quota estimation report for a Wide World Importers customer. Produce real
+artifacts, not only inline markdown.
 
 ## Steps
 
-1. **Query sales data**: Use the `wwi-sales-data` MCP server to get the customer's trailing 12-month sales broken down by product category. Use `dimension_Date` for fiscal year alignment. Example query:
+1. **Query sales data**: Use the `wwi-sales-data` MCP server to get the customer's trailing historical sales
+   from `SalesOrderHeader` joined to `SalesTerritory`, broken down by territory and product category when the
+   semantic model exposes category. Include at least territory, category, order date, revenue, and quantity.
+   Example query:
    ```
-   What were [customer]'s total sales by product category (StockItem dimension) for fiscal year 2015 and 2016? Show each category with total revenue and quantity, broken down by fiscal year using dimension_Date.
+   For [customer], return trailing 12-month WWI sales rows from SalesOrderHeader joined to SalesTerritory.
+   Include territory, product category, order date, total revenue, and quantity.
    ```
 
-2. **Query open pipeline**: Check for open orders from `fact_Order`:
-   ```
-   What open orders (Picked Date Key IS NULL) exist for [customer]? Show product category, quantity, and value.
-   ```
+2. **Gather market context**: Use `researcher-agent.research_company` for market trends. If live search is not
+   configured, accept the mock response and state that mock market context was used.
 
-3. **Calculate projections**: For each product category:
-   - Calculate year-over-year growth rate from historical data
-   - Apply growth rate (default 10-15% for growing categories, 5% for stable, 0% for declining)
-   - Add open pipeline value as committed upside
-   - Project the next fiscal year revenue
+3. **Gather WorkIQ context**: Use the configured WorkIQ tool if present. If real WorkIQ credentials are not
+   configured, use synthetic or mock activity with realistic recent emails/meetings and an engagement score.
+   Do not attempt to call real WorkIQ APIs without credentials.
 
-4. **Format the forecast**: Present as a markdown table:
-   | Product Category | FY2015 Revenue | FY2016 Revenue | YoY Growth | Open Pipeline | Projected FY2017 |
-   |---|---|---|---|---|---|
-   | Category 1 | $X | $Y | Z% | $P | $F |
-   | ... | ... | ... | ... | ... | ... |
-   | **Total** | **$X** | **$Y** | **Z%** | **$P** | **$F** |
-
-5. **Add insights**:
-   - Highlight the top 3 growth categories
-   - Flag any declining categories with recommendations
-   - Note pipeline upside vs. organic growth contribution
-   - Include methodology note: "Based on fiscal-year-aligned sales data from the WWI data warehouse with pipeline overlay from open orders"
-
-6. **Summary**: Provide a 2-3 sentence executive summary suitable for a QBR deck.
+4. **Generate artifacts**: Call `quota-estimator.generate_quota_estimation_report` with:
+   - `customer_name`
+   - `sales_rows` from `wwi-sales-data`
+   - `research_data` from `researcher-agent`
+   - `workiq_activity` from WorkIQ/mock activity
+   - `formats`: `["xlsx", "html", "pdf"]`
+5. **Return results**: Provide a short executive summary, the total recommended quota, and the generated
+   `.xlsx`, `.html`, and `.pdf` artifact paths returned by the quota estimator.
+   `.xlsx`, `.html`, and `.pdf` artifact paths returned by the quota estimator.

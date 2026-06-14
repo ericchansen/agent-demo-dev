@@ -25,6 +25,7 @@ const sidebars: SidebarsConfig = {
         'building-blocks/foundry',
         'building-blocks/skills',
         'building-blocks/report-generation',
+        'building-blocks/quota-pipeline',
         'building-blocks/wwi-dataset',
       ],
     },
@@ -47,8 +48,8 @@ const sidebars: SidebarsConfig = {
         'workshop/demo-script',
         'workshop/costs',
       ],
-    },
-  ],
+   },
+ ],
 };
 
 export default sidebars;

@@ -321,3 +321,80 @@ async def test_sharepoint_search_documents_no_results():
         assert len(data) == 0
     finally:
         await _cleanup(proc)
+
+
+# ---------------------------------------------------------------------------
+# Quota Estimator Tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_quota_estimator_list_tools():
+    """Quota estimator MCP server advertises the quota artifact generation tool."""
+    proc = await _start_mcp_server("src.agents.quota_estimator.mcp_server")
+    try:
+        await _initialize_server(proc)
+
+        assert proc.stdin is not None
+        assert proc.stdout is not None
+
+        proc.stdin.write(_encode_message(_LIST_TOOLS_REQUEST))
+        await proc.stdin.drain()
+
+        response = await _read_response(proc.stdout)
+
+        assert "result" in response, f"Expected 'result' in response, got: {response}"
+        tool_names = [tool["name"] for tool in response["result"]["tools"]]
+        assert "generate_quota_estimation_report" in tool_names
+    finally:
+        await _cleanup(proc)
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_quota_estimator_call_tool(tmp_path):
+    """Quota estimator MCP server generates XLSX, HTML, and PDF artifacts over stdio."""
+    proc = await _start_mcp_server("src.agents.quota_estimator.mcp_server")
+    try:
+        await _initialize_server(proc)
+
+        assert proc.stdin is not None
+        assert proc.stdout is not None
+
+        request = _call_tool_request(
+            "generate_quota_estimation_report",
+            {
+                "customer_name": "Tailspin Toys",
+                "sales_rows": [
+                    {
+                        "territory": "Northwest",
+                        "category": "Novelty Items",
+                        "order_date": "2025-11-01",
+                        "revenue": 75000,
+                        "quantity": 180,
+                    },
+                    {
+                        "territory": "Northwest",
+                        "category": "Novelty Items",
+                        "order_date": "2026-05-01",
+                        "revenue": 100000,
+                        "quantity": 250,
+                    },
+                ],
+                "research_data": {"summary": "Retail demand is expanding 10%."},
+                "workiq_activity": {"engagement_score": "High", "recent_activity": [{"type": "meeting"}]},
+                "output_dir": str(tmp_path),
+            },
+        )
+        proc.stdin.write(_encode_message(request))
+        await proc.stdin.drain()
+
+        response = await _read_response(proc.stdout)
+
+        assert "result" in response, f"Expected 'result' in response, got: {response}"
+        data = json.loads(response["result"]["content"][0]["text"])
+        assert data["status"] == "success"
+        assert set(data["artifacts"]) == {"xlsx", "html", "pdf"}
+    finally:
+        await _cleanup(proc)

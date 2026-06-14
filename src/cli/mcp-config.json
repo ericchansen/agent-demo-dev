@@ -41,6 +41,12 @@
       "args": ["-m", "src.agents.report_generator.mcp_server"],
       "type": "stdio",
       "description": "Generate DOCX/PPTX sales reports with charts and citations"
+    },
+    "quota-estimator": {
+      "command": "python",
+      "args": ["-m", "src.agents.quota_estimator.mcp_server"],
+      "type": "stdio",
+      "description": "Generate quota estimation reports as XLSX, HTML, and PDF artifacts"
     }
   }
 }

@@ -9,10 +9,29 @@
       "command": "python",
       "args": ["src/cli/fabric_mcp_proxy.py"]
     },
-    "report-generator": {
+    "market-data": {
+      "type": "http",
+      "url": "<PASTE_YOUR_MARKET_DATA_AGENT_MCP_URL_HERE>"
+    },
+    "researcher-agent": {
+      "type": "stdio",
       "command": "python",
-      "args": ["-m", "src.agents.report_generator.mcp_server"],
-      "type": "stdio"
+      "args": ["-m", "src.agents.researcher.mcp_server"]
+    },
+    "sharepoint-agent": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "src.agents.sharepoint.mcp_server"]
+    },
+    "report-generator": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "src.agents.report_generator.mcp_server"]
+    },
+    "quota-estimator": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "src.agents.quota_estimator.mcp_server"]
     }
   }
 }

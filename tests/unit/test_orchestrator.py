@@ -358,8 +358,47 @@ def test_build_tools_without_workiq() -> None:
     assert isinstance(tools, list)
     assert len(tools) >= 2
     assert "forecast_quota" in tool_names
+    assert "generate_quota_estimation_report" in tool_names
+    assert "generate_quota_estimation_report" in handlers
     assert "generate_report" in tool_names
     assert "get_account_activity" in tool_names or "get_account_activity" in handlers
+
+
+def test_generate_quota_estimation_report_func_creates_artifacts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Foundry local function wraps the shared quota estimator."""
+    generate_quota_func = _load_attr("src.orchestrator.foundry_agent", "generate_quota_estimation_report_func")
+    monkeypatch.chdir(tmp_path)
+
+    result = generate_quota_func(
+        {
+            "customer_name": "Tailspin Toys",
+            "sales_rows": [
+                {
+                    "territory": "Northwest",
+                    "category": "Novelty Items",
+                    "order_date": "2025-11-01",
+                    "revenue": 75000,
+                    "quantity": 180,
+                },
+                {
+                    "territory": "Northwest",
+                    "category": "Novelty Items",
+                    "order_date": "2026-05-01",
+                    "revenue": 100000,
+                    "quantity": 250,
+                },
+            ],
+            "research_data": {"summary": "Retail demand is expanding 10%."},
+            "workiq_activity": {"engagement_score": "High", "recent_activity": [{"type": "meeting"}]},
+        }
+    )
+
+    artifacts = result["artifacts"]
+    assert isinstance(artifacts, dict)
+    assert set(artifacts) == {"xlsx", "html", "pdf"}
+    assert all(Path(str(path)).exists() for path in artifacts.values())
 
 
 # ---------------------------------------------------------------------------

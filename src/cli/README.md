@@ -91,6 +91,7 @@ Skills are natural-language prompts that Copilot CLI recognizes. Place the
 | **Generate Account Plan** | `account-plan.md` | Full workflow — pipeline + research + SharePoint → DOCX report |
 | **Query Sales Pipeline** | `pipeline-query.md` | Ask natural-language questions about WWI sales data |
 | **Research Customer** | `customer-research.md` | Web research on a customer — news, earnings, strategy |
+| **Quota Forecast** | `quota-forecast.md` | WWI sales + research + WorkIQ context → XLSX/HTML/PDF quota artifacts |
 
 ### Example usage
 
@@ -106,6 +107,10 @@ What are our top 10 customers by revenue?
 Research Contoso Ltd — focus on earnings and expansion
 ```
 
+```
+Generate a quota forecast report for Tailspin Toys
+```
+
 ## MCP Servers
 
 | Server | Type | Description |
@@ -113,6 +118,7 @@ Research Contoso Ltd — focus on earnings and expansion
 | `wwi-sales-data` | HTTP | Fabric Data Agent — queries the WWI lakehouse |
 | `researcher-agent` | stdio | Local Python process — web search for company intelligence |
 | `sharepoint-agent` | stdio | Local Python process — SharePoint document retrieval |
+| `quota-estimator` | stdio | Local Python process — quota estimation artifacts in XLSX, HTML, and PDF |
 
 ## Troubleshooting
 
