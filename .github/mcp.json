@@ -2,36 +2,43 @@
   "mcpServers": {
     "fabric-core": {
       "type": "http",
-      "url": "https://api.fabric.microsoft.com/v1/mcp/core"
+      "url": "https://api.fabric.microsoft.com/v1/mcp/core",
+      "description": "Microsoft Fabric core MCP server for workspace and item operations"
     },
     "wwi-sales-data": {
-      "type": "stdio",
-      "command": "python",
-      "args": ["src/cli/fabric_mcp_proxy.py"]
+      "type": "http",
+      "url": "https://api.fabric.microsoft.com/v1/mcp/workspaces/<WORKSPACE_ID>/dataagents/<DATA_AGENT_ID>/agent",
+      "description": "Wide World Importers sales data via Fabric Data Agent"
     },
     "market-data": {
       "type": "http",
-      "url": "<PASTE_YOUR_MARKET_DATA_AGENT_MCP_URL_HERE>"
+      "url": "https://api.fabric.microsoft.com/v1/mcp/workspaces/<WORKSPACE_ID>/dataagents/<MARKET_DATA_AGENT_ID>/agent",
+      "description": "SEC EDGAR financial data for real US public companies via Fabric Data Agent"
     },
     "researcher-agent": {
       "type": "stdio",
       "command": "python",
-      "args": ["-m", "src.agents.researcher.mcp_server"]
+      "args": ["-m", "src.agents.researcher.mcp_server"],
+      "description": "Research companies on the web - news, earnings, strategy"
     },
     "sharepoint-agent": {
       "type": "stdio",
       "command": "python",
-      "args": ["-m", "src.agents.sharepoint.mcp_server"]
+      "args": ["-m", "src.agents.sharepoint.mcp_server"],
+      "description": "Search and retrieve internal SharePoint documents"
     },
     "report-generator": {
       "type": "stdio",
       "command": "python",
-      "args": ["-m", "src.agents.report_generator.mcp_server"]
+      "args": ["-m", "src.agents.report_generator.mcp_server"],
+      "description": "Generate DOCX/PPTX sales reports with charts and citations"
     },
     "quota-estimator": {
       "type": "stdio",
       "command": "python",
-      "args": ["-m", "src.agents.quota_estimator.mcp_server"]
+      "args": ["-m", "src.agents.quota_estimator.mcp_server"],
+      "description": "Generate quota estimation reports as XLSX, HTML, and PDF artifacts"
     }
   }
 }
+

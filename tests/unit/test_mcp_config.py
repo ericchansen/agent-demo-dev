@@ -4,64 +4,77 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
-_MCP_CONFIG_PATH = Path(__file__).resolve().parents[2] / "src" / "cli" / "mcp-config.json"
+_ROOT = Path(__file__).resolve().parents[2]
+_MCP_CONFIG_PATHS = [
+    _ROOT / ".github" / "mcp.json",
+    _ROOT / ".vscode" / "mcp.json",
+    _ROOT / "src" / "cli" / "mcp-config.json",
+]
+_EXPECTED_SERVERS = {
+    "fabric-core",
+    "wwi-sales-data",
+    "market-data",
+    "researcher-agent",
+    "sharepoint-agent",
+    "report-generator",
+    "quota-estimator",
+}
 
 
-@pytest.fixture
-def mcp_config() -> dict:
-    """Load and parse the MCP config JSON."""
-    assert _MCP_CONFIG_PATH.exists(), f"MCP config not found: {_MCP_CONFIG_PATH}"
-    with open(_MCP_CONFIG_PATH) as f:
-        return json.load(f)
+@pytest.fixture(params=_MCP_CONFIG_PATHS, ids=lambda path: str(path.relative_to(_ROOT)))
+def mcp_config(request: pytest.FixtureRequest) -> tuple[Path, dict[str, Any]]:
+    """Load and parse one MCP config JSON file."""
+    path = request.param
+    assert isinstance(path, Path)
+    assert path.exists(), f"MCP config not found: {path}"
+    with path.open(encoding="utf-8") as handle:
+        payload = json.load(handle)
+    assert isinstance(payload, dict)
+    return path, payload
 
 
-class TestMCPConfigStructure:
-    """Validate the MCP server config file structure."""
+def test_all_mcp_configs_have_expected_servers(mcp_config: tuple[Path, dict[str, Any]]) -> None:
+    """Every published MCP config should expose the full demo server set."""
+    path, payload = mcp_config
 
-    def test_has_mcp_servers_key(self, mcp_config):
-        """Config must have a top-level 'mcpServers' key."""
-        assert "mcpServers" in mcp_config
+    assert "mcpServers" in payload, f"{path} missing mcpServers"
+    servers = payload["mcpServers"]
+    assert isinstance(servers, dict)
+    assert set(servers) == _EXPECTED_SERVERS
 
-    def test_wwi_sales_data_present(self, mcp_config):
-        """Original WWI sales data server must be present."""
-        servers = mcp_config["mcpServers"]
-        assert "wwi-sales-data" in servers
-        assert servers["wwi-sales-data"]["type"] == "http"
 
-    def test_market_data_present(self, mcp_config):
-        """Market data server must be present."""
-        servers = mcp_config["mcpServers"]
-        assert "market-data" in servers
-        assert servers["market-data"]["type"] == "http"
+def test_all_mcp_servers_have_descriptions(mcp_config: tuple[Path, dict[str, Any]]) -> None:
+    """Every server should have a useful description for tool routing."""
+    path, payload = mcp_config
 
-    def test_researcher_agent_present(self, mcp_config):
-        """Researcher agent must be present."""
-        servers = mcp_config["mcpServers"]
-        assert "researcher-agent" in servers
-        assert servers["researcher-agent"]["type"] == "stdio"
+    for name, server in payload["mcpServers"].items():
+        assert "description" in server, f"{path}:{name} missing description"
+        assert len(server["description"]) > 10, f"{path}:{name} description too short"
 
-    def test_all_servers_have_description(self, mcp_config):
-        """Every server should have a description."""
-        for name, server in mcp_config["mcpServers"].items():
-            assert "description" in server, f"Server '{name}' missing description"
-            assert len(server["description"]) > 10, f"Server '{name}' description too short"
 
-    def test_http_servers_have_url(self, mcp_config):
-        """HTTP-type servers should have a url field."""
-        for name, server in mcp_config["mcpServers"].items():
-            if server.get("type") == "http":
-                assert "url" in server, f"HTTP server '{name}' missing url"
+def test_mcp_server_transport_fields_are_valid(mcp_config: tuple[Path, dict[str, Any]]) -> None:
+    """HTTP servers need URLs and stdio servers need commands."""
+    path, payload = mcp_config
 
-    def test_stdio_servers_have_command(self, mcp_config):
-        """Stdio-type servers should have a command field."""
-        for name, server in mcp_config["mcpServers"].items():
-            if server.get("type") == "stdio":
-                assert "command" in server, f"Stdio server '{name}' missing command"
+    for name, server in payload["mcpServers"].items():
+        server_type = server.get("type")
+        assert server_type in {"http", "stdio"}, f"{path}:{name} has unsupported type {server_type}"
+        if server_type == "http":
+            assert isinstance(server.get("url"), str), f"{path}:{name} HTTP server missing url"
+        if server_type == "stdio":
+            assert isinstance(server.get("command"), str), f"{path}:{name} stdio server missing command"
 
-    def test_no_duplicate_descriptions(self, mcp_config):
-        """Server descriptions should be unique to avoid routing confusion."""
-        descriptions = [s["description"] for s in mcp_config["mcpServers"].values()]
-        assert len(descriptions) == len(set(descriptions)), "Duplicate server descriptions found"
+
+def test_mcp_config_server_sets_match_across_surfaces() -> None:
+    """The GitHub, VS Code, and CLI surfaces should not drift."""
+    server_sets = []
+    for path in _MCP_CONFIG_PATHS:
+        with path.open(encoding="utf-8") as handle:
+            payload = json.load(handle)
+        server_sets.append(set(payload["mcpServers"]))
+
+    assert all(server_set == server_sets[0] for server_set in server_sets)
