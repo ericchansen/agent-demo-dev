@@ -22,7 +22,7 @@ from pathlib import Path
 
 GOLDEN_QA_PATH = Path(__file__).parent / "golden-qa.json"
 
-# ── Mock answers ────────────────────────────────────────────────────────────
+# -- Mock answers -------------------------------------------------------------
 # Keyword-triggered canned responses used when --mock is set.  Each mock
 # tries to include enough keywords to pass the expected_contains checks.
 
@@ -91,12 +91,52 @@ _MOCK_ANSWERS: dict[str, str] = {
         "Revenue by category: Novelty goods $5.2M, USB novelties $3.8M, Clothing $2.9M, Packaging materials $2.4M."
     ),
     "southeast sales territory": ("Total sales for the Southeast territory: $2.1M across 5,400 orders."),
+    "current open pipeline value": ("The current open pipeline value is $4.8M across open order pipeline items."),
+    "most open orders": ("Salesperson Amy Trefl has the most open orders in the pipeline."),
+    "backorders in the pipeline": ("The pipeline includes 184 backorder rows awaiting stock allocation."),
+    "pipeline coverage ratio": (
+        "Pipeline coverage ratio by salesperson ranges from 1.8x to 3.2x based on open order value."
+    ),
+    "quota attainment for fy2016": ("Quota attainment for FY2016 was 92%, with 2016 revenue at $14.3M against quota."),
+    "furthest behind their quota": ("The salesperson furthest behind quota is Hudson with 74% attainment."),
+    "total sales by fiscal quarter for fy2016": (
+        "FY2016 total sales by fiscal quarter: Q1 $3.4M, Q2 $3.6M, Q3 $3.5M, Q4 $3.8M."
+    ),
+    "top suppliers by total purchase volume": (
+        "Top suppliers by total purchase volume include Northwind Electric Cars and Graphic Design Institute."
+    ),
+    "gross margin by product category": (
+        "Gross margin by product category is strongest in novelty goods and USB novelties."
+    ),
+    "customers have outstanding balances": (
+        "Customers with outstanding balance exposure include Tailspin Toys and Wingtip Toys."
+    ),
+    "deep analysis for tailspin toys": (
+        "Tailspin Toys deep analysis: attainment is 95%, pipeline coverage is 2.4x, "
+        "and market research shows stable novelty-goods demand."
+    ),
+    "southeast territory if the target is $5m": ("The Southeast territory has 84% attainment against the $5M target."),
+    "compare engagement levels": (
+        "Engagement levels across the top 5 customers show meeting frequency and email activity are highest "
+        "for Tailspin Toys and Wingtip Toys."
+    ),
+    "sales forecast for wingtip toys": (
+        "Wingtip Toys forecast is $1.1M based on historical trends and current pipeline."
+    ),
+    "market headwinds and tailwinds": (
+        "Market headwinds include freight costs; tailwinds include resilient demand for novelty goods."
+    ),
+    "at-risk accounts": ("At-risk accounts show risk where engagement declined but historical revenue was strong."),
 }
 
 
-def _mock_answer(question: str) -> str:
+def _mock_answer(question: str, qa: dict | None = None) -> str:
     """Return a canned answer matching the question by keyword overlap."""
     q_lower = question.lower()
+    for key, answer in sorted(_MOCK_ANSWERS.items(), key=lambda item: len(item[0]), reverse=True):
+        if key in q_lower:
+            return answer
+
     best_key = ""
     best_overlap = 0
     for key in _MOCK_ANSWERS:
@@ -106,10 +146,12 @@ def _mock_answer(question: str) -> str:
             best_key = key
     if best_key:
         return _MOCK_ANSWERS[best_key]
+    if qa:
+        return "Mock result: " + "; ".join(str(term) for term in qa.get("expected_contains", []))
     return f"I found results related to your question about Wide World Importers: {question}"
 
 
-# ── Data Agent client ───────────────────────────────────────────────────────
+# -- Data Agent client --------------------------------------------------------
 
 
 def _live_answer(question: str) -> str:
@@ -127,7 +169,7 @@ def _live_answer(question: str) -> str:
         ) from None
 
 
-# ── Scoring ─────────────────────────────────────────────────────────────────
+# -- Scoring -----------------------------------------------------------------
 
 
 @dataclass
@@ -156,7 +198,7 @@ def score_answer(qa: dict, answer: str) -> EvalResult:
     )
 
 
-# ── Main ────────────────────────────────────────────────────────────────────
+# -- Main --------------------------------------------------------------------
 
 
 def load_golden_qa(path: Path, category: str | None = None) -> list[dict]:
@@ -165,6 +207,13 @@ def load_golden_qa(path: Path, category: str | None = None) -> list[dict]:
     if category:
         qa_list = [q for q in qa_list if q.get("category") == category]
     return qa_list
+
+
+def load_categories(path: Path) -> list[str]:
+    """Return sorted category names from the configured golden-QA file."""
+    with open(path, encoding="utf-8") as f:
+        qa_list: list[dict] = json.load(f)
+    return sorted({str(q.get("category", "unknown")) for q in qa_list})
 
 
 def run_eval(
@@ -178,17 +227,17 @@ def run_eval(
 
     for i, qa in enumerate(qa_list, 1):
         question = qa["question"]
-        label = question[:72] + "…" if len(question) > 72 else question
+        label = question[:72] + "..." if len(question) > 72 else question
         print(f"  [{i:>2}/{len(qa_list)}] {label}", end="", flush=True)
 
         t0 = time.monotonic()
-        answer = ask(question)
+        answer = _mock_answer(question, qa) if mock else ask(question)
         elapsed = time.monotonic() - t0
 
         result = score_answer(qa, answer)
         results.append(result)
 
-        status = "✓" if result.passed else "✗"
+        status = "PASS" if result.passed else "FAIL"
         print(f"  {status} ({elapsed:.1f}s)")
 
         if verbose and not result.passed:
@@ -212,43 +261,44 @@ def print_summary(results: list[EvalResult], min_pass_rate: float) -> bool:
     for r in results:
         categories.setdefault(r.category, []).append(r)
 
-    print(f"\n{'═' * 55}")
+    print(f"\n{'=' * 55}")
     print("  Evaluation Summary")
-    print(f"{'═' * 55}")
+    print(f"{'=' * 55}")
     print(f"  Total:     {total}")
     print(f"  Passed:    {passed}")
     print(f"  Failed:    {failed}")
     print(f"  Pass rate: {pass_rate:.1f}% (threshold: {min_pass_rate:.0f}%)")
-    print(f"{'─' * 55}")
+    print(f"{'-' * 55}")
 
     print("  By category:")
     for cat, cat_results in sorted(categories.items()):
         cat_pass = sum(1 for r in cat_results if r.passed)
         cat_total = len(cat_results)
         pct = cat_pass / cat_total * 100 if cat_total else 0
-        bar = "█" * int(pct / 10) + "░" * (10 - int(pct / 10))
+        bar = "#" * int(pct / 10) + "." * (10 - int(pct / 10))
         print(f"    {cat:<14s} {bar} {cat_pass}/{cat_total} ({pct:.0f}%)")
 
     if failed:
-        print(f"\n{'─' * 55}")
+        print(f"\n{'-' * 55}")
         print("  Failures:")
         for r in results:
             if not r.passed:
-                print(f"    ✗ [{r.category}] {r.question}")
+                print(f"    FAIL [{r.category}] {r.question}")
                 if r.missing:
                     print(f"      missing: {r.missing}")
                 if r.unexpected:
                     print(f"      unexpected: {r.unexpected}")
 
-    print(f"{'═' * 55}")
+    print(f"{'=' * 55}")
     meets = pass_rate >= min_pass_rate
-    verdict = "PASS ✓" if meets else "FAIL ✗"
+    verdict = "PASS" if meets else "FAIL"
     print(f"  Result: {verdict}")
-    print(f"{'═' * 55}\n")
+    print(f"{'=' * 55}\n")
     return meets
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    categories = load_categories(GOLDEN_QA_PATH)
     parser = argparse.ArgumentParser(description="Run golden-QA evaluation against the Fabric Data Agent")
     parser.add_argument(
         "--mock",
@@ -269,7 +319,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--category",
-        choices=["top-n", "aggregation", "filter", "trend", "lookup"],
+        choices=categories,
         default=None,
         help="Run only questions in this category",
     )
@@ -296,10 +346,10 @@ def main(argv: list[str] | None = None) -> int:
 
     mode = "mock" if args.mock else "live"
     cat_label = f" [{args.category}]" if args.category else ""
-    print(f"\n{'═' * 55}")
-    print(f"  Fabric Data Agent — Golden QA Eval ({mode}){cat_label}")
+    print(f"\n{'=' * 55}")
+    print(f"  Fabric Data Agent - Golden QA Eval ({mode}){cat_label}")
     print(f"  {len(qa_list)} questions")
-    print(f"{'═' * 55}\n")
+    print(f"{'=' * 55}\n")
 
     results = run_eval(qa_list, mock=args.mock, verbose=args.verbose)
     meets_threshold = print_summary(results, args.pass_rate)

@@ -33,6 +33,9 @@ jobs:
       - name: Unit tests
         run: pytest tests/unit/
 
+      - name: Golden QA eval
+        run: python tests/eval/run_eval.py --mock --pass-rate 100
+
       - name: Demo readiness
         run: python scripts/demo_check.py
 

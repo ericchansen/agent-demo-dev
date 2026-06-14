@@ -3,6 +3,9 @@
 
 RG ?= fsa-demo-rg
 CAPACITY_NAME ?= fsa-demo-capacity
+MOCK ?= 1
+PASS_RATE ?= 100
+CATEGORY ?=
 
 .PHONY: lint format format-check typecheck test test-integration test-eval \
         infra-validate infra-deploy infra-teardown load-data load-market-data \
@@ -27,7 +30,7 @@ test-integration:
 	pytest tests/integration/ -v
 
 test-eval:
-	python tests/eval/run_eval.py
+	python tests/eval/run_eval.py $(if $(filter 1 true yes,$(MOCK)),--mock,) --pass-rate $(PASS_RATE) $(if $(CATEGORY),--category $(CATEGORY),)
 
 infra-validate:
 	az bicep build --file infra/main.bicep
