@@ -5,8 +5,8 @@ RG ?= fsa-demo-rg
 CAPACITY_NAME ?= fsa-demo-capacity
 
 .PHONY: lint format format-check typecheck test test-integration test-eval \
-        infra-validate infra-deploy infra-teardown load-data \
-        serve-researcher serve-sharepoint demo diagrams clean
+        infra-validate infra-deploy infra-teardown load-data load-market-data \
+        configure-market-agent serve-researcher serve-sharepoint demo diagrams clean
 
 lint:
 	ruff check src/ tests/
@@ -44,6 +44,12 @@ infra-teardown:
 
 load-data:
 	python demo/load-wwi-data.py
+
+load-market-data:
+	python demo/load-market-data.py
+
+configure-market-agent:
+	@echo "Usage: python demo/configure_market_agent.py --workspace-id <GUID> --agent-id <GUID> --lakehouse-id <GUID>"
 
 serve-researcher:
 	python -m src.agents.researcher.mcp_server

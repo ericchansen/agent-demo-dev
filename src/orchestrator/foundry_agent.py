@@ -54,6 +54,25 @@ Guidelines:
 - Proactively surface insights the user might not have asked for
 - When comparing time periods, show both absolute values and percentage change"""
 
+_MARKET_DATA_INSTRUCTIONS = """
+
+5. MARKET DATA: Query SEC EDGAR financial data for real US public companies via the
+   market data tool. Available metrics: revenue, net_income, total_assets from 10-K
+   (annual) and 10-Q (quarterly) filings. Use this for competitive intelligence,
+   industry analysis, and benchmarking against real-world companies.
+   - Join company_financials to companies on cik for industry context
+   - Cite SEC filing type and date in responses
+   - Round large currency values to millions (e.g., $45,123M)"""
+
+
+def _build_agent_instructions(config: OrchestratorConfig) -> str:
+    """Generate agent instructions based on which connections are configured."""
+    instructions = _AGENT_INSTRUCTIONS
+    if config.market_data_connection_id:
+        instructions += _MARKET_DATA_INSTRUCTIONS
+    return instructions
+
+
 ACCOUNT_ACTIVITY_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
@@ -295,12 +314,28 @@ def _build_tools(config: OrchestratorConfig) -> tuple[list[ToolDefinition], dict
         FabricIQPreviewTool(
             project_connection_id=config.fabric_iq_connection_id,
             require_approval="never",
+            name="wwi_sales_data",
+            description="Query Wide World Importers sales data warehouse via Fabric Data Agent",
         )
     ]
     handlers: dict[str, ToolHandler] = {
         "forecast_quota": forecast_quota_func,
         "generate_report": generate_report_func,
     }
+
+    # Add market data tool if configured.
+    if config.market_data_connection_id:
+        tools.append(
+            FabricIQPreviewTool(
+                project_connection_id=config.market_data_connection_id,
+                require_approval="never",
+                name="real_world_market_data",
+                description=(
+                    "Query SEC EDGAR financial data for real US public companies — "
+                    "revenue, net income, total assets from 10-K/10-Q filings"
+                ),
+            )
+        )
 
     if config.workiq_connection_id:
         tools.append(WorkIQPreviewTool(project_connection_id=config.workiq_connection_id))
@@ -343,7 +378,7 @@ def _get_or_create_agent(project_client: AIProjectClient, config: OrchestratorCo
         agent_name=_AGENT_NAME,
         definition=PromptAgentDefinition(
             model=config.model_deployment_name,
-            instructions=_AGENT_INSTRUCTIONS,
+            instructions=_build_agent_instructions(config),
             tools=cast(list[Tool], tools),
         ),
     )

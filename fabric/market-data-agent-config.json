@@ -1,0 +1,57 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/dataAgent/definition/dataAgent/2.1.0/schema.json",
+  "displayName": "Market Data Agent",
+  "description": "AI assistant for market research using SEC EDGAR financial data and company profiles.",
+  "systemPrompt": "You are an AI assistant for market research and competitive intelligence. You have access to SEC EDGAR financial data for major US public companies. Help users query company financials, compare competitors, and analyze industry trends.",
+  "tables": [
+    {
+      "name": "company_financials",
+      "description": "Normalized quarterly financial data from SEC 10-K (annual) and 10-Q (quarterly) filings. Contains revenue, net income, and total assets for ~50 major US public companies.",
+      "columns": [
+        { "name": "cik", "type": "int", "description": "SEC Central Index Key — unique company identifier" },
+        { "name": "ticker", "type": "string", "description": "Stock ticker symbol (e.g., MSFT, AAPL)" },
+        { "name": "company_name", "type": "string", "description": "Common company name" },
+        { "name": "sic_code", "type": "string", "description": "Standard Industrial Classification code" },
+        { "name": "industry", "type": "string", "description": "Human-readable industry label" },
+        { "name": "form", "type": "string", "description": "SEC filing type: 10-K (annual) or 10-Q (quarterly)" },
+        { "name": "fiscal_year", "type": "string", "description": "Fiscal year of the filing" },
+        { "name": "fiscal_period", "type": "string", "description": "Fiscal period: FY (full year), Q1, Q2, Q3" },
+        { "name": "period_end_date", "type": "string", "description": "End date of the reporting period (YYYYMMDD)" },
+        { "name": "filed", "type": "string", "description": "Date the filing was submitted to SEC (YYYYMMDD)" },
+        { "name": "revenue", "type": "decimal", "description": "Total revenue in USD" },
+        { "name": "net_income", "type": "decimal", "description": "Net income (profit/loss) in USD" },
+        { "name": "total_assets", "type": "decimal", "description": "Total assets on balance sheet in USD" }
+      ]
+    },
+    {
+      "name": "companies",
+      "description": "Company profile data for the curated list of ~50 major US public companies.",
+      "columns": [
+        { "name": "cik", "type": "int", "description": "SEC Central Index Key — join key to company_financials" },
+        { "name": "ticker", "type": "string", "description": "Stock ticker symbol" },
+        { "name": "company_name", "type": "string", "description": "Common company name" },
+        { "name": "sic_code", "type": "string", "description": "Standard Industrial Classification code" },
+        { "name": "industry", "type": "string", "description": "Human-readable industry label derived from SIC code" }
+      ]
+    }
+  ],
+  "keyTerminology": {
+    "CIK": "Central Index Key — SEC's unique numeric identifier for each filing entity",
+    "SIC": "Standard Industrial Classification — 4-digit code categorizing a company's primary business",
+    "10-K": "Annual report filed with the SEC containing audited financial statements",
+    "10-Q": "Quarterly report filed with the SEC containing unaudited financial statements",
+    "GAAP": "Generally Accepted Accounting Principles — US accounting standards",
+    "Revenue": "Total revenue/sales for the reporting period",
+    "Net Income": "Profit or loss after all expenses and taxes",
+    "Total Assets": "Sum of all assets on the balance sheet at period end",
+    "Fiscal Period": "FY = full fiscal year, Q1/Q2/Q3 = fiscal quarters (Q4 is typically reported in 10-K as FY)"
+  },
+  "exampleQueries": [
+    "What was Microsoft's revenue for the most recent fiscal year?",
+    "Compare revenue for Apple, Google, and Amazon over the last 3 years",
+    "Which companies in the Software & Services industry had the highest revenue?",
+    "Show quarterly revenue trend for NVIDIA",
+    "What is JPMorgan Chase's total assets vs. Bank of America?",
+    "Which company had the highest net income margin (net_income / revenue)?"
+  ]
+}

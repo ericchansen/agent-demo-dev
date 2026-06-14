@@ -179,6 +179,76 @@ def test_generate_report_with_malformed_forecast(tmp_path: Path, monkeypatch: py
     assert Path(result["file_path"]).exists()
 
 
+# ---------------------------------------------------------------------------
+# Market data connection — dynamic instructions and tool registration
+# ---------------------------------------------------------------------------
+
+
+def test_build_instructions_without_market_data() -> None:
+    """Instructions should NOT mention market data when connection is absent."""
+    build_fn = _load_attr("src.orchestrator.foundry_agent", "_build_agent_instructions")
+    config_cls = _load_attr("src.orchestrator.config", "OrchestratorConfig")
+
+    config = config_cls(
+        foundry_project_endpoint="https://test.endpoint",
+        model_deployment_name="gpt-4o",
+        fabric_iq_connection_id="test-wwi-id",
+        market_data_connection_id=None,
+    )
+
+    instructions = build_fn(config)
+    assert "MARKET DATA" not in instructions
+    assert "SEC EDGAR" not in instructions
+
+
+def test_build_instructions_with_market_data() -> None:
+    """Instructions should include market data section when connection is set."""
+    build_fn = _load_attr("src.orchestrator.foundry_agent", "_build_agent_instructions")
+    config_cls = _load_attr("src.orchestrator.config", "OrchestratorConfig")
+
+    config = config_cls(
+        foundry_project_endpoint="https://test.endpoint",
+        model_deployment_name="gpt-4o",
+        fabric_iq_connection_id="test-wwi-id",
+        market_data_connection_id="test-market-id",
+    )
+
+    instructions = build_fn(config)
+    assert "MARKET DATA" in instructions
+    assert "SEC EDGAR" in instructions
+
+
+def test_config_market_data_from_env() -> None:
+    """OrchestratorConfig should pick up MARKET_DATA_CONNECTION_ID from env."""
+    config_cls = _load_attr("src.orchestrator.config", "OrchestratorConfig")
+
+    env = {
+        "FOUNDRY_PROJECT_ENDPOINT": "https://test.endpoint",
+        "MODEL_DEPLOYMENT_NAME": "gpt-4o",
+        "FABRIC_IQ_CONNECTION_ID": "test-wwi-id",
+        "MARKET_DATA_CONNECTION_ID": "test-market-id",
+    }
+
+    with patch.dict("os.environ", env, clear=False), patch("dotenv.load_dotenv"):
+        config = config_cls.from_env()
+        assert config.market_data_connection_id == "test-market-id"
+
+
+def test_config_market_data_absent() -> None:
+    """OrchestratorConfig should have None market_data when env var is absent."""
+    config_cls = _load_attr("src.orchestrator.config", "OrchestratorConfig")
+
+    env = {
+        "FOUNDRY_PROJECT_ENDPOINT": "https://test.endpoint",
+        "MODEL_DEPLOYMENT_NAME": "gpt-4o",
+        "FABRIC_IQ_CONNECTION_ID": "test-wwi-id",
+    }
+
+    with patch.dict("os.environ", env, clear=True), patch("dotenv.load_dotenv"):
+        config = config_cls.from_env()
+        assert config.market_data_connection_id is None
+
+
 def test_generate_report_forecast_missing_fields(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Report handles partial forecast items when downstream validation is lenient."""
     generate_report_func = _load_attr("src.orchestrator.foundry_agent", "generate_report_func")

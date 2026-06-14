@@ -50,6 +50,24 @@ make load-data
 
 This script downloads WWI Parquet files from a public Azure Blob Storage container and uploads them into your Lakehouse. No customer-specific or sensitive data is used.
 
+### Step 2b: Load Market Data (Optional)
+
+To enable the **real-world market data path** alongside WWI, load SEC EDGAR financial data for ~50 major US public companies:
+
+```bash
+make load-market-data
+```
+
+This downloads a recent SEC EDGAR quarterly data set, filters to a curated company list (`demo/market-data/companies.csv`), normalizes US GAAP tags into simple columns (revenue, net_income, total_assets), and outputs Parquet + CSV files.
+
+Then upload to a **separate** Fabric Lakehouse:
+
+1. Create a new Lakehouse (e.g., `MarketDataLH`) in your workspace.
+2. Upload `company_financials.parquet` and `companies.csv` from `demo/market-data/output/`.
+3. Right-click each file → **Load to table**.
+
+See [Data Paths](data-paths.md) for the full comparison of both data paths.
+
 ---
 
 ## Step 3: Create Fabric Data Agent

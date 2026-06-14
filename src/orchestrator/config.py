@@ -7,6 +7,7 @@ Required environment variables:
 
 Optional environment variables:
 - WORK_IQ_CONNECTION_ID
+- MARKET_DATA_CONNECTION_ID
 """
 
 from __future__ import annotations
@@ -29,6 +30,7 @@ class OrchestratorConfig:
     model_deployment_name: str
     fabric_iq_connection_id: str
     workiq_connection_id: str | None = None
+    market_data_connection_id: str | None = None
 
     @classmethod
     def from_env(cls) -> OrchestratorConfig:
@@ -64,4 +66,5 @@ class OrchestratorConfig:
             model_deployment_name=model,
             fabric_iq_connection_id=fabric_iq,
             workiq_connection_id=os.environ.get("WORK_IQ_CONNECTION_ID"),
+            market_data_connection_id=os.environ.get("MARKET_DATA_CONNECTION_ID"),
         )

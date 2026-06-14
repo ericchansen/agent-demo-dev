@@ -18,18 +18,21 @@ An AI sales agent accelerator for **Wide World Importers** that shows how to pai
 ┌─ CLI Surface (Prototype) ─────────────────────┐
 │ Copilot CLI → MCP Servers                      │
 │   → wwi-sales-data (Fabric Data Agent)         │
+│   → market-data (SEC EDGAR financials)         │
 │   → workiq (M365 activity data)                │
 │   → quota-forecast skill (inline report)       │
 └────────────────────────────────────────────────┘
 
 ┌─ M365 Surface (Production) ───────────────────┐
 │ M365 Copilot / Teams → Foundry Agent           │
-│   → Fabric IQ (NL→SQL platform tool)           │
+│   → Fabric IQ — wwi_sales_data (WWI)           │
+│   → Fabric IQ — real_world_market_data (SEC)   │
 │   → WorkIQ (M365 activity platform tool, OBO)  │
 │   → Report Generator (DOCX + OneDrive link)    │
 └────────────────────────────────────────────────┘
 
 Same Data Agent backend. Same business logic. Different distribution.
+Two data paths: fabricated (WWI) + real-world (SEC EDGAR).
 ```
 
 ## Quick Start (CLI)

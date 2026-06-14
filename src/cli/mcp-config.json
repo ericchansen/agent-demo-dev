@@ -19,6 +19,11 @@
       "url": "<PASTE_YOUR_FABRIC_DATA_AGENT_MCP_URL_HERE>",
       "description": "Wide World Importers sales data via Fabric Data Agent"
     },
+    "market-data": {
+      "type": "http",
+      "url": "<PASTE_YOUR_MARKET_DATA_AGENT_MCP_URL_HERE>",
+      "description": "SEC EDGAR financial data for real US public companies via Fabric Data Agent"
+    },
     "researcher-agent": {
       "command": "python",
       "args": ["-m", "src.agents.researcher.mcp_server"],
