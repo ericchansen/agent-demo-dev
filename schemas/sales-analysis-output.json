@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ericchansen/agent-demo/schemas/sales-analysis-output.json",
+  "title": "SalesAnalysisOutput",
+  "description": "Shared intermediate format consumed by all artifact generators (Excel, HTML, DOCX). Produced by the orchestration skill after gathering data from Fabric, web research, and WorkIQ.",
+  "type": "object",
+  "required": ["metadata", "summary", "pipeline", "quota"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["generated_at", "customer_name"],
+      "properties": {
+        "generated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when the analysis was generated."
+        },
+        "customer_name": {
+          "type": "string",
+          "description": "Primary customer or territory being analyzed."
+        },
+        "territory": {
+          "type": "string",
+          "description": "Sales territory (e.g., 'Southeast', 'Great Lakes')."
+        },
+        "analyst": {
+          "type": "string",
+          "description": "Name of the user who requested the analysis."
+        },
+        "data_sources": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of data sources used."
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["total_revenue_ytd", "total_revenue_prior_year"],
+      "properties": {
+        "total_revenue_ytd": { "type": "number" },
+        "total_revenue_prior_year": { "type": "number" },
+        "yoy_growth_pct": { "type": "number" },
+        "total_customers": { "type": "integer" },
+        "top_category": { "type": "string" },
+        "executive_summary": { "type": "string" }
+      }
+    },
+    "pipeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["deal_name", "value", "stage"],
+        "properties": {
+          "deal_name": { "type": "string" },
+          "customer": { "type": "string" },
+          "value": { "type": "number" },
+          "stage": { "type": "string" },
+          "close_date": { "type": "string", "format": "date" },
+          "probability": { "type": "number" },
+          "territory": { "type": "string" },
+          "rep": { "type": "string" }
+        }
+      }
+    },
+    "quota": {
+      "type": "object",
+      "required": ["annual_target", "ytd_actual"],
+      "properties": {
+        "annual_target": { "type": "number" },
+        "ytd_actual": { "type": "number" },
+        "attainment_pct": { "type": "number" },
+        "pipeline_coverage": { "type": "number" },
+        "run_rate_projection": { "type": "number" },
+        "risk_rating": { "type": "string", "enum": ["Green", "Yellow", "Red"] },
+        "by_category": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["category", "current_fy_revenue"],
+            "properties": {
+              "category": { "type": "string" },
+              "current_fy_revenue": { "type": "number" },
+              "growth_rate": { "type": "number" },
+              "projected_fy_revenue": { "type": "number" }
+            }
+          }
+        },
+        "monthly_trend": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["month", "revenue"],
+            "properties": {
+              "month": { "type": "string" },
+              "revenue": { "type": "number" },
+              "target": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "research": {
+      "type": "object",
+      "properties": {
+        "market_summary": { "type": "string" },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["title", "url"],
+            "properties": {
+              "title": { "type": "string" },
+              "url": { "type": "string", "format": "uri" },
+              "source": { "type": "string" },
+              "date": { "type": "string", "format": "date" },
+              "snippet": { "type": "string" },
+              "sales_implication": { "type": "string" }
+            }
+          }
+        },
+        "tailwinds": { "type": "array", "items": { "type": "string" } },
+        "headwinds": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "activity": {
+      "type": "object",
+      "properties": {
+        "engagement_score": { "type": "number" },
+        "meetings_last_30d": { "type": "integer" },
+        "emails_last_30d": { "type": "integer" },
+        "last_meeting_date": { "type": "string", "format": "date" },
+        "last_email_date": { "type": "string", "format": "date" },
+        "relationship_strength": { "type": "string", "enum": ["Strong", "Active", "Cooling", "Stale"] },
+        "key_contacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "role": { "type": "string" },
+              "last_interaction": { "type": "string", "format": "date" },
+              "interaction_count": { "type": "integer" }
+            }
+          }
+        }
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action", "rationale"],
+        "properties": {
+          "action": { "type": "string" },
+          "rationale": { "type": "string" },
+          "priority": { "type": "string", "enum": ["High", "Medium", "Low"] },
+          "data_source": { "type": "string" }
+        }
+      }
+    }
+  }
+}
