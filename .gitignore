@@ -58,3 +58,6 @@ website/node_modules/
 website/.docusaurus/
 website/build/
 output/
+
+# Agent Looper oversized-prompt spill file
+.looper-prompt.md
