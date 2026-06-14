@@ -60,11 +60,29 @@ The primary production path (`src/orchestrator/foundry_agent.py`). Registers too
 5. **Report generator function** — produces DOCX/PPTX, uploads to OneDrive, returns download link
 
 ### Hosted Agent (bring-your-own-code)
-A containerized agent (`src/orchestrator/hosted_agent/`) with full control over tool orchestration. It exposes a Copilot SDK-compatible chat adapter surface plus a deterministic local demo flow, and it wires the same production tool set: Fabric MCP queries, quota forecasting, quota estimation artifacts, report generation, web research, quota attainment, and account activity fallback.
+A containerized agent (`src/orchestrator/hosted_agent/`) with full control over tool orchestration. It exposes a `HostedChatAdapter` chat surface plus a deterministic local demo flow, and it wires the same production tool set: Fabric MCP queries, quota forecasting, quota estimation artifacts, report generation, web research, quota attainment, and account activity fallback.
 
 > 📖 [Foundry Hosted Agents](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-hosted)
 
-Configure hosted containers with `FABRIC_MCP_URL`, `FABRIC_MCP_TOOL_NAME`, `MODEL_ENDPOINT`, `MODEL_DEPLOYMENT`, and any Copilot SDK auth/runtime variables required by your selected adapter. Set `HOSTED_AGENT_OUTPUT_DIR` when you want quota artifacts written outside the default `output/hosted-agent` path.
+#### Adapter modes
+
+`process_invocation()` resolves a chat adapter through `build_adapter()`, selected by the `HOSTED_AGENT_ADAPTER` environment variable:
+
+| Mode | Adapter | When to use |
+|---|---|---|
+| `auto` (default) | Azure if configured, else local runtime | Safe default — uses the model only when `MODEL_ENDPOINT` and `MODEL_DEPLOYMENT` are set, otherwise the deterministic local runtime |
+| `local` | `LocalDeterministicAdapter` | Offline demos and tests — routes each prompt to one tool and drives the real tool-calling loop with no credentials |
+| `azure` | `AzureManagedIdentityChatAdapter` | Production — authenticates with `DefaultAzureCredential` (the container's managed identity) and calls the Foundry project's chat-completions deployment |
+
+#### Configuration
+
+Configure hosted containers with `FABRIC_MCP_URL`, `FABRIC_MCP_TOOL_NAME`, `MODEL_ENDPOINT` (Foundry project endpoint), and `MODEL_DEPLOYMENT` (model deployment name). Set `HOSTED_AGENT_ADAPTER` to pick the adapter mode and `HOSTED_AGENT_OUTPUT_DIR` when you want quota artifacts written outside the default `output/hosted-agent` path. The `azure` adapter raises a clear `HostedAgentConfigurationError` listing any missing variables.
+
+Each tool call emits a structured, content-free log line (`tool=… status=… duration_ms=… artifacts=…`) so tool routing, latency, and failures are observable without leaking customer data or generated report content.
+
+#### Validation status
+
+The deterministic local adapter, factory selection, and tool routing are covered by offline unit tests and the `python scripts/demo_check.py --docker` smoke check. The `azure` adapter is unit-tested against a mocked model client; live Fabric and live model validation are **not** exercised in CI and require real `FABRIC_MCP_URL`, `MODEL_ENDPOINT`, and managed-identity credentials.
 
 The agent's system prompt encodes the orchestration logic — when to call which tool, how to combine results, and how to format output.
 
