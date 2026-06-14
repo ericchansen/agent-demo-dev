@@ -34,12 +34,25 @@ This demo shows the same workflow in two surfaces.
 Based on that data, generate a quota forecast for Tailspin Toys for FY27
 ```
 
-*Expected: The agent calls the forecast skill → produces inline markdown with projections*
+*Expected: The agent calls the forecast skill -> produces XLSX, HTML, and PDF report artifacts with projections*
 
 **What to point out:**
 - The skill chained multiple tool calls automatically
 - Output includes projections based on historical trends
 - This is a reusable workflow, not a one-off prompt
+
+### Query 3: Scenario comparison
+
+```
+Now give me an aggressive and a conservative version of that quota
+```
+
+*Expected: The agent re-runs the skill with `scenario: aggressive` and `scenario: conservative` -> two artifact sets whose totals bracket the base case*
+
+**What to point out:**
+- Scenarios are deterministic, not model guesses
+- The Excel workbook includes an Assumptions sheet for auditability
+- HTML artifacts embed the chart inline for easy sharing
 
 > "That's the prototype. Same MCP servers, zero custom code. Now let's see the business user experience."
 
@@ -66,11 +79,11 @@ Based on that data, generate a quota forecast for Tailspin Toys for FY27
 @WWISalesAgent Generate an FY27 quota forecast report for Tailspin Toys
 ```
 
-*Expected: Agent generates DOCX → uploads to OneDrive → returns download link*
+*Expected: Agent queries Fabric, adds WorkIQ context, generates XLSX/HTML/PDF artifacts -> returns file paths or sharing links*
 
 **What to point out:**
-- The agent produced a real document, not just chat text
-- The DOCX is in OneDrive — shareable, editable, trackable
+- The agent produced real artifacts, not just chat text
+- The same scenario-aware quota estimator runs behind the Foundry function tool
 - Same Data Agent backend as the CLI, different output format
 
 ## Transition narrative
@@ -86,7 +99,7 @@ Between Act 1 and Act 2, explain the translation:
 | Cross-tenant OAuth prompt | Pre-auth all surfaces 10 min before demo |
 | WorkIQ not responding | Show pre-cached activity summary |
 | Agent not visible in M365 | Use Foundry playground instead |
-| DOCX upload fails | Show pre-generated DOCX from local run |
+| Artifact upload fails | Show pre-generated XLSX/HTML/PDF files from local run |
 | Fabric capacity paused | Resume 15 min before: `az fabric capacity resume` |
 | Slow first query | Warm up with a test query 5 min before demo |
 
@@ -97,4 +110,4 @@ Between Act 1 and Act 2, explain the translation:
 - [ ] Copilot CLI authenticated and MCP servers loaded
 - [ ] Foundry agent responding in playground
 - [ ] M365 Copilot can see the agent (@mention works)
-- [ ] Pre-generated DOCX available as fallback
+- [ ] Pre-generated XLSX/HTML/PDF artifacts available as fallback

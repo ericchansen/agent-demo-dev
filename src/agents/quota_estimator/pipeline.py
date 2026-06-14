@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import cast
 
@@ -27,6 +27,26 @@ _CATEGORY_FIELDS = ("category", "product_category", "ProductCategory", "stock_it
 _REVENUE_FIELDS = ("revenue", "total_revenue", "sales_amount", "TotalDue", "extended_price", "ExtendedPrice")
 _QUANTITY_FIELDS = ("quantity", "Quantity", "quantity_sold", "QuantitySold")
 
+# Deterministic scenario adjustments applied on top of the trend, market, and engagement signals.
+_SCENARIO_ADJUSTMENTS: dict[str, float] = {
+    "conservative": -0.03,
+    "base": 0.0,
+    "aggressive": 0.03,
+}
+_DEFAULT_SCENARIO = "base"
+
+
+def _normalize_scenario(scenario: str | None) -> str:
+    if scenario is None:
+        return _DEFAULT_SCENARIO
+    normalized = str(scenario).strip().lower()
+    if not normalized:
+        return _DEFAULT_SCENARIO
+    if normalized not in _SCENARIO_ADJUSTMENTS:
+        allowed = ", ".join(sorted(_SCENARIO_ADJUSTMENTS))
+        raise ValueError(f"Unsupported scenario '{scenario}'. Allowed values: {allowed}.")
+    return normalized
+
 
 def build_quota_estimate(
     *,
@@ -34,19 +54,22 @@ def build_quota_estimate(
     sales_rows: Sequence[Mapping[str, object]],
     research_data: Mapping[str, object] | None = None,
     workiq_activity: Mapping[str, object] | None = None,
+    scenario: str | None = _DEFAULT_SCENARIO,
     generated_at: datetime | None = None,
 ) -> QuotaEstimate:
     """Build a deterministic quota estimate from Fabric, research, and WorkIQ inputs."""
+    normalized_scenario = _normalize_scenario(scenario)
     normalized_rows = _normalize_sales_rows(sales_rows)
     research_context = _normalize_research_context(research_data or {})
     activity = _normalize_workiq_activity(workiq_activity or {})
-    recommendations = _build_recommendations(normalized_rows, research_context, activity)
+    recommendations = _build_recommendations(normalized_rows, research_context, activity, normalized_scenario)
     timestamp = generated_at or datetime.now()
 
     methodology = (
         "Grouped WWI trailing sales rows by SalesTerritory and product category, calculated a bounded "
         "historical trend for each group, then adjusted growth using market research and WorkIQ engagement "
-        "signals. Recommended quota equals trailing revenue multiplied by the final growth rate."
+        f"signals and the '{normalized_scenario}' scenario. Recommended quota equals trailing revenue "
+        "multiplied by the final growth rate."
     )
     citations = [
         "Fabric Data Agent query over Wide World Importers SalesOrderHeader joined to SalesTerritory.",
@@ -57,6 +80,7 @@ def build_quota_estimate(
     return QuotaEstimate(
         customer_name=customer_name,
         generated_at=timestamp,
+        scenario=normalized_scenario,
         sales_rows=normalized_rows,
         research_context=research_context,
         workiq_activity=activity,
@@ -72,8 +96,10 @@ def generate_quota_estimation_report(
     sales_rows: Sequence[Mapping[str, object]],
     research_data: Mapping[str, object] | None = None,
     workiq_activity: Mapping[str, object] | None = None,
+    scenario: str | None = _DEFAULT_SCENARIO,
     output_dir: str | Path = Path("output") / "quota-estimates",
     formats: Sequence[str] | None = None,
+    generated_at: datetime | None = None,
 ) -> dict[str, object]:
     """Generate quota estimate artifacts and return a JSON-serializable result."""
     estimate = build_quota_estimate(
@@ -81,11 +107,13 @@ def generate_quota_estimation_report(
         sales_rows=sales_rows,
         research_data=research_data,
         workiq_activity=workiq_activity,
+        scenario=scenario,
+        generated_at=generated_at,
     )
     requested_formats = _normalize_formats(formats)
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
-    stem = f"{_slugify_filename(customer_name)}_quota_estimate"
+    stem = f"{_slugify_filename(customer_name)}_{estimate.scenario}_quota_estimate"
 
     artifacts: list[GeneratedArtifact] = []
     for fmt in requested_formats:
@@ -103,6 +131,7 @@ def generate_quota_estimation_report(
     estimate_with_artifacts = QuotaEstimate(
         customer_name=estimate.customer_name,
         generated_at=estimate.generated_at,
+        scenario=estimate.scenario,
         sales_rows=estimate.sales_rows,
         research_context=estimate.research_context,
         workiq_activity=estimate.workiq_activity,
@@ -120,6 +149,7 @@ def quota_estimate_to_dict(estimate: QuotaEstimate) -> dict[str, object]:
         "status": "success",
         "customer_name": estimate.customer_name,
         "generated_at": estimate.generated_at.isoformat(timespec="seconds"),
+        "scenario": estimate.scenario,
         "summary": {
             "trailing_revenue_total": round(estimate.trailing_revenue_total, 2),
             "recommended_quota_total": round(estimate.recommended_quota_total, 2),
@@ -134,6 +164,7 @@ def quota_estimate_to_dict(estimate: QuotaEstimate) -> dict[str, object]:
                 "historical_growth_rate": round(item.historical_growth_rate, 4),
                 "market_adjustment": round(item.market_adjustment, 4),
                 "engagement_adjustment": round(item.engagement_adjustment, 4),
+                "scenario_adjustment": round(item.scenario_adjustment, 4),
                 "recommended_growth_rate": round(item.recommended_growth_rate, 4),
                 "recommended_quota": round(item.recommended_quota, 2),
                 "rationale": item.rationale,
@@ -223,6 +254,7 @@ def _build_recommendations(
     rows: Sequence[HistoricalSalesRow],
     research_context: ResearchContext,
     activity: WorkIQActivity,
+    scenario: str,
 ) -> list[QuotaRecommendation]:
     grouped: dict[tuple[str, str], list[HistoricalSalesRow]] = defaultdict(list)
     for row in rows:
@@ -231,6 +263,7 @@ def _build_recommendations(
     recommendations: list[QuotaRecommendation] = []
     market_adjustment = _market_adjustment(research_context.growth_rate_hint)
     engagement_adjustment = _engagement_adjustment(activity)
+    scenario_adjustment = _SCENARIO_ADJUSTMENTS[scenario]
 
     for territory, category in sorted(grouped):
         group_rows = grouped[(territory, category)]
@@ -238,7 +271,7 @@ def _build_recommendations(
         trailing_quantity = sum(row.quantity for row in group_rows)
         historical_growth_rate = _historical_growth_rate(group_rows)
         recommended_growth_rate = _clamp(
-            0.04 + (historical_growth_rate * 0.5) + market_adjustment + engagement_adjustment,
+            0.04 + (historical_growth_rate * 0.5) + market_adjustment + engagement_adjustment + scenario_adjustment,
             -0.05,
             0.25,
         )
@@ -246,7 +279,8 @@ def _build_recommendations(
         rationale = (
             f"{territory} / {category}: trend {historical_growth_rate * 100:.1f}%, "
             f"market adjustment {market_adjustment * 100:.1f}%, "
-            f"engagement adjustment {engagement_adjustment * 100:.1f}%."
+            f"engagement adjustment {engagement_adjustment * 100:.1f}%, "
+            f"{scenario} scenario adjustment {scenario_adjustment * 100:.1f}%."
         )
         recommendations.append(
             QuotaRecommendation(
@@ -257,6 +291,7 @@ def _build_recommendations(
                 historical_growth_rate=historical_growth_rate,
                 market_adjustment=market_adjustment,
                 engagement_adjustment=engagement_adjustment,
+                scenario_adjustment=scenario_adjustment,
                 recommended_growth_rate=recommended_growth_rate,
                 recommended_quota=recommended_quota,
                 rationale=rationale,
@@ -432,48 +467,57 @@ def _clamp(value: float, minimum: float, maximum: float) -> float:
     return max(minimum, min(maximum, value))
 
 
-def demo_sales_rows() -> list[dict[str, object]]:
-    """Return deterministic WWI-shaped sample rows for local demos and compatibility wrappers."""
+def demo_sales_rows(as_of: date | None = None) -> list[dict[str, object]]:
+    """Return deterministic WWI-shaped sample rows for local demos and compatibility wrappers.
+
+    Order dates are generated relative to ``as_of`` (defaults to today) so demos always show a
+    recent trailing window. Pass a fixed ``as_of`` in tests to keep output deterministic.
+    """
+    anchor = as_of or date.today()
+
+    def _offset(days: int) -> str:
+        return (anchor - timedelta(days=days)).isoformat()
+
     return [
         {
             "territory": "Northwest",
             "category": "Novelty Items",
-            "order_date": "2025-08-01",
+            "order_date": _offset(320),
             "revenue": 190000,
             "quantity": 410,
         },
         {
             "territory": "Northwest",
             "category": "Novelty Items",
-            "order_date": "2026-03-01",
+            "order_date": _offset(40),
             "revenue": 260000,
             "quantity": 520,
         },
         {
             "territory": "Northwest",
             "category": "Toys",
-            "order_date": "2025-09-15",
+            "order_date": _offset(270),
             "revenue": 90000,
             "quantity": 240,
         },
         {
             "territory": "Northwest",
             "category": "Toys",
-            "order_date": "2026-04-10",
+            "order_date": _offset(20),
             "revenue": 125000,
             "quantity": 300,
         },
         {
             "territory": "Southwest",
             "category": "Clothing",
-            "order_date": "2025-10-01",
+            "order_date": _offset(250),
             "revenue": 155000,
             "quantity": 350,
         },
         {
             "territory": "Southwest",
             "category": "Clothing",
-            "order_date": "2026-05-01",
+            "order_date": _offset(15),
             "revenue": 165000,
             "quantity": 360,
         },
@@ -500,18 +544,27 @@ def demo_research_data(customer_name: str) -> dict[str, object]:
     }
 
 
-def demo_workiq_activity(customer_name: str) -> dict[str, object]:
-    """Return deterministic synthetic WorkIQ activity for tenants without WorkIQ credentials."""
+def demo_workiq_activity(customer_name: str, as_of: date | None = None) -> dict[str, object]:
+    """Return deterministic synthetic WorkIQ activity for tenants without WorkIQ credentials.
+
+    Activity dates are generated relative to ``as_of`` (defaults to today). Pass a fixed ``as_of``
+    in tests to keep output deterministic.
+    """
+    anchor = as_of or date.today()
+
+    def _offset(days: int) -> str:
+        return (anchor - timedelta(days=days)).isoformat()
+
     return {
         "customer": customer_name,
         "source": "synthetic demo activity (WorkIQ credentials not configured)",
         "engagement_score": "High",
-        "last_contact": "2026-05-28",
+        "last_contact": _offset(3),
         "recent_activity": [
-            {"type": "email", "subject": f"FY27 planning - {customer_name}", "date": "2026-05-28"},
-            {"type": "meeting", "subject": f"Quota workshop - {customer_name}", "date": "2026-05-18"},
-            {"type": "email", "subject": f"Pricing proposal - {customer_name}", "date": "2026-05-10"},
-            {"type": "meeting", "subject": f"QBR prep - {customer_name}", "date": "2026-04-30"},
+            {"type": "email", "subject": f"FY planning - {customer_name}", "date": _offset(3)},
+            {"type": "meeting", "subject": f"Quota workshop - {customer_name}", "date": _offset(13)},
+            {"type": "email", "subject": f"Pricing proposal - {customer_name}", "date": _offset(21)},
+            {"type": "meeting", "subject": f"QBR prep - {customer_name}", "date": _offset(34)},
         ],
     }
 
@@ -541,6 +594,7 @@ def forecast_payload_from_estimate(estimate: QuotaEstimate) -> dict[str, object]
 
     return {
         "customer": estimate.customer_name,
+        "scenario": estimate.scenario,
         "current_fy_total": round(estimate.trailing_revenue_total, 2),
         "projected_fy_total": round(estimate.recommended_quota_total, 2),
         "overall_growth_rate": round(estimate.overall_growth_rate, 4),

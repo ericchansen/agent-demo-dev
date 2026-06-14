@@ -108,8 +108,11 @@ Research Contoso Ltd — focus on earnings and expansion
 ```
 
 ```
-Generate a quota forecast report for Tailspin Toys
+Generate an aggressive quota forecast report for Tailspin Toys
 ```
+
+The quota forecast skill accepts a scenario — `conservative`, `base` (default), or `aggressive` — which applies a
+deterministic growth delta and is recorded in every generated artifact.
 
 ## MCP Servers
 

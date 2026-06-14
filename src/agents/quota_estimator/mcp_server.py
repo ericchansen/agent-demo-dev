@@ -48,6 +48,12 @@ async def list_tools() -> list[Tool]:
                         "description": "WorkIQ or synthetic M365 activity context.",
                         "additionalProperties": True,
                     },
+                    "scenario": {
+                        "type": "string",
+                        "enum": ["conservative", "base", "aggressive"],
+                        "default": "base",
+                        "description": "Deterministic forecast scenario applied to recommended growth.",
+                    },
                     "output_dir": {
                         "type": "string",
                         "description": "Directory where generated report artifacts should be written.",
@@ -88,11 +94,16 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     if formats_raw is not None and not isinstance(formats_raw, list):
         raise ValueError("formats must be a list of strings when provided.")
 
+    scenario = arguments.get("scenario")
+    if scenario is not None and not isinstance(scenario, str):
+        raise ValueError("scenario must be a string when provided.")
+
     result = generate_quota_estimation_report(
         customer_name=customer_name,
         sales_rows=sales_rows_raw,
         research_data=research_data,
         workiq_activity=workiq_activity,
+        scenario=scenario if scenario is not None else "base",
         output_dir=str(arguments.get("output_dir", "output/quota-estimates")),
         formats=[str(item) for item in formats_raw] if formats_raw is not None else None,
     )

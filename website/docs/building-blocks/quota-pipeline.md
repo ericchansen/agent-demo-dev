@@ -14,14 +14,14 @@ Copilot CLI skill
   -> wwi-sales-data Fabric Data Agent MCP
   -> researcher-agent MCP
   -> synthetic or mock WorkIQ activity
-  -> quota-estimator MCP
+  -> quota-estimator MCP (scenario: conservative | base | aggressive)
   -> .xlsx, .html, .pdf
 
 M365 Copilot / Teams
   -> Azure AI Foundry agent
   -> FabricIQPreviewTool
   -> WorkIQPreviewTool or get_account_activity mock
-  -> generate_quota_estimation_report function tool
+  -> generate_quota_estimation_report function tool (scenario aware)
   -> .xlsx, .html, .pdf
 ```
 
@@ -32,22 +32,39 @@ M365 Copilot / Teams
 | Shared `src/agents/quota_estimator/` package | Keeps quota math and rendering consistent between CLI prototypes and Foundry production agents. |
 | Fabric-first inputs | The estimator expects rows shaped like `SalesOrderHeader` joined to `SalesTerritory`, so it stays close to WWI source data. |
 | Deterministic calculations | Demo results are repeatable and testable without an LLM deciding quota math. |
+| Deterministic scenarios | `conservative`, `base`, and `aggressive` apply fixed growth deltas (-3%, 0%, +3%) so stakeholders can compare bounded outcomes without re-querying. |
 | Mock-safe WorkIQ | The demo uses synthetic M365 activity unless WorkIQ credentials are configured. No real WorkIQ API calls are required. |
-| Real artifacts | Excel, HTML, and PDF outputs prove the workflow is more than a chat response. |
+| Injectable dates | Demo sales and activity dates are generated relative to an `as_of` date (today by default) so demos always look current, while tests pin a fixed date for determinism. |
+| Real artifacts | Excel, HTML (with an embedded base64 chart), and PDF outputs prove the workflow is more than a chat response. |
+
+## Scenario modes
+
+Every entry point accepts an optional `scenario` field:
+
+| Scenario | Growth delta | Use it for |
+|---|---|---|
+| `conservative` | -3% | Floor planning and downside cases. |
+| `base` (default) | 0% | The recommended, evidence-weighted forecast. |
+| `aggressive` | +3% | Stretch targets and upside planning. |
+
+The delta is added to the trend, market, and engagement signals before the final growth rate is clamped to a safe
+range. Generating all three scenarios for the same inputs yields strictly increasing quota totals
+(`conservative < base < aggressive`), which the unit tests assert. The chosen scenario is recorded in the artifact
+file name, the Excel **Summary** and **Assumptions** sheets, the HTML header, and the PDF cover page.
 
 ## Data flow
 
-1. The user asks for a quota forecast report.
+1. The user asks for a quota forecast report and optionally names a scenario.
 2. The agent queries Fabric for trailing historical sales rows with territory, order date, revenue, quantity, and
    category when available.
 3. The agent gathers market context from `researcher-agent` or Copilot research.
 4. The agent gathers WorkIQ activity. In demo mode this is realistic synthetic email and meeting activity.
-5. The quota estimator groups rows by territory and category, calculates historical trend, applies market and
-   engagement adjustments, and records methodology plus citations.
+5. The quota estimator groups rows by territory and category, calculates historical trend, applies market,
+   engagement, and scenario adjustments, and records methodology plus citations.
 6. Renderers write:
-   - `*_quota_estimate.xlsx` with Summary, Recommendations, Sales Detail, and Methodology sheets
-   - `*_quota_estimate.html` with a complete browser-viewable report
-   - `*_quota_estimate.pdf` with an executive summary and chart
+   - `*_<scenario>_quota_estimate.xlsx` with Summary, Recommendations, Sales Detail, Methodology, and Assumptions sheets
+   - `*_<scenario>_quota_estimate.html` with a complete browser-viewable report and an embedded chart image
+   - `*_<scenario>_quota_estimate.pdf` with an executive summary and chart
 
 ## Customizing for another dataset
 
@@ -69,11 +86,20 @@ not have product categories, omit the category field and the estimator will grou
 Configure the local MCP servers from `src/cli/mcp-config.json`, then invoke the skill:
 
 ```text
-Generate a quota forecast report for Tailspin Toys
+Generate an aggressive quota forecast report for Tailspin Toys
 ```
 
 The skill instructs Copilot CLI to query `wwi-sales-data`, call `researcher-agent`, use mock or synthetic WorkIQ
-activity when needed, then call `quota-estimator.generate_quota_estimation_report`.
+activity when needed, then call `quota-estimator.generate_quota_estimation_report` with the requested scenario.
+
+> **MCP configuration:** `src/cli/mcp-config.json` is the authoritative, fully documented server registry for the
+> CLI surface. The workspace files `.github/mcp.json` and `.vscode/mcp.json` are kept in sync and list the same
+> stdio servers (`researcher-agent`, `sharepoint-agent`, `report-generator`, `quota-estimator`) plus the
+> `wwi-sales-data` HTTP endpoint, so the skill's referenced servers resolve in both VS Code and Copilot CLI.
+
+> **WorkIQ fallback:** When no WorkIQ connection is configured the pipeline accepts synthetic activity from
+> `demo_workiq_activity(...)`. It is clearly labelled `synthetic demo activity (WorkIQ credentials not configured)`
+> in the report sources, and it still drives the engagement adjustment so the demo behaves like the production path.
 
 ## Running from Foundry / M365 Copilot
 
@@ -81,8 +107,8 @@ The Foundry orchestrator in `src/orchestrator/foundry_agent.py` exposes:
 
 | Tool | Purpose |
 |---|---|
-| `generate_quota_estimation_report` | Generates XLSX, HTML, and PDF artifacts from Fabric rows, research, and WorkIQ activity. |
-| `forecast_quota` | Compatibility wrapper that returns the legacy structured forecast payload for older prompts and tests. |
+| `generate_quota_estimation_report` | Generates XLSX, HTML, and PDF artifacts from Fabric rows, research, and WorkIQ activity. Accepts an optional `scenario`. |
+| `forecast_quota` | Compatibility wrapper that returns the legacy structured forecast payload. Also accepts an optional `scenario`. |
 | `get_account_activity` | Mock WorkIQ fallback when a WorkIQ connection is not configured. |
 
 Agent instructions tell the model to use `FabricIQPreviewTool` first, then WorkIQ or the mock fallback, and finally
@@ -93,9 +119,10 @@ the quota report function.
 Run a local smoke test from the repo root:
 
 ```powershell
-uv run python -c "from src.agents.quota_estimator.pipeline import demo_research_data, demo_sales_rows, demo_workiq_activity, generate_quota_estimation_report; print(generate_quota_estimation_report(customer_name='Tailspin Toys', sales_rows=demo_sales_rows(), research_data=demo_research_data('Tailspin Toys'), workiq_activity=demo_workiq_activity('Tailspin Toys'), output_dir='output/quota-smoke'))"
+uv run python -c "from src.agents.quota_estimator.pipeline import demo_research_data, demo_sales_rows, demo_workiq_activity, generate_quota_estimation_report; print(generate_quota_estimation_report(customer_name='Tailspin Toys', sales_rows=demo_sales_rows(), research_data=demo_research_data('Tailspin Toys'), workiq_activity=demo_workiq_activity('Tailspin Toys'), scenario='aggressive', output_dir='output/quota-smoke'))"
 ```
 
-Open the generated workbook and confirm it has Summary, Recommendations, Sales Detail, and Methodology sheets. Open
-the HTML file in a browser and the PDF in a reader. The generated files are written under `output/`, which is ignored
-by git.
+Open the generated workbook and confirm it has Summary, Recommendations, Sales Detail, Methodology, and Assumptions
+sheets. Open the HTML file in a browser (the chart is embedded inline) and the PDF in a reader. The generated files
+are written under `output/`, which is ignored by git. The same end-to-end path is exercised in CI by
+`tests/unit/test_quota_estimator.py::test_end_to_end_demo_artifacts_smoke`.

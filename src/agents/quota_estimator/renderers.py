@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import base64
 import html
+import io
 from pathlib import Path
 from typing import Any
 
@@ -12,12 +14,13 @@ matplotlib.use("Agg")
 
 from matplotlib import pyplot as plt  # noqa: E402
 from matplotlib.backends.backend_pdf import PdfPages  # noqa: E402
+from matplotlib.figure import Figure  # noqa: E402
 from matplotlib.ticker import FuncFormatter  # noqa: E402
 from openpyxl import Workbook  # noqa: E402
 from openpyxl.styles import Font, PatternFill  # noqa: E402
 from openpyxl.utils import get_column_letter  # noqa: E402
 
-from src.agents.quota_estimator.models import QuotaEstimate
+from src.agents.quota_estimator.models import QuotaEstimate  # noqa: E402
 
 _HEADER_FILL = PatternFill("solid", fgColor="0078D4")
 _HEADER_FONT = Font(color="FFFFFF", bold=True)
@@ -35,6 +38,7 @@ def render_quota_xlsx(estimate: QuotaEstimate, output_path: str | Path) -> str:
     summary_sheet["A1"] = f"Quota Estimate - {estimate.customer_name}"
     summary_sheet["A1"].font = _TITLE_FONT
     summary_rows = [
+        ("Scenario", estimate.scenario),
         ("Generated at", estimate.generated_at.isoformat(timespec="seconds")),
         ("Trailing revenue", estimate.trailing_revenue_total),
         ("Recommended quota", estimate.recommended_quota_total),
@@ -45,9 +49,9 @@ def render_quota_xlsx(estimate: QuotaEstimate, output_path: str | Path) -> str:
     for row_index, row in enumerate(summary_rows, start=3):
         summary_sheet.cell(row=row_index, column=1, value=row[0])
         summary_sheet.cell(row=row_index, column=2, value=row[1])
-    summary_sheet["B4"].number_format = "$#,##0"
     summary_sheet["B5"].number_format = "$#,##0"
-    summary_sheet["B6"].number_format = "0.0%"
+    summary_sheet["B6"].number_format = "$#,##0"
+    summary_sheet["B7"].number_format = "0.0%"
 
     recommendation_sheet = workbook.create_sheet("Recommendations")
     _append_header(
@@ -115,6 +119,38 @@ def render_quota_xlsx(estimate: QuotaEstimate, output_path: str | Path) -> str:
     for row_index, citation in enumerate(estimate.citations, start=8):
         methodology_sheet.cell(row=row_index, column=1, value=citation)
 
+    assumptions_sheet = workbook.create_sheet("Assumptions")
+    _append_header(
+        assumptions_sheet,
+        [
+            "Territory",
+            "Category",
+            "Baseline Trend",
+            "Market Adjustment",
+            "Engagement Adjustment",
+            "Scenario Adjustment",
+            "Final Growth",
+            "Final Quota",
+        ],
+    )
+    for recommendation in estimate.recommendations:
+        assumptions_sheet.append(
+            [
+                recommendation.territory,
+                recommendation.category,
+                recommendation.historical_growth_rate,
+                recommendation.market_adjustment,
+                recommendation.engagement_adjustment,
+                recommendation.scenario_adjustment,
+                recommendation.recommended_growth_rate,
+                recommendation.recommended_quota,
+            ]
+        )
+    for row in assumptions_sheet.iter_rows(min_row=2, min_col=3, max_col=8):
+        for cell in row[:5]:
+            cell.number_format = "0.0%"
+        row[5].number_format = "$#,##0"
+
     for sheet in workbook.worksheets:
         _autosize_columns(sheet)
 
@@ -139,6 +175,7 @@ def render_quota_html(estimate: QuotaEstimate, output_path: str | Path) -> str:
         for item in estimate.recommendations
     )
     citations = "\n".join(f"<li>{html.escape(citation)}</li>" for citation in estimate.citations)
+    chart_data_uri = f"data:image/png;base64,{_chart_png_base64(estimate)}"
 
     document = f"""<!doctype html>
 <html lang="en">
@@ -152,16 +189,22 @@ def render_quota_html(estimate: QuotaEstimate, output_path: str | Path) -> str:
     th {{ background: #0078d4; color: white; }}
     .metric {{ display: inline-block; margin-right: 2rem; font-size: 1.1rem; }}
     .metric strong {{ display: block; color: #0078d4; }}
+    .scenario {{ display: inline-block; padding: 0.2rem 0.6rem; border-radius: 0.5rem;
+                 background: #eef4fb; color: #0078d4; font-weight: 600; text-transform: capitalize; }}
+    .chart img {{ max-width: 100%; height: auto; border: 1px solid #d0d7de; border-radius: 0.25rem; }}
   </style>
 </head>
 <body>
   <h1>Quota Estimate - {html.escape(estimate.customer_name)}</h1>
-  <p>Generated {html.escape(estimate.generated_at.isoformat(timespec="seconds"))}</p>
+  <p>Generated {html.escape(estimate.generated_at.isoformat(timespec="seconds"))}
+     &middot; Scenario: <span class="scenario">{html.escape(estimate.scenario)}</span></p>
   <section>
     <div class="metric"><strong>{_currency(estimate.trailing_revenue_total)}</strong>Trailing revenue</div>
     <div class="metric"><strong>{_currency(estimate.recommended_quota_total)}</strong>Recommended quota</div>
     <div class="metric"><strong>{_percent(estimate.overall_growth_rate)}</strong>Overall growth</div>
   </section>
+  <h2>Quota vs. Trailing Revenue</h2>
+  <div class="chart"><img alt="Quota recommendations by territory and category" src="{chart_data_uri}"></div>
   <h2>Recommendations</h2>
   <table>
     <thead>
@@ -204,7 +247,12 @@ def _render_summary_page(estimate: QuotaEstimate, pdf: PdfPages) -> None:
     fig, ax = plt.subplots(figsize=(11, 8.5))
     ax.axis("off")
     ax.text(0.05, 0.92, f"Quota Estimate - {estimate.customer_name}", fontsize=20, weight="bold")
-    ax.text(0.05, 0.86, f"Generated {estimate.generated_at.isoformat(timespec='seconds')}", fontsize=10)
+    ax.text(
+        0.05,
+        0.86,
+        f"Generated {estimate.generated_at.isoformat(timespec='seconds')}  |  Scenario: {estimate.scenario}",
+        fontsize=10,
+    )
     ax.text(0.05, 0.76, f"Trailing revenue: {_currency(estimate.trailing_revenue_total)}", fontsize=14)
     ax.text(0.05, 0.70, f"Recommended quota: {_currency(estimate.recommended_quota_total)}", fontsize=14)
     ax.text(0.05, 0.64, f"Overall growth: {_percent(estimate.overall_growth_rate)}", fontsize=14)
@@ -217,24 +265,39 @@ def _render_summary_page(estimate: QuotaEstimate, pdf: PdfPages) -> None:
 
 
 def _render_recommendation_page(estimate: QuotaEstimate, pdf: PdfPages) -> None:
+    fig = _build_quota_chart_figure(estimate)
+    pdf.savefig(fig, bbox_inches="tight")  # type: ignore[no-untyped-call]
+    plt.close(fig)
+
+
+def _build_quota_chart_figure(estimate: QuotaEstimate) -> Figure:
+    """Build the shared trailing-revenue vs. recommended-quota bar chart."""
     categories = [f"{item.territory}\n{item.category}" for item in estimate.recommendations]
     trailing = [item.trailing_revenue for item in estimate.recommendations]
     projected = [item.recommended_quota for item in estimate.recommendations]
 
-    fig, ax = plt.subplots(figsize=(11, 8.5))
+    fig, ax = plt.subplots(figsize=(11, 6))
     x_positions = range(len(categories))
     width = 0.35
     ax.bar([index - width / 2 for index in x_positions], trailing, width, label="Trailing Revenue", color="#0078D4")
     ax.bar([index + width / 2 for index in x_positions], projected, width, label="Recommended Quota", color="#50E6FF")
-    ax.set_title("Quota Recommendations by Territory and Category")
+    ax.set_title(f"Quota Recommendations by Territory and Category ({estimate.scenario})")
     ax.set_ylabel("Revenue")
     ax.set_xticks(list(x_positions))
     ax.set_xticklabels(categories, rotation=30, ha="right", fontsize=8)
     ax.yaxis.set_major_formatter(FuncFormatter(lambda value, _: f"${value / 1000:,.0f}K"))
     ax.legend()
     fig.tight_layout()
-    pdf.savefig(fig, bbox_inches="tight")  # type: ignore[no-untyped-call]
+    return fig
+
+
+def _chart_png_base64(estimate: QuotaEstimate) -> str:
+    """Render the quota chart to a base64-encoded PNG for inline HTML embedding."""
+    fig = _build_quota_chart_figure(estimate)
+    buffer = io.BytesIO()
+    fig.savefig(buffer, format="png", dpi=120, bbox_inches="tight")
     plt.close(fig)
+    return base64.b64encode(buffer.getvalue()).decode("ascii")
 
 
 def _append_header(sheet: Any, headers: list[str]) -> None:

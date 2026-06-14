@@ -31,7 +31,9 @@ artifacts, not only inline markdown.
    - `sales_rows` from `wwi-sales-data`
    - `research_data` from `researcher-agent`
    - `workiq_activity` from WorkIQ/mock activity
+   - `scenario`: one of `conservative`, `base` (default), or `aggressive`. Infer it from the user's
+     request (for example "stretch" or "upside" maps to `aggressive`, "downside" or "floor" maps to
+     `conservative`); otherwise use `base`.
    - `formats`: `["xlsx", "html", "pdf"]`
-5. **Return results**: Provide a short executive summary, the total recommended quota, and the generated
-   `.xlsx`, `.html`, and `.pdf` artifact paths returned by the quota estimator.
-   `.xlsx`, `.html`, and `.pdf` artifact paths returned by the quota estimator.
+5. **Return results**: Provide a short executive summary, the selected scenario, the total recommended quota, and the
+   generated `.xlsx`, `.html`, and `.pdf` artifact paths returned by the quota estimator.

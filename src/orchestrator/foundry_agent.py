@@ -110,7 +110,12 @@ FORECAST_QUOTA_SCHEMA: dict[str, Any] = {
         "customer_name": {
             "type": "string",
             "description": "Customer or prospect account name.",
-        }
+        },
+        "scenario": {
+            "type": "string",
+            "enum": ["conservative", "base", "aggressive"],
+            "description": "Deterministic forecast scenario applied to recommended growth (default base).",
+        },
     },
     "required": ["customer_name"],
     "additionalProperties": False,
@@ -145,6 +150,11 @@ GENERATE_QUOTA_ESTIMATION_REPORT_SCHEMA: dict[str, Any] = {
             "type": "object",
             "description": "WorkIQ or synthetic M365 activity signals.",
             "additionalProperties": True,
+        },
+        "scenario": {
+            "type": "string",
+            "enum": ["conservative", "base", "aggressive"],
+            "description": "Deterministic forecast scenario applied to recommended growth (default base).",
         },
         "output_dir": {
             "type": "string",
@@ -337,11 +347,13 @@ def forecast_quota_func(arguments: dict[str, Any]) -> dict[str, Any]:
     """Return a legacy FY quota forecast payload using the shared estimator."""
     customer = arguments.get("customer_name", "Unknown")
     customer_name = str(customer)
+    scenario = arguments.get("scenario")
     estimate = build_quota_estimate(
         customer_name=customer_name,
         sales_rows=demo_sales_rows(),
         research_data=demo_research_data(customer_name),
         workiq_activity=demo_workiq_activity(customer_name),
+        scenario=str(scenario) if scenario is not None else "base",
     )
     return forecast_payload_from_estimate(estimate)
 
@@ -365,11 +377,16 @@ def generate_quota_estimation_report_func(arguments: dict[str, Any]) -> dict[str
     if formats is not None and not isinstance(formats, list):
         raise ValueError("formats must be a list of strings when provided.")
 
+    scenario = arguments.get("scenario")
+    if scenario is not None and not isinstance(scenario, str):
+        raise ValueError("scenario must be a string when provided.")
+
     return generate_quota_estimation_report(
         customer_name=customer_name,
         sales_rows=sales_rows,
         research_data=research_data,
         workiq_activity=workiq_activity,
+        scenario=scenario if scenario is not None else "base",
         output_dir=str(arguments.get("output_dir", "output/quota-estimates")),
         formats=[str(item) for item in formats] if formats is not None else None,
     )

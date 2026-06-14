@@ -384,6 +384,7 @@ async def test_quota_estimator_call_tool(tmp_path):
                 ],
                 "research_data": {"summary": "Retail demand is expanding 10%."},
                 "workiq_activity": {"engagement_score": "High", "recent_activity": [{"type": "meeting"}]},
+                "scenario": "aggressive",
                 "output_dir": str(tmp_path),
             },
         )
@@ -395,6 +396,7 @@ async def test_quota_estimator_call_tool(tmp_path):
         assert "result" in response, f"Expected 'result' in response, got: {response}"
         data = json.loads(response["result"]["content"][0]["text"])
         assert data["status"] == "success"
+        assert data["scenario"] == "aggressive"
         assert set(data["artifacts"]) == {"xlsx", "html", "pdf"}
     finally:
         await _cleanup(proc)

@@ -99,6 +99,7 @@ class QuotaRecommendation:
     historical_growth_rate: float
     market_adjustment: float
     engagement_adjustment: float
+    scenario_adjustment: float
     recommended_growth_rate: float
     recommended_quota: float
     rationale: str
@@ -118,6 +119,7 @@ class QuotaEstimate:
 
     customer_name: str
     generated_at: datetime
+    scenario: str
     sales_rows: list[HistoricalSalesRow]
     research_context: ResearchContext
     workiq_activity: WorkIQActivity
