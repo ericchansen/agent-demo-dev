@@ -33,7 +33,7 @@ This accelerator supports five architecture options for exposing the agent to en
 | **GitHub Copilot CLI** | Full multi-agent workflow via MCP tool calls in your terminal. Skill-based orchestration chains Fabric, research, and WorkIQ into artifacts (Excel, HTML, DOCX). | ✅ Implemented |
 | **M365 Copilot (Direct Publish)** | Zero-code path — publish from Fabric portal directly into M365 Copilot Chat | ✅ Implemented |
 | **Azure AI Foundry (Prompt Agent)** | Declarative agent with FunctionTools for quota forecasting, web research, attainment computation, and DOCX report generation | ✅ Implemented |
-| **Azure AI Foundry (Hosted Agent)** | Bring-your-own-code container using GitHub Copilot SDK with full tool orchestration | 🔧 Scaffolded |
+| **Azure AI Foundry (Hosted Agent)** | Bring-your-own-code container with Fabric MCP, quota, research, attainment, activity, and report tools | ✅ Implemented |
 | **Cowork** | M365 plugin surface with native WorkIQ access. Maps 1:1 to CLI skill pattern. | 📋 Documented |
 
 See [docs/surfaces/README.md](surfaces/README.md) for a detailed comparison and decision flowchart.

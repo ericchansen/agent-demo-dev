@@ -48,8 +48,22 @@ flowchart LR
 | Component | Location | Purpose |
 |---|---|---|
 | Agent orchestrator | `src/orchestrator/` | Foundry agent configuration and tool wiring |
+| Hosted agent runtime | `src/orchestrator/hosted_agent/` | Bring-your-own-code container with Fabric MCP, quota, research, attainment, activity, and report tools |
 | Report generator | `src/agents/report_generator/` | DOCX generation + OneDrive upload |
 | Infra (Bicep) | `infra/` | Foundry project, agent, Entra app registration |
+
+## Hosted runtime configuration
+
+Set these environment variables on the hosted container:
+
+| Variable | Purpose |
+|---|---|
+| `FABRIC_MCP_URL` | Fabric Data Agent MCP endpoint |
+| `FABRIC_MCP_TOOL_NAME` | MCP tool name to invoke for natural-language Fabric questions |
+| `MODEL_ENDPOINT` | Optional endpoint for an injected Copilot SDK-compatible chat adapter |
+| `MODEL_DEPLOYMENT` | Model deployment name, defaulting to `gpt-4o` |
+| `HOSTED_AGENT_OUTPUT_DIR` | Output directory for generated quota artifacts |
+| `COPILOT_HOME` | Optional credential/cache path if your Copilot SDK adapter requires it |
 
 ## When to use the Foundry surface
 

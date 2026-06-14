@@ -100,7 +100,7 @@ This accelerator supports five architecture options for exposing the agent to en
 | **Copilot CLI** | MCP servers + skills in your terminal | ✅ Implemented |
 | **M365 Direct Publish** | Zero-code — publish from Fabric portal into M365 Copilot Chat | ✅ Implemented |
 | **Foundry Prompt Agent** | Declarative agent with FunctionTools for forecasting, research, and reports | ✅ Implemented |
-| **Foundry Hosted Agent** | Bring-your-own-code container with GitHub Copilot SDK | 🔨 Scaffolded |
+| **Foundry Hosted Agent** | Bring-your-own-code container with Fabric MCP, quota, research, attainment, activity, and report tools | ✅ Implemented |
 | **Cowork** | M365 plugin surface with native WorkIQ access | 📋 Documented |
 
 The backend services (Fabric Data Agent, WorkIQ, report generator) don't change. Only the surface does.

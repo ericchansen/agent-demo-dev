@@ -60,9 +60,11 @@ The primary production path (`src/orchestrator/foundry_agent.py`). Registers too
 5. **Report generator function** — produces DOCX/PPTX, uploads to OneDrive, returns download link
 
 ### Hosted Agent (bring-your-own-code)
-A containerized agent (`src/orchestrator/hosted_agent/`) using the GitHub Copilot SDK with full control over tool orchestration. Deployed as a Docker container in Foundry's managed compute.
+A containerized agent (`src/orchestrator/hosted_agent/`) with full control over tool orchestration. It exposes a Copilot SDK-compatible chat adapter surface plus a deterministic local demo flow, and it wires the same production tool set: Fabric MCP queries, quota forecasting, quota estimation artifacts, report generation, web research, quota attainment, and account activity fallback.
 
 > 📖 [Foundry Hosted Agents](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-hosted)
+
+Configure hosted containers with `FABRIC_MCP_URL`, `FABRIC_MCP_TOOL_NAME`, `MODEL_ENDPOINT`, `MODEL_DEPLOYMENT`, and any Copilot SDK auth/runtime variables required by your selected adapter. Set `HOSTED_AGENT_OUTPUT_DIR` when you want quota artifacts written outside the default `output/hosted-agent` path.
 
 The agent's system prompt encodes the orchestration logic — when to call which tool, how to combine results, and how to format output.
 
