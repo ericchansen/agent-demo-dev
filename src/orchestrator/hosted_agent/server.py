@@ -1,8 +1,9 @@
 """Foundry invocation server for the Hosted Agent.
 
-Receives HTTP requests from the Foundry managed runtime and dispatches
-them to the agent pipeline. Uses the azure-ai-agentserver-invocations
-package to handle the invocation protocol.
+Receives HTTP POST requests from the Foundry managed runtime and dispatches
+them to the agent pipeline via a minimal http.server handler. A future
+iteration may adopt the azure-ai-agentserver-invocations SDK once the
+Hosted Agent protocol stabilises.
 
 Reference: https://github.com/microsoft-foundry/foundry-samples
 """

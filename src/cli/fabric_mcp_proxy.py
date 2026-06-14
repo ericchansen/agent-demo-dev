@@ -125,6 +125,11 @@ def main() -> None:
             _log(f"Skipping non-JSON input: {line[:80]}")
             continue
 
+        # JSON-RPC notifications have no "id" and expect no response.
+        if "id" not in request:
+            _log(f"Notification (no id): {request.get('method', '?')} — skipping response")
+            continue
+
         try:
             response = forward_request(request)
         except subprocess.CalledProcessError as exc:

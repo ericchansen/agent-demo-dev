@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements-hosted.txt .
+COPY src/orchestrator/hosted_agent/requirements-hosted.txt .
 RUN pip install --no-cache-dir -r requirements-hosted.txt
 
 COPY src/ src/

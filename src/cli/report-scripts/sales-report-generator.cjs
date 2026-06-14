@@ -117,8 +117,7 @@ function buildSummaryTab(wb, data) {
   ];
 
   const headerRow = ws.addRow(["Metric", "Value"]);
-  headerRow.number = 4;
-  styleHeader(ws.getRow(4));
+  styleHeader(headerRow);
 
   kpis.forEach(([label, value, fmt]) => {
     const row = ws.addRow([label, value]);

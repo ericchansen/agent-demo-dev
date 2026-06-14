@@ -127,7 +127,8 @@
       const meta = data.metadata || {};
       const summary = data.summary || {};
       const quota = data.quota || {};
-      const pipeline = data.pipeline || [];
+      const rawPipeline = data.pipeline || [];
+      const pipeline = Array.isArray(rawPipeline) ? rawPipeline : (rawPipeline.customers || []);
       const research = data.research || {};
       const activity = data.activity || {};
       const recs = data.recommendations || [];

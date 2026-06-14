@@ -359,7 +359,7 @@ def web_research_func(arguments: dict[str, Any]) -> dict[str, Any]:
     return {
         "query": query,
         "source": "demo (simulated web research)",
-        "results": [
+        "findings": [
             {
                 "title": "Wholesale Novelty Market Trends 2026",
                 "url": "https://example.com/market-trends-2026",

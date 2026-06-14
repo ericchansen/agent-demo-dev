@@ -47,21 +47,22 @@
       }
     },
     "pipeline": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["deal_name", "value", "stage"],
-        "properties": {
-          "deal_name": { "type": "string" },
-          "customer": { "type": "string" },
-          "value": { "type": "number" },
-          "stage": { "type": "string" },
-          "close_date": { "type": "string", "format": "date" },
-          "probability": { "type": "number" },
-          "territory": { "type": "string" },
-          "rep": { "type": "string" }
+      "oneOf": [
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/pipelineDeal" }
+        },
+        {
+          "type": "object",
+          "required": ["customers"],
+          "properties": {
+            "customers": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/pipelineDeal" }
+            }
+          }
         }
-      }
+      ]
     },
     "quota": {
       "type": "object",
@@ -157,6 +158,22 @@
           "priority": { "type": "string", "enum": ["High", "Medium", "Low"] },
           "data_source": { "type": "string" }
         }
+      }
+    }
+  },
+  "$defs": {
+    "pipelineDeal": {
+      "type": "object",
+      "required": ["deal_name", "value", "stage"],
+      "properties": {
+        "deal_name": { "type": "string" },
+        "customer": { "type": "string" },
+        "value": { "type": "number" },
+        "stage": { "type": "string" },
+        "close_date": { "type": "string", "format": "date" },
+        "probability": { "type": "number" },
+        "territory": { "type": "string" },
+        "rep": { "type": "string" }
       }
     }
   }
