@@ -167,9 +167,29 @@ response = openai_client.responses.create(
 
 ## Reference Implementation
 
-This repo provides a working Foundry orchestrator in `src/orchestrator/`:
+This repo provides working Foundry agents at two tiers:
 
+### Prompt Agent (Declarative)
 - [`foundry_agent.py`](../../src/orchestrator/foundry_agent.py) — Agent creation, tool registration, and run loop
 - [`config.py`](../../src/orchestrator/config.py) — Environment-based configuration
+- Tools: `FabricIQPreviewTool`, `web_research`, `compute_quota_attainment`, `forecast_quota`, `generate_report`, `get_account_activity`
+
+### Hosted Agent (Copilot SDK)
+- [`hosted_agent/__init__.py`](../../src/orchestrator/hosted_agent/__init__.py) — Copilot SDK agent scaffold with tool definitions and handlers
+- [`hosted_agent/server.py`](../../src/orchestrator/hosted_agent/server.py) — HTTP invocation server for Foundry managed runtime
+- [`hosted_agent/Dockerfile`](../../src/orchestrator/hosted_agent/Dockerfile) — Container definition
+
+The Hosted Agent uses GitHub Copilot SDK for full bring-your-own-code control. It reuses the same tool implementations from the Prompt Agent but runs as a container in Foundry's managed runtime.
+
+### Scale-Up Path: Microsoft Agent Framework (MAF)
+
+For scenarios requiring **multi-agent orchestration** (e.g., separate agents for data gathering, analysis, and report generation that coordinate via a supervisor), consider [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) (`pip install microsoft-agent-framework`). MAF provides:
+
+- **Multi-agent patterns**: Supervisor, sequential, parallel agent topologies
+- **Stateful conversations**: Agent memory and context management
+- **Built-in tool protocols**: MCP and OpenAPI tool integration
+- **Observability**: Tracing and debugging across agent boundaries
+
+MAF is the right choice when a single agent with tools becomes unwieldy — typically when you need 3+ specialized agents that hand off work. For this accelerator's current scope (one agent with multiple tools), the Copilot SDK approach is simpler and sufficient.
 
 See the root [README](../../README.md) for setup instructions.
