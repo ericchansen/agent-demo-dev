@@ -29,6 +29,6 @@ jobs:
         with:
           inlineScript: |
             az deployment group create \
-              --resource-group rg-fabric-agent \
+              --resource-group rg-fabric-agent-dev \
               --template-file infra/main.bicep \
               --parameters infra/parameters/dev.bicepparam
