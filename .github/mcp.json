@@ -27,6 +27,16 @@
       "args": ["-m", "src.agents.sharepoint.mcp_server"],
       "description": "Search and retrieve internal SharePoint documents"
     },
+    "researcher-agent": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "src.agents.researcher.mcp_server"]
+    },
+    "sharepoint-agent": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "src.agents.sharepoint.mcp_server"]
+    },
     "report-generator": {
       "type": "stdio",
       "command": "python",
