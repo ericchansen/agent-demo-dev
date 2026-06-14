@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "6019550603085813915"
+      "templateHash": "15589226258202668071"
     }
   },
   "parameters": {
@@ -83,6 +83,24 @@
       "type": "string",
       "metadata": {
         "description": "Name of the AI Foundry Hub workspace (fabric-agent-hub)."
+      }
+    },
+    "publicNetworkAccess": {
+      "type": "string",
+      "defaultValue": "Disabled",
+      "allowedValues": [
+        "Enabled",
+        "Disabled"
+      ],
+      "metadata": {
+        "description": "Public network access for demo-facing resources. Keep Disabled for production; dev can override to Enabled for portal access."
+      }
+    },
+    "foundryHubStorageRoleAssignmentName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Optional existing role assignment name for the Foundry hub managed identity on storage. Use only to make redeploys idempotent when the assignment already exists with a non-default name."
       }
     },
     "tags": {
@@ -314,6 +332,9 @@
           "location": {
             "value": "[parameters('location')]"
           },
+          "publicNetworkAccess": {
+            "value": "[parameters('publicNetworkAccess')]"
+          },
           "tags": {
             "value": "[parameters('tags')]"
           }
@@ -325,7 +346,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.41.2.15936",
-              "templateHash": "14703096329102117490"
+              "templateHash": "17066317453410089376"
             }
           },
           "parameters": {
@@ -360,6 +381,17 @@
               "metadata": {
                 "description": "Resource tags."
               }
+            },
+            "publicNetworkAccess": {
+              "type": "string",
+              "defaultValue": "Disabled",
+              "allowedValues": [
+                "Enabled",
+                "Disabled"
+              ],
+              "metadata": {
+                "description": "Public network access for the Storage account."
+              }
             }
           },
           "resources": [
@@ -378,11 +410,11 @@
                 "allowSharedKeyAccess": false,
                 "minimumTlsVersion": "TLS1_2",
                 "supportsHttpsTrafficOnly": true,
-                "publicNetworkAccess": "Disabled",
+                "publicNetworkAccess": "[parameters('publicNetworkAccess')]",
                 "allowBlobPublicAccess": false,
                 "networkAcls": {
                   "bypass": "AzureServices",
-                  "defaultAction": "Deny"
+                  "defaultAction": "[if(equals(parameters('publicNetworkAccess'), 'Enabled'), 'Allow', 'Deny')]"
                 }
               }
             }
@@ -425,6 +457,9 @@
           "customSubDomainName": {
             "value": "[parameters('cogServicesName')]"
           },
+          "publicNetworkAccess": {
+            "value": "[parameters('publicNetworkAccess')]"
+          },
           "tags": {
             "value": "[parameters('tags')]"
           }
@@ -436,7 +471,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.41.2.15936",
-              "templateHash": "13931221009824002923"
+              "templateHash": "7029321386326845302"
             }
           },
           "parameters": {
@@ -486,6 +521,17 @@
               "metadata": {
                 "description": "Resource tags."
               }
+            },
+            "publicNetworkAccess": {
+              "type": "string",
+              "defaultValue": "Disabled",
+              "allowedValues": [
+                "Enabled",
+                "Disabled"
+              ],
+              "metadata": {
+                "description": "Public network access for the Cognitive Services account."
+              }
             }
           },
           "resources": [
@@ -504,10 +550,10 @@
               },
               "properties": {
                 "disableLocalAuth": true,
-                "publicNetworkAccess": "Disabled",
+                "publicNetworkAccess": "[parameters('publicNetworkAccess')]",
                 "customSubDomainName": "[if(empty(parameters('customSubDomainName')), null(), parameters('customSubDomainName'))]",
                 "networkAcls": {
-                  "defaultAction": "Deny",
+                  "defaultAction": "[if(equals(parameters('publicNetworkAccess'), 'Enabled'), 'Allow', 'Deny')]",
                   "ipRules": [],
                   "virtualNetworkRules": []
                 }
@@ -552,6 +598,9 @@
           "customSubDomainName": {
             "value": "[parameters('foundryHubCogServicesName')]"
           },
+          "publicNetworkAccess": {
+            "value": "[parameters('publicNetworkAccess')]"
+          },
           "tags": {
             "value": "[parameters('tags')]"
           }
@@ -563,7 +612,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.41.2.15936",
-              "templateHash": "13931221009824002923"
+              "templateHash": "7029321386326845302"
             }
           },
           "parameters": {
@@ -613,6 +662,17 @@
               "metadata": {
                 "description": "Resource tags."
               }
+            },
+            "publicNetworkAccess": {
+              "type": "string",
+              "defaultValue": "Disabled",
+              "allowedValues": [
+                "Enabled",
+                "Disabled"
+              ],
+              "metadata": {
+                "description": "Public network access for the Cognitive Services account."
+              }
             }
           },
           "resources": [
@@ -631,10 +691,10 @@
               },
               "properties": {
                 "disableLocalAuth": true,
-                "publicNetworkAccess": "Disabled",
+                "publicNetworkAccess": "[parameters('publicNetworkAccess')]",
                 "customSubDomainName": "[if(empty(parameters('customSubDomainName')), null(), parameters('customSubDomainName'))]",
                 "networkAcls": {
-                  "defaultAction": "Deny",
+                  "defaultAction": "[if(equals(parameters('publicNetworkAccess'), 'Enabled'), 'Allow', 'Deny')]",
                   "ipRules": [],
                   "virtualNetworkRules": []
                 }
@@ -682,6 +742,12 @@
           "storageAccountId": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'storage'), '2025-04-01').outputs.storageAccountId.value]"
           },
+          "publicNetworkAccess": {
+            "value": "[parameters('publicNetworkAccess')]"
+          },
+          "storageRoleAssignmentName": {
+            "value": "[parameters('foundryHubStorageRoleAssignmentName')]"
+          },
           "tags": {
             "value": "[parameters('tags')]"
           }
@@ -693,7 +759,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.41.2.15936",
-              "templateHash": "11701199558766968155"
+              "templateHash": "1451419975574334635"
             }
           },
           "parameters": {
@@ -727,6 +793,24 @@
               "metadata": {
                 "description": "Resource tags."
               }
+            },
+            "publicNetworkAccess": {
+              "type": "string",
+              "defaultValue": "Disabled",
+              "allowedValues": [
+                "Enabled",
+                "Disabled"
+              ],
+              "metadata": {
+                "description": "Public network access for the AI Foundry hub."
+              }
+            },
+            "storageRoleAssignmentName": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional role assignment resource name when the storage RBAC assignment already exists."
+              }
             }
           },
           "variables": {
@@ -735,7 +819,7 @@
           "resources": [
             {
               "type": "Microsoft.MachineLearningServices/workspaces",
-              "apiVersion": "2024-04-01",
+              "apiVersion": "2025-06-01",
               "name": "[parameters('hubName')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
@@ -746,7 +830,12 @@
               "properties": {
                 "keyVault": "[parameters('keyVaultId')]",
                 "storageAccount": "[parameters('storageAccountId')]",
-                "publicNetworkAccess": "Disabled",
+                "publicNetworkAccess": "[parameters('publicNetworkAccess')]",
+                "networkAcls": {
+                  "defaultAction": "[if(equals(parameters('publicNetworkAccess'), 'Enabled'), 'Allow', 'Deny')]",
+                  "ipRules": [],
+                  "resourceAccessRules": []
+                },
                 "systemDatastoresAuthMode": "identity"
               }
             },
@@ -754,9 +843,9 @@
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[resourceId('Microsoft.Storage/storageAccounts', last(split(parameters('storageAccountId'), '/')))]",
-              "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', last(split(parameters('storageAccountId'), '/'))), resourceId('Microsoft.MachineLearningServices/workspaces', parameters('hubName')), variables('storageBlobDataContributorRoleId'))]",
+              "name": "[if(empty(parameters('storageRoleAssignmentName')), guid(resourceId('Microsoft.Storage/storageAccounts', last(split(parameters('storageAccountId'), '/'))), resourceId('Microsoft.MachineLearningServices/workspaces', parameters('hubName')), variables('storageBlobDataContributorRoleId')), parameters('storageRoleAssignmentName'))]",
               "properties": {
-                "principalId": "[reference(resourceId('Microsoft.MachineLearningServices/workspaces', parameters('hubName')), '2024-04-01', 'full').identity.principalId]",
+                "principalId": "[reference(resourceId('Microsoft.MachineLearningServices/workspaces', parameters('hubName')), '2025-06-01', 'full').identity.principalId]",
                 "principalType": "ServicePrincipal",
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('storageBlobDataContributorRoleId'))]"
               },
@@ -778,7 +867,7 @@
               "metadata": {
                 "description": "Principal ID of the hub system-assigned managed identity."
               },
-              "value": "[reference(resourceId('Microsoft.MachineLearningServices/workspaces', parameters('hubName')), '2024-04-01', 'full').identity.principalId]"
+              "value": "[reference(resourceId('Microsoft.MachineLearningServices/workspaces', parameters('hubName')), '2025-06-01', 'full').identity.principalId]"
             }
           }
         }

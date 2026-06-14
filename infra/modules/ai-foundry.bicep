@@ -5,7 +5,7 @@
 //   • systemDatastoresAuthMode = identity  → default datastores use managed
 //     identity (Entra) instead of access keys
 //   • System-assigned managed identity enabled on the hub
-//   • publicNetworkAccess = Disabled
+//   • publicNetworkAccess defaults to Disabled
 //   • RBAC: Storage Blob Data Contributor auto-assigned to hub MI on the
 //     linked storage account (no manual step required)
 //
@@ -29,13 +29,20 @@ param storageAccountId string
 @description('Resource tags.')
 param tags object = {}
 
+@description('Public network access for the AI Foundry hub.')
+@allowed(['Enabled', 'Disabled'])
+param publicNetworkAccess string = 'Disabled'
+
+@description('Optional role assignment resource name when the storage RBAC assignment already exists.')
+param storageRoleAssignmentName string = ''
+
 // ── Storage account reference (for scoping the RBAC assignment) ─────────────
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
   name: last(split(storageAccountId, '/'))
 }
 
 // ── AI Foundry Hub ──────────────────────────────────────────────────────────
-resource hub 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
+resource hub 'Microsoft.MachineLearningServices/workspaces@2025-06-01' = {
   name: hubName
   location: location
   tags: tags
@@ -46,11 +53,14 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
   properties: {
     keyVault: keyVaultId
     storageAccount: storageAccountId
-    publicNetworkAccess: 'Disabled'
-    // systemDatastoresAuthMode is not yet in the Bicep type library (BCP037 is a false-positive;
-    // the property exists in the MachineLearningServices REST API and is accepted by ARM).
-    // It sets default datastore connections to use the hub's managed identity instead of access keys.
+    publicNetworkAccess: publicNetworkAccess
     #disable-next-line BCP037
+    networkAcls: {
+      defaultAction: publicNetworkAccess == 'Enabled' ? 'Allow' : 'Deny'
+      ipRules: []
+      resourceAccessRules: []
+    }
+    // Set default datastore connections to use the hub's managed identity instead of access keys.
     systemDatastoresAuthMode: 'identity'
   }
 }
@@ -61,7 +71,7 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-04-01' = {
 var storageBlobDataContributorRoleId = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
 
 resource hubStorageRbac 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(storageAccount.id, hub.id, storageBlobDataContributorRoleId)
+  name: empty(storageRoleAssignmentName) ? guid(storageAccount.id, hub.id, storageBlobDataContributorRoleId) : storageRoleAssignmentName
   scope: storageAccount
   properties: {
     principalId: hub.identity.principalId

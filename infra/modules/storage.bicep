@@ -5,7 +5,7 @@
 //   • defaultToOAuthAuthentication = true  → UI and SDK default to Entra auth
 //   • allowSharedKeyAccess = false          → shared-key (access-key) auth blocked
 //   • minimumTlsVersion = TLS1_2            → no legacy TLS
-//   • publicNetworkAccess = Disabled        → no direct internet exposure
+//   • publicNetworkAccess defaults to Disabled → no direct internet exposure
 // ---------------------------------------------------------------------------
 
 @description('Name of the Storage account.')
@@ -20,6 +20,10 @@ param sku string = 'Standard_LRS'
 
 @description('Resource tags.')
 param tags object = {}
+
+@description('Public network access for the Storage account.')
+@allowed(['Enabled', 'Disabled'])
+param publicNetworkAccess string = 'Disabled'
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   name: name
@@ -36,11 +40,11 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     allowSharedKeyAccess: false
     minimumTlsVersion: 'TLS1_2'
     supportsHttpsTrafficOnly: true
-    publicNetworkAccess: 'Disabled'
+    publicNetworkAccess: publicNetworkAccess
     allowBlobPublicAccess: false
     networkAcls: {
       bypass: 'AzureServices'
-      defaultAction: 'Deny'
+      defaultAction: publicNetworkAccess == 'Enabled' ? 'Allow' : 'Deny'
     }
   }
 }

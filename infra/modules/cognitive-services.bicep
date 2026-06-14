@@ -5,7 +5,7 @@
 //
 // Security posture enforced:
 //   • disableLocalAuth = true          → API-key auth blocked; Entra tokens only
-//   • publicNetworkAccess = Disabled   → no direct internet exposure
+//   • publicNetworkAccess defaults to Disabled → no direct internet exposure
 //
 // ⚠️  MANUAL STEP BEFORE DISABLING PUBLIC ACCESS:
 //   Confirm all consumers (Foundry hub, orchestrator containers) reach this
@@ -33,6 +33,10 @@ param customSubDomainName string = ''
 @description('Resource tags.')
 param tags object = {}
 
+@description('Public network access for the Cognitive Services account.')
+@allowed(['Enabled', 'Disabled'])
+param publicNetworkAccess string = 'Disabled'
+
 resource cogAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   name: name
   location: location
@@ -47,10 +51,10 @@ resource cogAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   properties: {
     // Block API-key (local) auth; callers must present an Entra token.
     disableLocalAuth: true
-    publicNetworkAccess: 'Disabled'
+    publicNetworkAccess: publicNetworkAccess
     customSubDomainName: empty(customSubDomainName) ? null : customSubDomainName
     networkAcls: {
-      defaultAction: 'Deny'
+      defaultAction: publicNetworkAccess == 'Enabled' ? 'Allow' : 'Deny'
       ipRules: []
       virtualNetworkRules: []
     }

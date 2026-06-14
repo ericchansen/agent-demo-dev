@@ -37,6 +37,13 @@ param foundryHubCogServicesName string
 @description('Name of the AI Foundry Hub workspace (fabric-agent-hub).')
 param foundryHubName string
 
+@description('Public network access for demo-facing resources. Keep Disabled for production; dev can override to Enabled for portal access.')
+@allowed(['Enabled', 'Disabled'])
+param publicNetworkAccess string = 'Disabled'
+
+@description('Optional existing role assignment name for the Foundry hub managed identity on storage. Use only to make redeploys idempotent when the assignment already exists with a non-default name.')
+param foundryHubStorageRoleAssignmentName string = ''
+
 @description('Resource tags applied to every resource.')
 param tags object = {}
 
@@ -67,6 +74,7 @@ module storage './modules/storage.bicep' = {
   params: {
     name: storageAccountName
     location: location
+    publicNetworkAccess: publicNetworkAccess
     tags: tags
   }
 }
@@ -77,6 +85,7 @@ module cogServices './modules/cognitive-services.bicep' = {
     name: cogServicesName
     location: location
     customSubDomainName: cogServicesName
+    publicNetworkAccess: publicNetworkAccess
     tags: tags
   }
 }
@@ -87,6 +96,7 @@ module foundryHubCogServices './modules/cognitive-services.bicep' = {
     name: foundryHubCogServicesName
     location: location
     customSubDomainName: foundryHubCogServicesName
+    publicNetworkAccess: publicNetworkAccess
     tags: tags
   }
 }
@@ -98,6 +108,8 @@ module aiFoundry './modules/ai-foundry.bicep' = {
     location: location
     keyVaultId: keyVault.outputs.keyVaultId
     storageAccountId: storage.outputs.storageAccountId
+    publicNetworkAccess: publicNetworkAccess
+    storageRoleAssignmentName: foundryHubStorageRoleAssignmentName
     tags: tags
   }
 }
