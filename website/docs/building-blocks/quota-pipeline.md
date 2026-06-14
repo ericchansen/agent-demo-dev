@@ -25,6 +25,24 @@ M365 Copilot / Teams
   -> .xlsx, .html, .pdf
 ```
 
+## Golden demo prompts
+
+Copy-paste prompts that reliably exercise the full pipeline. Each produces the same three artifacts;
+only the surface and phrasing differ. Use these as a known-good script when rehearsing a demo.
+
+| Surface | Prompt | What it proves |
+|---|---|---|
+| Copilot CLI | `Generate a base quota forecast report for Tailspin Toys` | End-to-end CLI → MCP → artifacts. |
+| Copilot CLI | `Generate an aggressive quota forecast report for Wingtip Toys and summarize the upside vs. the base case` | Scenario comparison in one turn. |
+| Foundry / M365 | `@WWISalesAgent Build a quota estimation report for Tailspin Toys using our trailing sales and current market trends` | Fabric query → research → function tool. |
+| Foundry / M365 | `@WWISalesAgent Give me conservative, base, and aggressive quota targets for Contoso Ltd with the assumptions behind each` | All three scenarios + methodology. |
+| Hosted agent (HTTP) | `POST /invoke {"input": "Generate a quota report for Tailspin Toys"}` | Container runtime returns artifact summary JSON. |
+
+> **Tip:** The word the model keys on for scenarios is `conservative`, `base`, or `aggressive`. Omitting it
+> defaults to `base`. Naming a customer that exists in the WWI dataset (Tailspin Toys, Wingtip Toys, Contoso Ltd)
+> keeps the Fabric query grounded.
+
+
 ## Operator quickstart
 
 This is the fastest path from "I have sales rows" to three artifacts on disk. Everything below is
@@ -213,3 +231,38 @@ Open the generated workbook and confirm it has Summary, Recommendations, Sales D
 sheets. Open the HTML file in a browser (the chart is embedded inline) and the PDF in a reader. The generated files
 are written under `output/`, which is ignored by git. The same end-to-end path is exercised in CI by
 `tests/unit/test_quota_estimator.py::test_end_to_end_demo_artifacts_smoke`.
+
+## Networking & public access
+
+The Foundry-hosted path (and the `ai.azure.com` portal you use to publish the agent) is only reachable when the
+underlying Azure resources allow public network access. The Bicep modules default `publicNetworkAccess` to
+`'Disabled'` — safe for production behind Private Link — but that default blocks the portal from loading and the
+hosted agent container from being managed during a demo.
+
+For the dev environment, `infra/parameters/dev.bicepparam` overrides this:
+
+```bicep
+param publicNetworkAccess = 'Enabled'
+```
+
+This single parameter flows through `infra/main.bicep` to the AI Foundry hub
+(`infra/modules/ai-foundry.bicep`), Cognitive Services (`infra/modules/cognitive-services.bicep`), and storage
+(`infra/modules/storage.bicep`). When `Enabled`, each module also sets its `networkAcls.defaultAction` to `Allow`
+so the portal, Foundry runtime, and hosted container all stay reachable.
+
+| Environment | `publicNetworkAccess` | Portal / hosted agent reachable | Use |
+|---|---|---|---|
+| Production (default) | `Disabled` | No — Private Link only | Locked-down deployments |
+| Dev (`dev.bicepparam`) | `Enabled` | Yes | Demos and rapid prototyping |
+
+> **If the Foundry portal will not load** (`ai.azure.com` spins or 403s), confirm the hub still has public access
+> enabled:
+>
+> ```powershell
+> az resource show --ids "<hub-resource-id>" --query "properties.publicNetworkAccess" -o tsv
+> ```
+>
+> It should return `Enabled` for the dev hub. Re-apply with
+> `az deployment group create -g rg-fabric-agent-dev -f infra/main.bicep -p infra/parameters/dev.bicepparam` if it
+> has drifted back to `Disabled` (for example, after a governance policy re-applied the production default).
+
