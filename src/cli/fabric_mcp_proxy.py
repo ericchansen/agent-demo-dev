@@ -75,7 +75,7 @@ def get_token() -> str:
     return str(_token_cache["token"])
 
 
-def forward_request(request: dict) -> dict:
+def forward_request(request: dict[str, object]) -> dict[str, object]:
     """Forward a JSON-RPC request to the Fabric MCP endpoint."""
     token = get_token()
     data = json.dumps(request).encode()
@@ -95,7 +95,7 @@ def forward_request(request: dict) -> dict:
         body = json.loads(resp.read())
 
     _log(f"← {method} OK")
-    return body
+    return dict(body)
 
 
 def main() -> None:

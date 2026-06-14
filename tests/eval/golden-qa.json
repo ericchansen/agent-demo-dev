@@ -1,203 +1,346 @@
 [
   {
     "question": "Who are our top 5 customers by total revenue?",
-    "expected_contains": ["Tailspin Toys", "Wingtip Toys"],
+    "expected_contains": [
+      "Tailspin Toys",
+      "Wingtip Toys"
+    ],
     "category": "top-n"
   },
   {
     "question": "What were the top 3 best-selling stock items by quantity sold?",
-    "expected_contains": ["USB"],
+    "expected_contains": [
+      "USB"
+    ],
     "category": "top-n"
   },
   {
     "question": "Which 5 cities generated the most sales revenue?",
-    "expected_contains": ["New York", "Los Angeles"],
+    "expected_contains": [
+      "New York",
+      "Los Angeles"
+    ],
     "category": "top-n"
   },
   {
     "question": "Who are the top 3 salespersons by total sales amount?",
-    "expected_contains": ["Salesperson"],
+    "expected_contains": [
+      "Salesperson"
+    ],
     "category": "top-n"
   },
   {
     "question": "What are the top 10 customers in the Midwest territory by revenue?",
-    "expected_contains": ["Tailspin Toys", "Wingtip Toys"],
+    "expected_contains": [
+      "Tailspin Toys",
+      "Wingtip Toys"
+    ],
     "category": "top-n"
   },
   {
     "question": "What was the total sales revenue in 2016?",
-    "expected_contains": ["2016"],
+    "expected_contains": [
+      "2016"
+    ],
     "category": "aggregation"
   },
   {
     "question": "How many total orders were placed in 2015?",
-    "expected_contains": ["2015"],
+    "expected_contains": [
+      "2015"
+    ],
     "category": "aggregation"
   },
   {
     "question": "What is the average order value across all sales?",
-    "expected_contains": ["average"],
+    "expected_contains": [
+      "average"
+    ],
     "category": "aggregation"
   },
   {
     "question": "What was the total quantity of items sold in 2016?",
-    "expected_contains": ["2016"],
+    "expected_contains": [
+      "2016"
+    ],
     "category": "aggregation"
   },
   {
     "question": "How many distinct customers made purchases in 2016?",
-    "expected_contains": ["customer"],
+    "expected_contains": [
+      "customer"
+    ],
     "category": "aggregation"
   },
   {
     "question": "What was the total tax collected across all sales?",
-    "expected_contains": ["tax"],
+    "expected_contains": [
+      "tax"
+    ],
     "category": "aggregation"
   },
   {
     "question": "Show me all sales for Tailspin Toys (Head Office)",
-    "expected_contains": ["Tailspin Toys"],
+    "expected_contains": [
+      "Tailspin Toys"
+    ],
     "category": "filter"
   },
   {
     "question": "What were the sales in New York City?",
-    "expected_contains": ["New York"],
+    "expected_contains": [
+      "New York"
+    ],
     "category": "filter"
   },
   {
     "question": "Show me all transactions where the profit margin was negative",
-    "expected_contains": ["profit", "margin"],
-    "expected_not_contains": ["no data"],
+    "expected_contains": [
+      "profit",
+      "margin"
+    ],
+    "expected_not_contains": [
+      "no data"
+    ],
     "category": "filter"
   },
   {
     "question": "List all sales of USB novelty items",
-    "expected_contains": ["USB"],
+    "expected_contains": [
+      "USB"
+    ],
     "category": "filter"
   },
   {
     "question": "What were the sales for Wingtip Toys in 2016?",
-    "expected_contains": ["Wingtip Toys", "2016"],
+    "expected_contains": [
+      "Wingtip Toys",
+      "2016"
+    ],
     "category": "filter"
   },
   {
     "question": "Show me sales where quantity exceeded 500 units in a single order",
-    "expected_contains": ["500"],
+    "expected_contains": [
+      "500"
+    ],
     "category": "filter"
   },
   {
     "question": "How did total sales change month over month in 2016?",
-    "expected_contains": ["January", "February"],
+    "expected_contains": [
+      "January",
+      "February"
+    ],
     "category": "trend"
   },
   {
     "question": "What is the quarterly sales trend for 2015?",
-    "expected_contains": ["Q1", "Q2"],
+    "expected_contains": [
+      "Q1",
+      "Q2"
+    ],
     "category": "trend"
   },
   {
     "question": "Compare sales revenue between 2015 and 2016",
-    "expected_contains": ["2015", "2016"],
+    "expected_contains": [
+      "2015",
+      "2016"
+    ],
     "category": "trend"
   },
   {
     "question": "How did Tailspin Toys purchasing volume change over time?",
-    "expected_contains": ["Tailspin Toys"],
+    "expected_contains": [
+      "Tailspin Toys"
+    ],
     "category": "trend"
   },
   {
     "question": "What is the year-over-year growth rate in total revenue?",
-    "expected_contains": ["growth"],
+    "expected_contains": [
+      "growth"
+    ],
     "category": "trend"
   },
   {
     "question": "What is the total revenue from Tailspin Toys across all locations?",
-    "expected_contains": ["Tailspin Toys"],
+    "expected_contains": [
+      "Tailspin Toys"
+    ],
     "category": "lookup"
   },
   {
     "question": "How many buying groups are in the customer dimension?",
-    "expected_contains": ["buying group"],
+    "expected_contains": [
+      "buying group"
+    ],
     "category": "lookup"
   },
   {
     "question": "What category does the stock item 'USB food flash drive - pizza slice' belong to?",
-    "expected_contains": ["USB"],
+    "expected_contains": [
+      "USB"
+    ],
     "category": "lookup"
   },
   {
     "question": "Which employee is assigned as the primary salesperson for Contoso Ltd?",
-    "expected_contains": ["Contoso"],
+    "expected_contains": [
+      "Contoso"
+    ],
     "category": "lookup"
   },
   {
     "question": "What are our best-selling stock items by total revenue?",
-    "expected_contains": ["stock item"],
+    "expected_contains": [
+      "stock item"
+    ],
     "category": "top-n"
   },
   {
     "question": "Which salesperson had the highest total sales in 2016?",
-    "expected_contains": ["2016"],
+    "expected_contains": [
+      "2016"
+    ],
     "category": "top-n"
   },
   {
     "question": "What is the revenue breakdown by product category?",
-    "expected_contains": ["category"],
+    "expected_contains": [
+      "category"
+    ],
     "category": "aggregation"
   },
   {
     "question": "What were total sales for the Southeast sales territory?",
-    "expected_contains": ["Southeast"],
+    "expected_contains": [
+      "Southeast"
+    ],
     "category": "filter"
   },
   {
     "question": "What is our current open pipeline value?",
-    "expected_contains": ["pipeline", "order"],
+    "expected_contains": [
+      "pipeline",
+      "order"
+    ],
     "category": "pipeline"
   },
   {
     "question": "Which salesperson has the most open orders?",
-    "expected_contains": ["order", "salesperson"],
+    "expected_contains": [
+      "order",
+      "salesperson"
+    ],
     "category": "pipeline"
   },
   {
     "question": "Show me all backorders in the pipeline",
-    "expected_contains": ["backorder"],
+    "expected_contains": [
+      "backorder"
+    ],
     "category": "pipeline"
   },
   {
     "question": "What is the pipeline coverage ratio by salesperson?",
-    "expected_contains": ["coverage", "ratio"],
+    "expected_contains": [
+      "coverage",
+      "ratio"
+    ],
     "category": "pipeline"
   },
   {
     "question": "What is the quota attainment for FY2016?",
-    "expected_contains": ["quota", "2016"],
+    "expected_contains": [
+      "quota",
+      "2016"
+    ],
     "category": "quota"
   },
   {
     "question": "Which salesperson is furthest behind their quota?",
-    "expected_contains": ["quota"],
+    "expected_contains": [
+      "quota"
+    ],
     "category": "quota"
   },
   {
     "question": "What are total sales by fiscal quarter for FY2016?",
-    "expected_contains": ["Q1", "Q2"],
+    "expected_contains": [
+      "Q1",
+      "Q2"
+    ],
     "category": "quota"
   },
   {
     "question": "Who are our top suppliers by total purchase volume?",
-    "expected_contains": ["supplier"],
+    "expected_contains": [
+      "supplier"
+    ],
     "category": "cost"
   },
   {
     "question": "What is the gross margin by product category?",
-    "expected_contains": ["margin"],
+    "expected_contains": [
+      "margin"
+    ],
     "category": "cost"
   },
   {
     "question": "Which customers have outstanding balances?",
-    "expected_contains": ["outstanding", "balance"],
+    "expected_contains": [
+      "outstanding",
+      "balance"
+    ],
     "category": "cost"
+  },
+  {
+    "question": "Run a deep analysis for Tailspin Toys including quota attainment, pipeline coverage, and market research",
+    "expected_contains": [
+      "Tailspin Toys",
+      "attainment",
+      "pipeline"
+    ],
+    "category": "deep-analysis"
+  },
+  {
+    "question": "What is the quota attainment for the Southeast territory if the target is $5M?",
+    "expected_contains": [
+      "attainment",
+      "Southeast"
+    ],
+    "category": "deep-analysis"
+  },
+  {
+    "question": "Compare engagement levels across our top 5 customers based on meeting frequency and email activity",
+    "expected_contains": [
+      "engagement",
+      "meeting"
+    ],
+    "category": "deep-analysis"
+  },
+  {
+    "question": "Generate a sales forecast for Wingtip Toys based on historical trends and current pipeline",
+    "expected_contains": [
+      "Wingtip Toys",
+      "forecast"
+    ],
+    "category": "deep-analysis"
+  },
+  {
+    "question": "What market headwinds and tailwinds should we consider for our novelty goods business?",
+    "expected_contains": [
+      "market"
+    ],
+    "category": "deep-analysis"
+  },
+  {
+    "question": "Identify at-risk accounts where engagement has declined but revenue was previously strong",
+    "expected_contains": [
+      "risk"
+    ],
+    "category": "deep-analysis"
   }
 ]
