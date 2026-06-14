@@ -1,6 +1,6 @@
 # Hosted Agent dependencies
 # Core
-azure-ai-agentserver-invocations>=0.1.0
+azure-ai-agentserver-invocations>=1.0.0b5,<2.0.0
 azure-identity>=1.15.0
 
 # Copilot SDK (verify exact package name before deployment)

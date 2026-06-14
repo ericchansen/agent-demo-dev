@@ -92,6 +92,7 @@ def _build_agent_instructions(config: OrchestratorConfig) -> str:
         instructions += _MARKET_DATA_INSTRUCTIONS
     return instructions
 
+
 ACCOUNT_ACTIVITY_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
