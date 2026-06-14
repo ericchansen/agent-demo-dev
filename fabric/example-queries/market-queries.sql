@@ -67,7 +67,7 @@ ORDER BY fiscal_year DESC, margin_pct DESC;
 SELECT c.ticker, c.company_name, cf.fiscal_year, cf.total_assets
 FROM company_financials cf
 JOIN companies c ON cf.cik = c.cik
-WHERE c.industry IN ('Banking', 'Financial Services')
+WHERE c.industry IN ('Commercial Banking', 'Investment Services', 'Security Brokers')
     AND cf.form = '10-K'
 ORDER BY cf.fiscal_year DESC, cf.total_assets DESC;
 

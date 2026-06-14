@@ -59,7 +59,6 @@ _GAAP_TAG_MAP: dict[str, list[str]] = {
     ],
     "total_assets": [
         "Assets",
-        "AssetsCurrent",
     ],
 }
 
@@ -161,6 +160,7 @@ def _parse_and_normalize(
         # Filter to our submissions, tags, and USD values.
         num = num[num["adsh"].isin(valid_adsh) & num["tag"].isin(_ALL_TAGS) & (num["uom"] == "USD")]
         num["value"] = pd.to_numeric(num["value"], errors="coerce")
+        num["qtrs"] = pd.to_numeric(num["qtrs"], errors="coerce").fillna(-1).astype(int)
         num.dropna(subset=["value"], inplace=True)
         print(f"    Numeric facts matched: {len(num)} rows")
 
@@ -170,6 +170,19 @@ def _parse_and_normalize(
     # Map GAAP tags → normalized columns and pick the best (highest-priority) tag per company/period/column.
     merged["column"] = merged["tag"].map(lambda t: _TAG_PRIORITY[t][0])
     merged["priority"] = merged["tag"].map(lambda t: _TAG_PRIORITY[t][1])
+
+    # Filter by qtrs to avoid YTD ambiguity:
+    #   - Balance sheet items (total_assets): qtrs=0 (point-in-time)
+    #   - 10-K income/revenue: qtrs=4 (full year)
+    #   - 10-Q income/revenue: qtrs=1 (single quarter)
+    is_balance_sheet = merged["column"] == "total_assets"
+    is_10k = merged["form"] == "10-K"
+    qtrs_filter = (
+        (is_balance_sheet & (merged["qtrs"] == 0))
+        | (~is_balance_sheet & is_10k & (merged["qtrs"] == 4))
+        | (~is_balance_sheet & ~is_10k & (merged["qtrs"] == 1))
+    )
+    merged = merged[qtrs_filter]
 
     # For each company + period + column, keep the tag with lowest priority number (= most preferred).
     merged.sort_values("priority", inplace=True)

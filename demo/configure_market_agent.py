@@ -16,12 +16,24 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import shutil
 import subprocess
 import time
 
 import requests
 
-AZ = r"C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin\az.cmd"
+
+def _find_az() -> str:
+    """Locate the Azure CLI executable on PATH."""
+    for name in ("az", "az.cmd"):
+        path = shutil.which(name)
+        if path:
+            return path
+    msg = "Azure CLI not found on PATH. Install from https://aka.ms/installazurecli"
+    raise FileNotFoundError(msg)
+
+
+AZ = _find_az()
 
 
 def get_token() -> str:
@@ -146,13 +158,19 @@ def main() -> None:
         headers=headers,
         json=body,
     )
+    r.raise_for_status()
     print(f"Status: {r.status_code}")
     loc = r.headers.get("Location", "")
+    if not loc:
+        print("No Location header — update may have completed synchronously.")
+        return
 
     s = "Unknown"
     for i in range(12):
         time.sleep(5)
-        pr = requests.get(loc, headers={"Authorization": f"Bearer {token}"}).json()
+        poll = requests.get(loc, headers={"Authorization": f"Bearer {token}"})
+        poll.raise_for_status()
+        pr = poll.json()
         s = pr.get("status", "?")
         print(f"  {(i + 1) * 5}s: {s}")
         if s in ("Succeeded", "Failed"):
@@ -160,6 +178,9 @@ def main() -> None:
                 err = pr.get("error", {})
                 print(f"  Error: {err.get('message', err)}")
             break
+
+    if s != "Succeeded":
+        raise SystemExit(f"Agent update failed with status: {s}")
 
     print(f"\nDONE: {s}")
 

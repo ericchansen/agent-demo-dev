@@ -57,8 +57,8 @@ Guidelines:
 _MARKET_DATA_INSTRUCTIONS = """
 
 5. MARKET DATA: Query SEC EDGAR financial data for real US public companies via the
-   market data tool. Available metrics: revenue, net_income, total_assets from 10-K
-   (annual) and 10-Q (quarterly) filings. Use this for competitive intelligence,
+   real_world_market_data tool. Available metrics: revenue, net_income, total_assets
+   from 10-K (annual) and 10-Q (quarterly) filings. Use this for competitive intelligence,
    industry analysis, and benchmarking against real-world companies.
    - Join company_financials to companies on cik for industry context
    - Cite SEC filing type and date in responses
