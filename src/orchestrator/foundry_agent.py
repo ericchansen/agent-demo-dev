@@ -369,10 +369,7 @@ def web_research_func(arguments: dict[str, Any]) -> dict[str, Any]:
                     "The wholesale novelty goods market is projected to grow 8.5% YoY "
                     "driven by seasonal demand and e-commerce expansion."
                 ),
-                "sales_implication": (
-                    "Growth tailwind — budget for increased inventory "
-                    "and fulfillment capacity."
-                ),
+                "sales_implication": ("Growth tailwind — budget for increased inventory and fulfillment capacity."),
             },
             {
                 "title": f"{customer} Expands Distribution Network",
@@ -384,8 +381,7 @@ def web_research_func(arguments: dict[str, Any]) -> dict[str, Any]:
                     "distribution centers, increasing their total to 15."
                 ),
                 "sales_implication": (
-                    "Upsell opportunity — new DCs need initial inventory "
-                    "stocking across all categories."
+                    "Upsell opportunity — new DCs need initial inventory stocking across all categories."
                 ),
             },
             {
@@ -394,12 +390,10 @@ def web_research_func(arguments: dict[str, Any]) -> dict[str, Any]:
                 "source": "Logistics Today",
                 "date": "2026-04-20",
                 "snippet": (
-                    "Freight and raw material costs have declined 12% "
-                    "from 2025 peaks, improving wholesale margins."
+                    "Freight and raw material costs have declined 12% from 2025 peaks, improving wholesale margins."
                 ),
                 "sales_implication": (
-                    "Margin improvement — customers may be receptive "
-                    "to volume commitments at current pricing."
+                    "Margin improvement — customers may be receptive to volume commitments at current pricing."
                 ),
             },
         ],

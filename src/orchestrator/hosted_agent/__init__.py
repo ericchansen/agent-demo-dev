@@ -124,10 +124,7 @@ def handle_fabric_query(arguments: dict[str, Any]) -> dict[str, Any]:
     # For now, return a placeholder that indicates the tool is wired
     return {
         "status": "not_implemented",
-        "message": (
-            "Fabric MCP integration pending managed identity setup. "
-            f"Query was: {question}"
-        ),
+        "message": (f"Fabric MCP integration pending managed identity setup. Query was: {question}"),
     }
 
 

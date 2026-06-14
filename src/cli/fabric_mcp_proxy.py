@@ -52,11 +52,17 @@ def get_token() -> str:
         return str(_token_cache["token"])
 
     cmd = [
-        _AZ_CMD, "account", "get-access-token",
-        "--resource", RESOURCE,
-        "--subscription", SUBSCRIPTION,
-        "--query", "accessToken",
-        "-o", "tsv",
+        _AZ_CMD,
+        "account",
+        "get-access-token",
+        "--resource",
+        RESOURCE,
+        "--subscription",
+        SUBSCRIPTION,
+        "--query",
+        "accessToken",
+        "-o",
+        "tsv",
     ]
     if TENANT:
         cmd.extend(["--tenant", TENANT])

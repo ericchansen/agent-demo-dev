@@ -2,7 +2,7 @@
   "servers": {
     "wwi-sales-data": {
       "type": "http",
-      "url": "https://api.fabric.microsoft.com/v1/mcp/workspaces/<your-workspace-id>/dataagent"
+      "url": "https://api.fabric.microsoft.com/v1/mcp/workspaces/6cf857b8-a0d0-4029-af88-62a83b4116e5/dataagents/f89ca52e-8d23-4020-b0ab-489ab57d0d14/agent"
     },
     "report-generator": {
       "type": "stdio",
