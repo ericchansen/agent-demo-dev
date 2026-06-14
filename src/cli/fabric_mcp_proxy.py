@@ -19,6 +19,7 @@ import platform
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.request
 
 _DEFAULT_MCP_URL = (
@@ -91,8 +92,21 @@ def forward_request(request: dict[str, object]) -> dict[str, object]:
     method = request.get("method", "?")
     _log(f"→ {method} (id={request.get('id')})")
 
-    with urllib.request.urlopen(req, timeout=120) as resp:
-        body = json.loads(resp.read())
+    try:
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            body = json.loads(resp.read())
+    except urllib.error.HTTPError as http_err:
+        # Fabric may return JSON-RPC error bodies with non-200 status codes
+        err_body = http_err.read().decode(errors="replace")
+        _log(f"← {method} HTTP {http_err.code}: {err_body[:200]}")
+        try:
+            return dict(json.loads(err_body))
+        except (json.JSONDecodeError, TypeError):
+            return {
+                "jsonrpc": "2.0",
+                "id": request.get("id"),
+                "error": {"code": -32603, "message": f"HTTP {http_err.code}: {err_body[:500]}"},
+            }
 
     _log(f"← {method} OK")
     return dict(body)
