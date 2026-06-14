@@ -1,0 +1,79 @@
+{
+  "description": "Synthetic M365 activity data for WWI customers. Used by the sales-analysis skill when WorkIQ is unavailable. Based on Wide World Importers sample dataset customers.",
+  "generated_at": "2026-06-14T00:00:00Z",
+  "customers": {
+    "Tailspin Toys": {
+      "engagement_score": 82,
+      "meetings_last_30d": 6,
+      "emails_last_30d": 23,
+      "last_meeting_date": "2026-06-10",
+      "last_email_date": "2026-06-13",
+      "relationship_strength": "Strong",
+      "key_contacts": [
+        { "name": "Darren Ong", "role": "VP Procurement", "last_interaction": "2026-06-10", "interaction_count": 14 },
+        { "name": "Sara Madsen", "role": "Buyer", "last_interaction": "2026-06-13", "interaction_count": 22 },
+        { "name": "Raj Patel", "role": "CFO", "last_interaction": "2026-05-28", "interaction_count": 5 }
+      ]
+    },
+    "Wingtip Toys": {
+      "engagement_score": 54,
+      "meetings_last_30d": 2,
+      "emails_last_30d": 8,
+      "last_meeting_date": "2026-06-03",
+      "last_email_date": "2026-06-11",
+      "relationship_strength": "Active",
+      "key_contacts": [
+        { "name": "Maria Garcia", "role": "Purchasing Director", "last_interaction": "2026-06-03", "interaction_count": 9 },
+        { "name": "James Wilson", "role": "Category Manager", "last_interaction": "2026-06-11", "interaction_count": 6 }
+      ]
+    },
+    "Contoso Ltd": {
+      "engagement_score": 31,
+      "meetings_last_30d": 1,
+      "emails_last_30d": 3,
+      "last_meeting_date": "2026-05-20",
+      "last_email_date": "2026-06-02",
+      "relationship_strength": "Cooling",
+      "key_contacts": [
+        { "name": "Alice Thompson", "role": "Head of Supply Chain", "last_interaction": "2026-05-20", "interaction_count": 4 },
+        { "name": "Ben Clarke", "role": "Procurement Analyst", "last_interaction": "2026-06-02", "interaction_count": 3 }
+      ]
+    },
+    "Fabrikam Inc": {
+      "engagement_score": 12,
+      "meetings_last_30d": 0,
+      "emails_last_30d": 1,
+      "last_meeting_date": "2026-04-15",
+      "last_email_date": "2026-05-22",
+      "relationship_strength": "Stale",
+      "key_contacts": [
+        { "name": "David Kim", "role": "Operations Manager", "last_interaction": "2026-04-15", "interaction_count": 2 }
+      ]
+    },
+    "Northwind Traders": {
+      "engagement_score": 71,
+      "meetings_last_30d": 4,
+      "emails_last_30d": 15,
+      "last_meeting_date": "2026-06-12",
+      "last_email_date": "2026-06-14",
+      "relationship_strength": "Strong",
+      "key_contacts": [
+        { "name": "Linda Chen", "role": "Director of Purchasing", "last_interaction": "2026-06-12", "interaction_count": 18 },
+        { "name": "Michael Brooks", "role": "Inventory Manager", "last_interaction": "2026-06-14", "interaction_count": 11 },
+        { "name": "Anna Johansson", "role": "CEO", "last_interaction": "2026-05-30", "interaction_count": 3 }
+      ]
+    },
+    "Adventure Works": {
+      "engagement_score": 45,
+      "meetings_last_30d": 2,
+      "emails_last_30d": 6,
+      "last_meeting_date": "2026-06-05",
+      "last_email_date": "2026-06-09",
+      "relationship_strength": "Active",
+      "key_contacts": [
+        { "name": "Tom Richards", "role": "Wholesale Manager", "last_interaction": "2026-06-05", "interaction_count": 7 },
+        { "name": "Jessica Park", "role": "Finance Lead", "last_interaction": "2026-06-09", "interaction_count": 4 }
+      ]
+    }
+  }
+}

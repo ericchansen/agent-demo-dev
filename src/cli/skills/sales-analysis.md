@@ -109,8 +109,10 @@ Query engagement for [target customer]:
 ```
 → Capture: activity object
 
-If WorkIQ is NOT available, populate activity with null values and note
-"WorkIQ unavailable — engagement data not included" in recommendations.
+If WorkIQ is NOT available, load mock engagement data from
+`demo/mock-workiq-activity.json`. Look up the customer name in the
+`customers` object and use the matching activity record.
+If the customer is not in the mock data, populate activity with null values.
 
 ---
 
