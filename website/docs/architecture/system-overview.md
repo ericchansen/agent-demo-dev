@@ -22,8 +22,8 @@ flowchart TB
     end
 
     subgraph Tools["Tool Layer"]
-        MCP_FDA["wwi-sales-data\n(MCP server)"]
-        MCP_WIQ["workiq\n(MCP server)"]
+        MCP_FDA["Fabric Data Agent"]
+        MCP_WIQ["WorkIQ"]
         Skills["Skills\n(prompt templates)"]
         FIQ["FabricIQPreviewTool\n(platform tool)"]
         WIQT["WorkIQPreviewTool\n(platform tool)"]

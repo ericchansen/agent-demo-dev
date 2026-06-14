@@ -13,12 +13,11 @@ The CLI surface uses GitHub Copilot CLI as the agent runtime. It's the prototypi
 flowchart LR
     User["Developer"] --> CLI["copilot CLI"]
     CLI --> Engine["Copilot CLI Engine\n(orchestrator)"]
-    Engine --> MCP1["wwi-sales-data\n(HTTP MCP)"]
-    Engine --> MCP2["workiq\n(stdio MCP)"]
+    Engine -->|MCP| FDA["Fabric Data Agent"]
+    Engine -->|MCP| WIQ["WorkIQ"]
     Engine --> Skill["quota-forecast\n(skill)"]
-    MCP1 --> DA["Fabric Data Agent"]
-    DA --> LH["Lakehouse"]
-    MCP2 --> Graph["M365 Graph"]
+    FDA --> LH["Lakehouse"]
+    WIQ --> Graph["M365 Graph"]
 ```
 
 ## How it works

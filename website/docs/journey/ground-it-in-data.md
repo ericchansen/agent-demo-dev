@@ -13,17 +13,12 @@ In this chapter, you'll connect your agent to a [Microsoft Fabric Data Agent](..
 
 ```mermaid
 flowchart LR
-    User["You"] --> Agent["Copilot CLI"]
-    Agent --> MCP["MCP Server\n(wwi-sales-data)"]
-    MCP --> DA["Fabric Data Agent"]
-    DA --> LH["Lakehouse\n(6 WWI tables)"]
-    LH --> DA
-    DA --> MCP
-    MCP --> Agent
-    Agent --> User
+    User["You"] <--> CLI["Copilot CLI"]
+    CLI <-->|MCP| FDA["Fabric Data Agent"]
+    FDA <-->|SQL| LH["Lakehouse"]
 ```
 
-The chain is: you ask a question → the agent routes it to an [MCP server](../building-blocks/mcp) → the MCP server calls the Fabric Data Agent HTTP endpoint → the Data Agent translates your question to SQL → the Lakehouse returns results → the answer flows back to you.
+The chain is: you ask a question → the agent routes it to the [Fabric Data Agent](../building-blocks/fabric-data-agent) over [MCP](../building-blocks/mcp) → the Data Agent translates your question to SQL → the Lakehouse returns results → the answer flows back to you.
 
 ## The data
 

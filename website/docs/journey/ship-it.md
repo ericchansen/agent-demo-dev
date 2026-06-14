@@ -16,8 +16,8 @@ The core idea of this accelerator: you prototype in one surface and deploy to an
 ```mermaid
 flowchart TD
     subgraph CLI["CLI Surface (Prototype)"]
-        CopilotCLI["Copilot CLI"] --> MCP1["wwi-sales-data\n(MCP server)"]
-        CopilotCLI --> MCP2["workiq\n(MCP server)"]
+        CopilotCLI["Copilot CLI"] -->|MCP| CLI_FDA["Fabric Data Agent"]
+        CopilotCLI -->|MCP| CLI_WIQ["WorkIQ"]
         CopilotCLI --> Skill["quota-forecast\n(skill)"]
     end
 
@@ -28,9 +28,9 @@ flowchart TD
         Foundry --> Func["Report function\n(DOCX + OneDrive)"]
     end
 
-    MCP1 -.-> DA["Fabric Data Agent"]
+    CLI_FDA -.-> DA["Fabric Data Agent\n(shared backend)"]
     FIQ -.-> DA
-    MCP2 -.-> WIQ["WorkIQ Service"]
+    CLI_WIQ -.-> WIQ["WorkIQ Service"]
     WIQT -.-> WIQ
 
     style CLI fill:#e8f4fd,stroke:#0078d4

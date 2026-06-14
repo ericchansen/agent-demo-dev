@@ -23,14 +23,11 @@ Same data question, but now grounded in *your* working relationship with that cu
 
 ```mermaid
 flowchart LR
-    User["You"] --> Agent["Copilot CLI"]
-    Agent --> FD["wwi-sales-data\n(Fabric)"]
-    Agent --> WIQ["workiq\n(M365 signals)"]
-    FD --> DA["Data Agent → Lakehouse"]
-    WIQ --> Graph["Microsoft Graph\n(OBO auth)"]
-    DA --> Agent
-    Graph --> Agent
-    Agent --> User
+    User["You"] <--> CLI["Copilot CLI"]
+    CLI <-->|MCP| FDA["Fabric Data Agent"]
+    CLI <-->|MCP| WIQ["WorkIQ"]
+    FDA --> LH["Lakehouse"]
+    WIQ --> Graph["Microsoft Graph"]
 ```
 
 The agent now has two MCP servers: one for business data (Fabric) and one for activity context (WorkIQ). The orchestrator — Copilot CLI — decides which to call based on your question. Ask about sales → Fabric. Ask about recent engagement → WorkIQ. Ask for a customer brief → both.
