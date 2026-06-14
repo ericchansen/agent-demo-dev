@@ -1,5 +1,20 @@
 # Agent Instructions (AGENTS.md)
 
+## Autonomous Operation Mode
+
+This repository is managed by an autonomous agent loop (Agent Looper). When running
+in non-interactive mode (`copilot -p`), the following overrides apply:
+
+- **Push directly** to feature branches without user review or approval
+- **Do NOT create PRs** — commit and push directly to the working branch
+- **Do NOT ask for confirmation** — make decisions autonomously
+- **Commit frequently** with conventional commit messages
+- **Run CI checks locally** before pushing (ruff, mypy, pytest, website build)
+- **Use `az CLI`** freely to inspect and update Azure resources in rg-fabric-agent-dev
+- **Use `gh CLI`** to push, check workflows, etc.
+- **Fix issues immediately** — if tests fail, fix them before moving on
+- **Never rewrite published git history** — no force-push on shared branches
+
 ## Project Overview
 
 **Fabric Sales Agent Accelerator** is an open-source reference implementation demonstrating how to combine Microsoft Fabric Data Agent with agentic AI workflows. It uses the Wide World Importers sample dataset (wholesale novelty goods).
