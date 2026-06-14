@@ -44,6 +44,9 @@ param publicNetworkAccess string = 'Disabled'
 @description('Optional existing role assignment name for the Foundry hub managed identity on storage. Use only to make redeploys idempotent when the assignment already exists with a non-default name.')
 param foundryHubStorageRoleAssignmentName string = ''
 
+@description('Optional resource ID of an external (management-group) policy assignment whose "modify" effect forces Foundry hubs to publicNetworkAccess=Disabled. When set, a Waiver exemption is created so the dev hub stays reachable. Leave empty in production.')
+param foundryHubPnaExemptionAssignmentId string = ''
+
 @description('Resource tags applied to every resource.')
 param tags object = {}
 
@@ -116,6 +119,9 @@ module aiFoundry './modules/ai-foundry.bicep' = {
 
 module policies './modules/policy.bicep' = {
   name: 'policies'
+  params: {
+    foundryHubPnaExemptionAssignmentId: foundryHubPnaExemptionAssignmentId
+  }
 }
 
 // Entra ID app registrations cannot be created via Bicep.

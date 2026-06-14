@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "15589226258202668071"
+      "templateHash": "8093309517432950487"
     }
   },
   "parameters": {
@@ -101,6 +101,13 @@
       "defaultValue": "",
       "metadata": {
         "description": "Optional existing role assignment name for the Foundry hub managed identity on storage. Use only to make redeploys idempotent when the assignment already exists with a non-default name."
+      }
+    },
+    "foundryHubPnaExemptionAssignmentId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Optional resource ID of an external (management-group) policy assignment whose \"modify\" effect forces Foundry hubs to publicNetworkAccess=Disabled. When set, a Waiver exemption is created so the dev hub stays reachable. Leave empty in production."
       }
     },
     "tags": {
@@ -886,6 +893,11 @@
           "scope": "inner"
         },
         "mode": "Incremental",
+        "parameters": {
+          "foundryHubPnaExemptionAssignmentId": {
+            "value": "[parameters('foundryHubPnaExemptionAssignmentId')]"
+          }
+        },
         "template": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "1.0.0.0",
@@ -893,7 +905,16 @@
             "_generator": {
               "name": "bicep",
               "version": "0.41.2.15936",
-              "templateHash": "13924865904746257965"
+              "templateHash": "13027485974784649606"
+            }
+          },
+          "parameters": {
+            "foundryHubPnaExemptionAssignmentId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Resource ID of an external (e.g. management-group) policy assignment whose \"modify\" effect forces AI Foundry hubs to publicNetworkAccess=Disabled. When provided, a resource-group-scoped Waiver exemption is created so the dev hub can keep public network access Enabled for portal reachability. Leave empty in production."
+              }
             }
           },
           "resources": [
@@ -959,6 +980,18 @@
                   }
                 },
                 "enforcementMode": "Default"
+              }
+            },
+            {
+              "condition": "[not(empty(parameters('foundryHubPnaExemptionAssignmentId')))]",
+              "type": "Microsoft.Authorization/policyExemptions",
+              "apiVersion": "2022-07-01-preview",
+              "name": "exempt-hub-pna-dev",
+              "properties": {
+                "displayName": "[FSA] Dev Foundry hub — exempt from public-network modify policy",
+                "description": "Allows the dev AI Foundry hub to keep publicNetworkAccess=Enabled for portal reachability. Do not apply in production.",
+                "policyAssignmentId": "[parameters('foundryHubPnaExemptionAssignmentId')]",
+                "exemptionCategory": "Waiver"
               }
             }
           ]

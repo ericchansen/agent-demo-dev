@@ -15,7 +15,11 @@
 //   4. AI Services — restrict network access      (037eea7a)
 // ---------------------------------------------------------------------------
 
-// No parameters required — assignments are RG-scoped by targetScope on main.bicep.
+// No parameters required for the audit assignments below — they are
+// RG-scoped by targetScope on main.bicep.
+
+@description('Resource ID of an external (e.g. management-group) policy assignment whose "modify" effect forces AI Foundry hubs to publicNetworkAccess=Disabled. When provided, a resource-group-scoped Waiver exemption is created so the dev hub can keep public network access Enabled for portal reachability. Leave empty in production.')
+param foundryHubPnaExemptionAssignmentId string = ''
 
 // ── 1. Storage accounts should prevent shared-key access ────────────────────
 resource policyStorageNoSharedKey 'Microsoft.Authorization/policyAssignments@2023-04-01' = {
@@ -78,5 +82,21 @@ resource policyAiSvcRestrictNetwork 'Microsoft.Authorization/policyAssignments@2
       }
     }
     enforcementMode: 'Default'
+  }
+}
+
+// ── 5. Exempt the dev Foundry hub from an external public-network modify policy ─
+// MCAPS (and similar) tenants assign a management-group-scoped policy whose
+// `modify` effect rewrites every AI Foundry hub back to publicNetworkAccess=Disabled.
+// That silently reverts our dev override and blocks the ai.azure.com portal.
+// A resource-group-scoped Waiver exemption lets the dev hub stay Enabled.
+// Only created when an assignment ID is supplied (dev); empty in production.
+resource foundryHubPnaExemption 'Microsoft.Authorization/policyExemptions@2022-07-01-preview' = if (!empty(foundryHubPnaExemptionAssignmentId)) {
+  name: 'exempt-hub-pna-dev'
+  properties: {
+    displayName: '[FSA] Dev Foundry hub — exempt from public-network modify policy'
+    description: 'Allows the dev AI Foundry hub to keep publicNetworkAccess=Enabled for portal reachability. Do not apply in production.'
+    policyAssignmentId: foundryHubPnaExemptionAssignmentId
+    exemptionCategory: 'Waiver'
   }
 }
