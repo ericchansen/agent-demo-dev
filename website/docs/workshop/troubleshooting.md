@@ -88,8 +88,17 @@ gh workflow run "Live Smoke" -f require_databricks=true
 ```
 
 A `skipped` live-backend check only fails the run when that backend is **required**. The job summary table and
-`demo-readiness-report.json` show which backends were required, ran, or were skipped. Full setup is on the
-[Enable Live Smoke](enable-live-smoke) page.
+`demo-readiness-report.json` show which backends were required, ran, or were skipped. Full setup, plus the
+[Backend Validation Status](enable-live-smoke#5-backend-validation-status) matrix that distinguishes
+"green because skipped" from a proven live path, is on the [Enable Live Smoke](enable-live-smoke) page.
+
+### A green run does not mean a backend was proven
+
+If Live Smoke is green but you never set Fabric/Databricks/Foundry secrets, those rows are `skipped`, not
+`ran` — the live path was **not** exercised. This is expected in demo mode. To prove a backend end-to-end,
+set its secrets and run it in required mode (`-f require_fabric=true`, etc.). See the
+[Backend Validation Status](enable-live-smoke#5-backend-validation-status) matrix for the exact secrets and
+proof command per backend.
 
 ### Local Azure reads hit an interactive CAE / Conditional Access prompt
 

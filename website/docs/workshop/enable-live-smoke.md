@@ -116,6 +116,28 @@ Every run uploads `demo-readiness-report.json` and writes a Step Summary table. 
 The run fails only when a `required` backend is `failed` or `skipped`, or when an always-on check
 (published-site, offline readiness) fails.
 
+## 5. Backend Validation Status
+
+A **green** Live Smoke run does not always mean every backend was exercised. In **demo mode** an unconfigured
+backend reports `skipped` and the workflow still passes — green because skipped, **not** because the live path
+was proven. Use this matrix to read the honest state of each backend and know exactly what it takes to move a
+row from `skipped` to live-proven (`ran`).
+
+| Backend | Default CI status | What "ran" proves | Secrets required to prove it live | How a facilitator proves it |
+|---|---|---|---|---|
+| **Foundry** (agent registration) | `skipped` until secrets set; **provable headlessly** | The account-based project registers `WWISalesAgent` and answers a Playground Responses query. | `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `FOUNDRY_PROJECT_ENDPOINT`, `MODEL_DEPLOYMENT_NAME` | `uv run python scripts/verify_foundry_agent.py` → `[OK] live registration + Playground response verified`, then `-f require_foundry=true`. |
+| **Fabric** (golden-QA eval) | `skipped` until secrets set | The Fabric Data Agent MCP answers the golden-QA questions over live lakehouse data. | `FABRIC_MCP_URL` (or `FABRIC_WORKSPACE_ID` + `FABRIC_DATA_AGENT_ID`), `FABRIC_MCP_TOOL_NAME`, plus `AZURE_*` | Provision a Fabric Data Agent, set the secrets, run `-f require_fabric=true`. |
+| **Databricks** (Genie query) | `skipped` until secrets set | A Genie space answers a query over Unity Catalog tables. | `DATABRICKS_GENIE_MCP_URL` (managed MCP) **or** `DATABRICKS_WORKSPACE_URL` + `DATABRICKS_GENIE_SPACE_ID` + `DATABRICKS_TOKEN` | Create a Genie space, grant `CAN RUN`, set the secrets, run `-f require_databricks=true`. |
+| **Published site** | `ran` on every push | The published workshop site is reachable. | none | Automatic — no secrets. |
+| **Offline readiness** | `ran` on every push | `demo_check.py`, offline eval, and artifact generation succeed without any cloud. | none | Automatic — runs on every push. |
+
+:::warning Skipped ≠ proven
+Treat `skipped` as **unvalidated**, not "working". The offline gate and unit tests cover tool contracts,
+quota math, and artifact generation deterministically, but they do not prove a live Fabric, Databricks, or
+Foundry round trip. Before a customer delivery, set the secrets for the platform you teach and run that
+backend in **required mode** so a skip turns the run red.
+:::
+
 :::warning Out of scope for an autonomous agent
 Creating the federated credential mutates Microsoft Graph and may trigger an interactive Conditional Access /
 CAE challenge that a headless agent cannot satisfy. In that case the setup script prints the manual command —
