@@ -26,6 +26,10 @@
 .PARAMETER Branch
     Branch the workflow runs on (the OIDC subject pins to it). Default: main.
 
+.PARAMETER EnvironmentName
+    Optional GitHub Actions environment name. When set, also creates a
+    federated credential for workflows whose jobs run in that environment.
+
 .PARAMETER AppDisplayName
     Entra app display name to create/reuse. Default: agent-demo-dev-live-smoke.
 
@@ -55,6 +59,7 @@
 param(
     [string]$Repo = "ericchansen/agent-demo-dev",
     [string]$Branch = "main",
+    [string]$EnvironmentName = "dev",
     [string]$AppDisplayName = "agent-demo-dev-live-smoke",
     [string]$AppId = "",
     [string]$SubscriptionId = "",
@@ -65,8 +70,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$FedCredName = "github-actions-$Branch"
-$Subject = "repo:${Repo}:ref:refs/heads/$Branch"
 $Issuer = "https://token.actions.githubusercontent.com"
 $Audience = "api://AzureADTokenExchange"
 
@@ -81,11 +84,16 @@ function Test-Command {
 }
 
 function Get-FederatedCredentialJson {
+    param(
+        [string]$Name,
+        [string]$Subject,
+        [string]$Description
+    )
     @{
-        name        = $FedCredName
+        name        = $Name
         issuer      = $Issuer
         subject     = $Subject
-        description = "GitHub Actions OIDC for $Repo on $Branch (Live Smoke)"
+        description = $Description
         audiences   = @($Audience)
     } | ConvertTo-Json -Depth 4
 }
@@ -96,7 +104,7 @@ function Show-ManualFallback {
     Write-Host "Could not complete the Microsoft Graph mutation automatically." -ForegroundColor Red
     Write-Host "A facilitator with Application Administrator (or app ownership) can run:" -ForegroundColor Red
     Write-Host ""
-    $json = Get-FederatedCredentialJson
+    $json = Get-FederatedCredentialJson -Name "github-actions-$Branch" -Subject "repo:${Repo}:ref:refs/heads/$Branch" -Description "GitHub Actions OIDC for $Repo on $Branch"
     $tmp = "federated-credential.json"
     Write-Host "  # 1. Save this federated credential JSON to $tmp :"
     Write-Host $json
@@ -166,32 +174,51 @@ elseif ($ClientId -ne "<new-app-id>") {
     }
 }
 
-# --- Federated credential (idempotent) -------------------------------------
-Write-Step "Configuring federated credential '$FedCredName'"
-Write-Host "    subject: $Subject"
-if ($DryRun) {
-    Write-Skip "would create/verify federated credential:"
-    Write-Host (Get-FederatedCredentialJson)
-}
-else {
+function Set-FederatedCredential {
+    param(
+        [string]$Name,
+        [string]$Subject,
+        [string]$Description
+    )
+
+    Write-Step "Configuring federated credential '$Name'"
+    Write-Host "    subject: $Subject"
+    if ($DryRun) {
+        Write-Skip "would create/verify federated credential:"
+        Write-Host (Get-FederatedCredentialJson -Name $Name -Subject $Subject -Description $Description)
+        return
+    }
+
     $haveCred = az ad app federated-credential list --id $ClientId --query "[?subject=='$Subject'] | [0].name" -o tsv 2>$null
     if ($haveCred) {
         Write-Host "    Federated credential already present ($haveCred) — leaving as-is."
+        return
     }
-    else {
-        $tmp = New-TemporaryFile
-        Get-FederatedCredentialJson | Set-Content -Path $tmp -Encoding utf8
-        try {
-            az ad app federated-credential create --id $ClientId --parameters $tmp | Out-Null
-            Write-Host "    Federated credential created."
-        }
-        catch {
-            Remove-Item $tmp -ErrorAction SilentlyContinue
-            Show-ManualFallback -ClientId $ClientId
-            throw
-        }
+
+    $tmp = New-TemporaryFile
+    Get-FederatedCredentialJson -Name $Name -Subject $Subject -Description $Description | Set-Content -Path $tmp -Encoding utf8
+    try {
+        az ad app federated-credential create --id $ClientId --parameters $tmp | Out-Null
+        Write-Host "    Federated credential created."
+    }
+    catch {
         Remove-Item $tmp -ErrorAction SilentlyContinue
+        Show-ManualFallback -ClientId $ClientId
+        throw
     }
+    Remove-Item $tmp -ErrorAction SilentlyContinue
+}
+
+Set-FederatedCredential `
+    -Name "github-actions-$Branch" `
+    -Subject "repo:${Repo}:ref:refs/heads/$Branch" `
+    -Description "GitHub Actions OIDC for $Repo on $Branch"
+
+if ($EnvironmentName) {
+    Set-FederatedCredential `
+        -Name "github-actions-env-$EnvironmentName" `
+        -Subject "repo:${Repo}:environment:$EnvironmentName" `
+        -Description "GitHub Actions OIDC for $Repo environment $EnvironmentName"
 }
 
 # --- Role assignment so azure/login can act --------------------------------
