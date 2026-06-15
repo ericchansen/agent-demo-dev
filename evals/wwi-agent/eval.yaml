@@ -1,0 +1,22 @@
+name: wwi-quota-agent-eval
+agent:
+  name: WWISalesAgent
+  kind: prompt
+  project_endpoint: ${FOUNDRY_PROJECT_ENDPOINT}
+  model_deployment: ${MODEL_DEPLOYMENT_NAME}
+dataset_reference:
+  name: wwi-agent-golden-prompts
+  version: "1.0"
+  local_uri: datasets/golden-prompts.jsonl
+evaluators:
+  - builtin.task_adherence
+  - name: quota-quality
+    version: "1"
+    local_uri: rubrics/quota-quality.md
+options:
+  eval_model: ${MODEL_DEPLOYMENT_NAME}
+  max_samples: 20
+metadata:
+  workshop_day: 2
+  scenario: trace-to-eval
+  data_contract: fabric-or-databricks-normalized-sales-rows

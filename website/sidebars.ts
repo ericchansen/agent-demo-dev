@@ -52,6 +52,7 @@ const sidebars: SidebarsConfig = {
         'workshop/demo-script',
         'workshop/hosted-agent-deploy',
         'workshop/enable-live-smoke',
+        'workshop/evaluation',
         'workshop/troubleshooting',
         'workshop/costs',
       ],
