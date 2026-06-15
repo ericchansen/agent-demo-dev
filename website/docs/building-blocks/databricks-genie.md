@@ -52,7 +52,16 @@ Use Unity Catalog table descriptions and trusted SQL examples. Prefer the last
 
 ## API integration pattern
 
-Use the Genie Spaces API from a thin data-agent adapter. This repo includes a Databricks SDK-backed adapter in
+There are three supported integration paths. Start with the SDK path because it is testable from the repo; move
+to managed MCP when your Databricks workspace and governance model are ready for a hosted MCP endpoint.
+
+| Path | How it works | Use it when |
+|---|---|---|
+| SDK Conversation API | `src/orchestrator/databricks_genie.py` uses the Databricks SDK `WorkspaceClient.genie` adapter and normalizes query results. | You want the simplest live smoke and a Python function tool in Foundry/hosted agent. |
+| Managed MCP | Databricks exposes governed tools through managed MCP over Unity Catalog resources. | You want a platform-managed MCP surface for agents instead of custom adapter code. |
+| Offline fallback | The multi-agent PoC emits deterministic Databricks-shaped rows. | You need to teach the architecture without a live workspace or DBU spend. |
+
+The SDK path uses the Genie Spaces API from a thin data-agent adapter. This repo includes that adapter in
 `src/orchestrator/databricks_genie.py` and exposes it as the `databricks_query` tool in the Foundry and hosted
 agent surfaces.
 
@@ -77,8 +86,11 @@ Then ask the hosted or Foundry agent for a Databricks-backed sales question:
 uv run python -m src.orchestrator "Use Databricks Genie to show sales by territory for Tailspin Toys"
 ```
 
-The tool returns `rows`, `conversation_id`, `message_id`, and `source_platform: "databricks"` so the quota pipeline
-can call `generate_quota_estimation_report` without changing the estimator.
+That exact command is the live Genie smoke. When the question mentions "Databricks Genie", the module directly
+calls the SDK adapter and prints JSON. A configured run returns `status: "ok"`, `rows`, `conversation_id`,
+`message_id`, and `source_platform: "databricks"` so the quota pipeline can call
+`generate_quota_estimation_report` without changing the estimator. With env unset, it exits with
+`status: "configuration_error"` and lists the required variables.
 
 The multi-agent proof of concept in `src/orchestrator/multi_agent/` demonstrates this boundary with deterministic
 Databricks-shaped rows when a live workspace is not configured.
@@ -127,5 +139,6 @@ and prefer the deterministic offline fallback for large groups. See the
 - [Genie Spaces](https://learn.microsoft.com/en-us/azure/databricks/genie/)
 - [Create and manage a Genie Space](https://learn.microsoft.com/en-us/azure/databricks/genie/set-up)
 - [Use the Genie Spaces API](https://learn.microsoft.com/en-us/azure/databricks/genie/conversation-api)
+- [Managed MCP servers in Azure Databricks](https://learn.microsoft.com/en-us/azure/databricks/generative-ai/mcp/managed-mcp)
 - [Manage budgets and cost controls for Genie](https://learn.microsoft.com/en-us/azure/databricks/genie/budgets)
 - [Unity Catalog](https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog/)

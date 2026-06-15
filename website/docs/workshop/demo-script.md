@@ -64,6 +64,17 @@ Now give me an aggressive and a conservative version of that quota
 
 > "Same agent, now published to M365 via Azure AI Foundry."
 
+Before switching surfaces, show the publish proof:
+
+```powershell
+az provider show --namespace Microsoft.BotService --query registrationState -o tsv
+uv run python scripts/verify_foundry_agent.py
+```
+
+The first command must return `Registered`; the second must print
+`[OK] live registration + Playground response verified`. If Teams/M365 publishing is not available in the tenant,
+keep the story honest and use the Foundry Playground as the business-user fallback.
+
 ### Query 1: Customer brief
 
 ```
@@ -110,8 +121,12 @@ Between Act 1 and Act 2, explain the translation:
 ## Pre-demo checklist
 
 - [ ] Fabric capacity is running (`az fabric capacity show`)
-- [ ] Test a query against the Data Agent
+- [ ] Mock eval passes: `uv run python tests/eval/run_eval.py --mock --pass-rate 100`
+- [ ] Live Fabric eval is either passing or explicitly blocked with missing config noted
+- [ ] Databricks Genie smoke is either passing or explicitly blocked with missing config noted
 - [ ] Copilot CLI authenticated and MCP servers loaded
 - [ ] Foundry agent responding in playground
+- [ ] Bot Service provider is registered for publish
+- [ ] Published agent identity has RBAC to Fabric/Databricks/storage/Graph resources
 - [ ] M365 Copilot can see the agent (@mention works)
 - [ ] Pre-generated XLSX/HTML/PDF artifacts available as fallback

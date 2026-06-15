@@ -76,12 +76,25 @@ Use the workshop visuals as stage gates instead of decoration:
 | Generated artifacts | `website/static/img/workshop/quota-artifacts.svg` | XLSX, HTML, and PDF outputs are concrete demo deliverables. |
 | Foundry playground | `website/static/img/workshop/foundry-playground.svg` | The Foundry project, agent, Playground, and trace story are ready for Day 2. |
 
+## Live readiness checkpoints
+
+Run these before participants arrive and record each as **passed** or **blocked with reason**:
+
+| Check | Command | Pass condition |
+|---|---|---|
+| Foundry agent | `uv run python scripts/verify_foundry_agent.py` | `WWISalesAgent` is listed and the script prints `[OK] live registration + Playground response verified`. |
+| Fabric live eval | `uv run python tests/eval/run_eval.py --pass-rate 80` | Golden-QA pass rate meets threshold, or the command blocks before question 1 because Fabric MCP env is missing. |
+| Databricks Genie | `uv run python -m src.orchestrator "Use Databricks Genie to show sales by territory for Tailspin Toys"` | JSON includes `status: "ok"`, rows, `conversation_id`, and `message_id`, or `configuration_error` when the customer chose Fabric. |
+| Publish prerequisites | `az provider show --namespace Microsoft.BotService --query registrationState -o tsv` | `Registered`; then verify published-agent RBAC and @mention visibility. |
+| Live smoke workflow | `gh workflow run live-smoke.yml` | GitHub Actions shows passing jobs or clear blocked notices for unconfigured live services. |
+
 ## Prerequisites for participants
 
 See [Setup Guide](./setup) for full details. At minimum:
 - GitHub Copilot CLI installed and authenticated
 - Python 3.11+ with the repo cloned and dependencies installed
-- Access to a Fabric workspace (shared or individual)
+- Access to one supported data platform: a Fabric Data Agent MCP endpoint or a Databricks Genie Space over Unity
+  Catalog sales tables
 
 ## Tips
 

@@ -60,10 +60,11 @@ Configuration for this accelerator lives in `fabric/` in the repo:
 The Data Agent exposes an HTTP endpoint compatible with the [Model Context Protocol](./mcp):
 
 ```
-api.fabric.microsoft.com/v1/mcp/workspaces/{workspace-id}/dataagent
+https://api.fabric.microsoft.com/v1/mcp/workspaces/{workspace-id}/dataagents/{data-agent-id}/agent
 ```
 
-This is what the `wwi-sales-data` MCP server points to. In the Foundry surface, the same endpoint is wrapped as `FabricIQPreviewTool`.
+This is what the `wwi-sales-data` MCP server points to. In the Foundry surface, the same data source can be
+wrapped as `FabricIQPreviewTool`, while the live eval harness calls the MCP endpoint directly with Entra auth.
 
 > 📖 [Data Agent MCP server](https://learn.microsoft.com/en-us/fabric/data-science/data-agent-mcp-server) · [Fabric REST API](https://learn.microsoft.com/rest/api/fabric/)
 
@@ -88,6 +89,30 @@ Choose Fabric when the workshop owner wants a Microsoft-native path with MCP ava
 Agent. Choose Databricks when the customer already has curated Unity Catalog tables and Genie Spaces. Both
 platforms feed [the same quota estimator](./quota-pipeline), so the report lab and Foundry publishing lab remain
 identical after the data step.
+
+## Live eval configuration
+
+The golden-QA harness has two modes:
+
+| Mode | Command | Meaning |
+|---|---|---|
+| Offline deterministic | `uv run python tests/eval/run_eval.py --mock --pass-rate 100` | Proves scoring, prompts, and workshop readiness without Fabric. |
+| Live Fabric MCP | `uv run python tests/eval/run_eval.py --pass-rate 80` | Sends each question to your configured Fabric Data Agent MCP endpoint. |
+
+For live mode, set either a full endpoint or workspace/agent IDs:
+
+```dotenv
+FABRIC_MCP_URL=https://api.fabric.microsoft.com/v1/mcp/workspaces/<workspace-id>/dataagents/<data-agent-id>/agent
+# Or:
+FABRIC_WORKSPACE_ID=<workspace-id>
+FABRIC_DATA_AGENT_ID=<data-agent-id>
+
+# Optional. If omitted, the harness calls tools/list and uses the only exposed tool.
+FABRIC_MCP_TOOL_NAME=<tool-name>
+```
+
+If these values are missing, live eval exits before question 1 with a **blocked** configuration message. That is
+intentional: it keeps "mock eval passed" separate from "live Fabric is configured and answering."
 
 ## Further reading
 

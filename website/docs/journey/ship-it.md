@@ -125,6 +125,17 @@ Once the agent works in the Foundry playground, publish it as an Agent Applicati
 - **RBAC** — control who can use it
 - **Stable endpoint** — accessible from M365 Copilot and Teams
 
+Use this checklist for the facilitator handoff:
+
+| Step | Command or portal action | Proof |
+|---|---|---|
+| Register Bot Service provider | `az provider register --namespace Microsoft.BotService` then `az provider show --namespace Microsoft.BotService --query registrationState -o tsv` | State is `Registered`. |
+| Verify agent in Foundry | Run `uv run python scripts/verify_foundry_agent.py`, then open **Agents > WWISalesAgent > Playground**. | CLI prints `[OK] live registration + Playground response verified`; Playground returns an answer. |
+| Publish | In Foundry, choose **Publish** and select Microsoft 365 Copilot / Teams. | An Agent Application is created with an Entra identity. |
+| Assign users/groups | Add the workshop pilot group or test users to the application assignment/RBAC surface. | The same user who will demo can see the agent. |
+| Reassign data RBAC | Grant the agent identity the minimum Fabric workspace/Data Agent, Databricks, storage, and Graph permissions required for its tools. | The agent, not just the facilitator, can query data and write artifacts. |
+| Test business surface | In Teams or M365 Copilot Chat, @mention the agent with the Tailspin Toys prompt. | The published agent responds; if not, use Foundry Playground as the fallback surface. |
+
 > 📖 **Learn more:** [Publishing agent applications](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot) · [Entra app registration](https://learn.microsoft.com/entra/identity-platform/quickstart-register-app)
 
 ### 3. Use it in M365
@@ -151,6 +162,19 @@ Open Foundry tracing after each playground run. For the workshop, point out:
 - Failures that should become eval cases before production rollout.
 
 > 📖 **Learn more:** [Set up tracing for AI agents](https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-agent-setup)
+
+### Live-smoke automation
+
+The repository includes `.github/workflows/live-smoke.yml` for scheduled and manual drift checks. It runs five
+independent proofs:
+
+| Job | What it proves | Missing config behavior |
+|---|---|---|
+| Foundry registration | `WWISalesAgent` can register and answer in the configured project. | Reports blocked when Azure/Foundry secrets are absent. |
+| Fabric live eval | Golden-QA questions reach the Fabric Data Agent MCP endpoint. | Reports blocked when Fabric MCP or Azure auth values are absent. |
+| Databricks Genie | The Genie SDK adapter returns normalized rows. | Reports blocked when workspace/space values are absent. |
+| Published site | The GitHub Pages workshop site is reachable and docs links resolve. | Always runs; failures indicate a public docs issue. |
+| Demo readiness | Mock eval and `demo_check.py` still pass. | Always runs; failures indicate an offline regression. |
 
 ## Other surfaces
 

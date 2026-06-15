@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from dataclasses import dataclass, field
@@ -154,19 +155,43 @@ def _mock_answer(question: str, qa: dict | None = None) -> str:
 # -- Data Agent client --------------------------------------------------------
 
 
+class LiveEvalConfigurationError(RuntimeError):
+    """Raised when live Fabric eval is blocked by missing configuration."""
+
+
+def _missing_live_config() -> list[str]:
+    missing: list[str] = []
+    if not (
+        os.environ.get("FABRIC_MCP_URL")
+        or (os.environ.get("FABRIC_WORKSPACE_ID") and os.environ.get("FABRIC_DATA_AGENT_ID"))
+    ):
+        missing.append("FABRIC_MCP_URL or FABRIC_WORKSPACE_ID + FABRIC_DATA_AGENT_ID")
+    return missing
+
+
+def validate_live_eval_config() -> None:
+    """Fail before question 1 when the live Fabric MCP endpoint is not configured."""
+    missing = _missing_live_config()
+    if missing:
+        raise LiveEvalConfigurationError(
+            "Live Fabric eval is blocked because required configuration is missing: "
+            + "; ".join(missing)
+            + ". Use --mock for deterministic offline eval, or configure the Fabric Data Agent MCP endpoint."
+        )
+
+
 def _live_answer(question: str) -> str:
     """Send a question to the Fabric Data Agent and return its answer."""
     try:
-        from fabric_data_agent_client import FabricDataAgentClient  # type: ignore[import-untyped]
+        from src.orchestrator.fabric_mcp_client import FabricMcpClient, FabricMcpConfigurationError, FabricMcpError
 
-        client = FabricDataAgentClient()
-        response = client.query(question)
-        return response.get("answer", response.get("text", str(response)))
-    except ImportError:
-        raise RuntimeError(
-            "fabric_data_agent_client is not installed. "
-            "Use --mock for testing without a live Data Agent, or install the SDK."
-        ) from None
+        response = FabricMcpClient.from_env().query(question)
+        answer = response.get("answer")
+        return answer if isinstance(answer, str) else json.dumps(response, ensure_ascii=False)
+    except FabricMcpConfigurationError as exc:
+        raise RuntimeError(f"Fabric Data Agent MCP is not fully configured: {exc}") from exc
+    except FabricMcpError as exc:
+        raise RuntimeError(f"Fabric Data Agent MCP query failed: {exc}") from exc
 
 
 # -- Scoring -----------------------------------------------------------------
@@ -343,6 +368,13 @@ def main(argv: list[str] | None = None) -> int:
     if not qa_list:
         print("No questions to evaluate.", file=sys.stderr)
         return 1
+
+    if not args.mock:
+        try:
+            validate_live_eval_config()
+        except LiveEvalConfigurationError as exc:
+            print(f"[blocked] {exc}", file=sys.stderr)
+            return 2
 
     mode = "mock" if args.mock else "live"
     cat_label = f" [{args.category}]" if args.category else ""

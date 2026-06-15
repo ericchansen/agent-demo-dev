@@ -35,13 +35,31 @@ class _Response:
 def test_fabric_mcp_client_requires_endpoint_and_tool(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("FABRIC_MCP_URL", raising=False)
     monkeypatch.delenv("FABRIC_MCP_TOOL_NAME", raising=False)
+    monkeypatch.delenv("FABRIC_WORKSPACE_ID", raising=False)
+    monkeypatch.delenv("FABRIC_DATA_AGENT_ID", raising=False)
 
     with pytest.raises(FabricMcpConfigurationError, match="FABRIC_MCP_URL"):
         FabricMcpClient.from_env(credential=_Credential())
 
     monkeypatch.setenv("FABRIC_MCP_URL", "https://fabric.example/mcp")
-    with pytest.raises(FabricMcpConfigurationError, match="FABRIC_MCP_TOOL_NAME"):
-        FabricMcpClient.from_env(credential=_Credential())
+    client = FabricMcpClient.from_env(credential=_Credential())
+    assert client.endpoint_url == "https://fabric.example/mcp"
+    assert client.tool_name is None
+
+
+def test_fabric_mcp_client_builds_endpoint_from_workspace_and_agent(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("FABRIC_MCP_URL", raising=False)
+    monkeypatch.setenv("FABRIC_WORKSPACE_ID", "workspace-123")
+    monkeypatch.setenv("FABRIC_DATA_AGENT_ID", "agent-456")
+    monkeypatch.setenv("FABRIC_MCP_TOOL_NAME", "ask_wwi")
+
+    client = FabricMcpClient.from_env(credential=_Credential())
+
+    assert (
+        client.endpoint_url
+        == "https://api.fabric.microsoft.com/v1/mcp/workspaces/workspace-123/dataagents/agent-456/agent"
+    )
+    assert client.tool_name == "ask_wwi"
 
 
 def test_fabric_mcp_client_calls_tools_call(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -77,6 +95,41 @@ def test_fabric_mcp_client_calls_tools_call(monkeypatch: pytest.MonkeyPatch) -> 
     assert captured["headers"]["Authorization"].startswith("Bearer token-for-")
     assert captured["body"]["method"] == "tools/call"
     assert captured["body"]["params"] == {"name": "ask_wwi", "arguments": {"question": "Top customers by revenue"}}
+
+
+def test_fabric_mcp_client_discovers_single_tool(monkeypatch: pytest.MonkeyPatch) -> None:
+    bodies: list[dict[str, Any]] = []
+
+    def fake_urlopen(request: Any, timeout: int) -> _Response:
+        assert timeout == 120
+        body = json.loads(request.data.decode("utf-8"))
+        bodies.append(body)
+        if body["method"] == "tools/list":
+            return _Response({"jsonrpc": "2.0", "id": 1, "result": {"tools": [{"name": "ask_wwi"}]}})
+        return _Response({"jsonrpc": "2.0", "id": 2, "result": {"content": [{"type": "text", "text": "OK"}]}})
+
+    monkeypatch.setattr("src.orchestrator.fabric_mcp_client.urllib.request.urlopen", fake_urlopen)
+    client = FabricMcpClient(endpoint_url="https://fabric.example/mcp", tool_name=None, credential=_Credential())
+
+    result = client.query("Top customers")
+
+    assert result["tool_name"] == "ask_wwi"
+    assert result["answer"] == "OK"
+    assert [body["method"] for body in bodies] == ["tools/list", "tools/call"]
+
+
+def test_fabric_mcp_client_requires_tool_name_when_multiple_tools(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_urlopen(_request: Any, timeout: int) -> _Response:
+        assert timeout == 120
+        return _Response(
+            {"jsonrpc": "2.0", "id": 1, "result": {"tools": [{"name": "ask_wwi"}, {"name": "ask_market"}]}}
+        )
+
+    monkeypatch.setattr("src.orchestrator.fabric_mcp_client.urllib.request.urlopen", fake_urlopen)
+    client = FabricMcpClient(endpoint_url="https://fabric.example/mcp", tool_name=None, credential=_Credential())
+
+    with pytest.raises(FabricMcpConfigurationError, match="FABRIC_MCP_TOOL_NAME"):
+        client.query("Top customers")
 
 
 def test_fabric_mcp_client_surfaces_json_rpc_errors(monkeypatch: pytest.MonkeyPatch) -> None:

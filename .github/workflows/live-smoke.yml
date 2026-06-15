@@ -1,0 +1,167 @@
+name: Live Smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 10 * * 1"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  foundry-registration:
+    runs-on: ubuntu-latest
+    env:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      FOUNDRY_PROJECT_ENDPOINT: ${{ secrets.FOUNDRY_PROJECT_ENDPOINT }}
+      MODEL_DEPLOYMENT_NAME: ${{ secrets.MODEL_DEPLOYMENT_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Foundry configuration
+        id: config
+        run: |
+          missing=()
+          for name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID FOUNDRY_PROJECT_ENDPOINT MODEL_DEPLOYMENT_NAME; do
+            if [ -z "${!name}" ]; then missing+=("$name"); fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::notice title=Foundry smoke blocked::Missing secrets/env: ${missing[*]}"
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: azure/login@v2
+        if: steps.config.outputs.configured == 'true'
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+      - uses: actions/setup-python@v5
+        if: steps.config.outputs.configured == 'true'
+        with:
+          python-version: "3.11"
+      - name: Install Python dependencies
+        if: steps.config.outputs.configured == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Verify Foundry agent registration and response
+        if: steps.config.outputs.configured == 'true'
+        run: python scripts/verify_foundry_agent.py
+
+  fabric-live-eval:
+    runs-on: ubuntu-latest
+    env:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      FABRIC_MCP_URL: ${{ secrets.FABRIC_MCP_URL }}
+      FABRIC_WORKSPACE_ID: ${{ secrets.FABRIC_WORKSPACE_ID }}
+      FABRIC_DATA_AGENT_ID: ${{ secrets.FABRIC_DATA_AGENT_ID }}
+      FABRIC_MCP_TOOL_NAME: ${{ secrets.FABRIC_MCP_TOOL_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Fabric configuration
+        id: config
+        run: |
+          missing=()
+          for name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID; do
+            if [ -z "${!name}" ]; then missing+=("$name"); fi
+          done
+          if [ -z "$FABRIC_MCP_URL" ] && { [ -z "$FABRIC_WORKSPACE_ID" ] || [ -z "$FABRIC_DATA_AGENT_ID" ]; }; then
+            missing+=("FABRIC_MCP_URL or FABRIC_WORKSPACE_ID + FABRIC_DATA_AGENT_ID")
+          fi
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::notice title=Fabric live eval blocked::Missing secrets/env: ${missing[*]}"
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: azure/login@v2
+        if: steps.config.outputs.configured == 'true'
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+      - uses: actions/setup-python@v5
+        if: steps.config.outputs.configured == 'true'
+        with:
+          python-version: "3.11"
+      - name: Install Python dependencies
+        if: steps.config.outputs.configured == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Run Fabric golden-QA live eval
+        if: steps.config.outputs.configured == 'true'
+        run: python tests/eval/run_eval.py --pass-rate 80
+
+  databricks-genie:
+    runs-on: ubuntu-latest
+    env:
+      DATABRICKS_WORKSPACE_URL: ${{ secrets.DATABRICKS_WORKSPACE_URL }}
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_WORKSPACE_URL }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+      DATABRICKS_GENIE_SPACE_ID: ${{ secrets.DATABRICKS_GENIE_SPACE_ID }}
+      DATABRICKS_GENIE_WAREHOUSE_ID: ${{ secrets.DATABRICKS_GENIE_WAREHOUSE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Databricks configuration
+        id: config
+        run: |
+          missing=()
+          for name in DATABRICKS_WORKSPACE_URL DATABRICKS_GENIE_SPACE_ID; do
+            if [ -z "${!name}" ]; then missing+=("$name"); fi
+          done
+          if [ -z "$DATABRICKS_TOKEN" ]; then
+            echo "::notice title=Databricks auth::DATABRICKS_TOKEN is unset; the SDK will try other configured auth methods."
+          fi
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::notice title=Databricks Genie smoke blocked::Missing secrets/env: ${missing[*]}"
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-python@v5
+        if: steps.config.outputs.configured == 'true'
+        with:
+          python-version: "3.11"
+      - name: Install Python dependencies
+        if: steps.config.outputs.configured == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Query Databricks Genie
+        if: steps.config.outputs.configured == 'true'
+        run: python -m src.orchestrator "Use Databricks Genie to show sales by territory for Tailspin Toys"
+
+  published-site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Check published workshop site
+        run: |
+          curl --fail --location --silent --show-error https://ericchansen.github.io/agent-demo-dev/ > /dev/null
+          python scripts/validate_links.py --timeout 20 website/docs README.md
+
+  demo-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Offline eval and readiness
+        run: |
+          python tests/eval/run_eval.py --mock --pass-rate 100
+          python scripts/demo_check.py

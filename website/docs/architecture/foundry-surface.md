@@ -101,6 +101,11 @@ call the Playground makes). The check intentionally clears preview platform-tool
 single smoke query so it uses the deterministic local `fabric_query` / `get_account_activity` function tools.
 A successful run prints `[OK] live registration + Playground response verified`.
 
+**Current dev proof:** on 2026-06-15, the dev project endpoint
+`https://fabricagentaidev2026.services.ai.azure.com/api/projects/fsa-foundry-project-dev` registered
+`WWISalesAgent` version 5, listed it in the project agent catalog, and returned a Playground-style quota
+attainment response through the Responses API.
+
 Once it has run successfully at least once, open the Foundry portal (`https://ai.azure.com`):
 
 1. Open the **fsa-foundry-project-dev** project.

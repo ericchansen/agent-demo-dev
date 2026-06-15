@@ -9,9 +9,10 @@
   <text x="88" y="156" fill="#1f2937" font-family="Segoe UI, Arial" font-size="18" font-weight="700">Agents</text>
   <rect x="88" y="182" width="162" height="44" rx="8" fill="#2563eb"/>
   <text x="105" y="210" fill="#ffffff" font-family="Segoe UI, Arial" font-size="15" font-weight="700">WWISalesAgent</text>
-  <text x="88" y="263" fill="#374151" font-family="Segoe UI, Arial" font-size="14">Definition hash present</text>
-  <text x="88" y="292" fill="#374151" font-family="Segoe UI, Arial" font-size="14">Tools: Fabric, Databricks,</text>
-  <text x="88" y="316" fill="#374151" font-family="Segoe UI, Arial" font-size="14">WorkIQ, reports, research</text>
+  <text x="88" y="263" fill="#374151" font-family="Segoe UI, Arial" font-size="14">Verified live: 2026-06-15</text>
+  <text x="88" y="292" fill="#374151" font-family="Segoe UI, Arial" font-size="14">Agent version: 5</text>
+  <text x="88" y="316" fill="#374151" font-family="Segoe UI, Arial" font-size="14">Tools: Fabric, Databricks,</text>
+  <text x="88" y="340" fill="#374151" font-family="Segoe UI, Arial" font-size="14">WorkIQ, reports, research</text>
   <rect x="306" y="120" width="560" height="160" rx="12" fill="#f8fafc" stroke="#d5dce6"/>
   <text x="330" y="154" fill="#111827" font-family="Segoe UI, Arial" font-size="18" font-weight="700">Playground prompt</text>
   <rect x="330" y="176" width="500" height="50" rx="8" fill="#ffffff" stroke="#ccd6e0"/>

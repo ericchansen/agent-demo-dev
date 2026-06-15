@@ -132,7 +132,7 @@ Edit `.github/mcp.json` with your Fabric workspace ID:
   "mcpServers": {
     "wwi-sales-data": {
       "type": "http",
-      "url": "api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagent"
+      "url": "https://api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagents/YOUR-DATA-AGENT-ID/agent"
     }
   }
 }
@@ -142,7 +142,7 @@ Or use the CLI:
 
 ```bash
 copilot mcp add --transport http wwi-sales-data \
-  "api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagent"
+  "https://api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagents/YOUR-DATA-AGENT-ID/agent"
 ```
 
 > 📖 [MCP configuration](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers) · [Fabric Data Agent MCP](https://learn.microsoft.com/en-us/fabric/data-science/data-agent-mcp-server)
@@ -258,6 +258,18 @@ uv run python scripts/verify_foundry_agent.py
 
 This smoke test keeps the live project endpoint and model deployment but forces the local function-tool path,
 so it remains valid even before Fabric IQ or WorkIQ preview tools are enabled in the project.
+
+Verify the Fabric Data Agent separately with golden-QA live eval:
+
+```powershell
+$env:FABRIC_MCP_URL="https://api.fabric.microsoft.com/v1/mcp/workspaces/<workspace-id>/dataagents/<data-agent-id>/agent"
+# Optional when tools/list returns more than one tool:
+$env:FABRIC_MCP_TOOL_NAME="<tool-name>"
+uv run python tests/eval/run_eval.py --pass-rate 80
+```
+
+If the Fabric endpoint is not configured, the command exits as **blocked** before question 1. Use
+`uv run python tests/eval/run_eval.py --mock --pass-rate 100` for the offline workshop readiness checkpoint.
 
 See [Foundry Surface](../architecture/foundry-surface) for portal testing and [Ship It](../journey/ship-it)
 for publishing. It covers:
