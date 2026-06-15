@@ -31,10 +31,17 @@ The workshop must show agents running INSIDE Azure AI Foundry, not just as local
   * Publishing to M365 Copilot as an Agent Application
 - **Multi-agent pipelines**: Build a WORKING proof-of-concept, not just documentation:
   * Create `src/orchestrator/multi_agent/` with a pipeline that chains specialized agents:
-    - Data Agent: queries Fabric/Databricks for raw sales data
-    - Analysis Agent: processes data, computes trends, identifies anomalies
-    - Report Agent: generates XLSX/HTML/PDF artifacts from analysis output
-    - Planner Agent: orchestrates the others, decides what data to pull and what reports to generate
+    - Data Agent: queries Fabric Data Agent OR Databricks Genie for sales/business data
+    - Research Agent: uses /research or web search for market trends, competitive intel
+    - (Work Context Agent: WorkIQ for M365 activity -- mocked for now, real when available)
+    - Conversational Agent: the "brain" that a user talks to. It has access to the data
+      agent and research agent outputs. It can answer questions, provide analysis, and
+      when the user asks for a report, it delegates to the Report Agent.
+    - Report Agent: takes the combined context (data + research + work activity) and
+      generates XLSX/HTML/PDF artifacts
+    The flow is: User talks to Conversational Agent -> it pulls from Data + Research +
+    Work Context agents -> user asks for report -> Conversational Agent delegates to
+    Report Agent -> artifacts generated
   * Each agent should be a separate Foundry agent registration (visible independently in portal)
   * The pipeline should be invocable as a single command or skill
   * Add tests that verify the pipeline end-to-end with mocked agent responses
