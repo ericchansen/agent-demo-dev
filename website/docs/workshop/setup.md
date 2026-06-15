@@ -194,7 +194,13 @@ FOUNDRY_PROJECT_ENDPOINT=https://fabricagentaidev2026.services.ai.azure.com/api/
 MODEL_DEPLOYMENT_NAME=gpt-4o
 # Optional: omit to use the demo-safe fabric_query fallback on day one.
 # FABRIC_IQ_CONNECTION_ID=<fabric data agent connection id>
+# Optional: use Databricks Genie / Unity Catalog instead of Fabric.
+# DATABRICKS_WORKSPACE_URL=https://adb-<workspace-id>.<region>.azuredatabricks.net
+# DATABRICKS_GENIE_SPACE_ID=<genie-space-id>
 ```
+
+The `FOUNDRY_PROJECT_ENDPOINT` value is an authenticated SDK/API endpoint. It is not expected to return a useful
+page to an unauthenticated browser or public link checker; validate it with `scripts/verify_foundry_agent.py`.
 
 Verify the live agent registers and answers (register → list → Playground query):
 

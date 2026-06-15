@@ -89,9 +89,9 @@ uv run python -m src.orchestrator "Compute quota attainment: target 1,000,000, y
 uv run python scripts/verify_foundry_agent.py
 ```
 
-`verify_foundry_agent.py` is the canonical proof: it calls `create_version` for `WWISalesAgent`, lists
-the project agents to confirm portal visibility, and runs one Responses-API query (the same call the
-Playground makes). A successful run prints `[OK] live registration + Playground response verified`.
+`verify_foundry_agent.py` is the canonical proof: it registers or reuses the fingerprinted `WWISalesAgent`
+definition, lists the project agents to confirm portal visibility, and runs one Responses-API query (the same
+call the Playground makes). A successful run prints `[OK] live registration + Playground response verified`.
 
 Once it has run successfully at least once, open the Foundry portal (`https://ai.azure.com`):
 
@@ -101,6 +101,11 @@ Once it has run successfully at least once, open the Foundry portal (`https://ai
 3. Open the agent in **Playground** and run `Generate a quota report for Tailspin Toys`.
 4. Open tracing or observability views and inspect the tool calls, latency, and generated artifact metadata.
 5. Use **Publish** when the agent is ready for Microsoft 365 Copilot and Teams.
+
+![Foundry playground verification view](/img/workshop/foundry-playground.svg)
+
+Use this visual as the Day 2 checkpoint: the left pane confirms `WWISalesAgent` exists, the Playground prompt
+proves the Responses API path works, and the trace pane confirms tool-call observability without logging payloads.
 
 > **Fabric IQ vs. the demo fallback.** The `FabricIQPreviewTool` is a *platform* tool that requires a
 > real Fabric Data Agent connection **and** a project/region where the preview tool is enabled on the

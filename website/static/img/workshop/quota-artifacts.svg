@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-labelledby="title desc">
+  <title id="title">Generated quota artifacts</title>
+  <desc id="desc">Preview of generated Excel, HTML, and PDF quota estimate outputs.</desc>
+  <rect width="960" height="540" fill="#f8fafc"/>
+  <text x="54" y="68" fill="#0f172a" font-family="Segoe UI, Arial" font-size="30" font-weight="700">Generated quota estimate artifacts</text>
+  <rect x="56" y="112" width="252" height="336" rx="16" fill="#ecfdf5" stroke="#86efac"/>
+  <text x="86" y="152" fill="#166534" font-family="Segoe UI, Arial" font-size="22" font-weight="700">Excel workbook</text>
+  <rect x="86" y="184" width="192" height="36" fill="#ffffff" stroke="#bbf7d0"/>
+  <text x="102" y="207" fill="#334155" font-family="Segoe UI, Arial" font-size="14">Summary</text>
+  <rect x="86" y="220" width="192" height="36" fill="#ffffff" stroke="#bbf7d0"/>
+  <text x="102" y="243" fill="#334155" font-family="Segoe UI, Arial" font-size="14">Recommendations</text>
+  <rect x="86" y="256" width="192" height="36" fill="#ffffff" stroke="#bbf7d0"/>
+  <text x="102" y="279" fill="#334155" font-family="Segoe UI, Arial" font-size="14">Sales Detail</text>
+  <rect x="86" y="292" width="192" height="36" fill="#ffffff" stroke="#bbf7d0"/>
+  <text x="102" y="315" fill="#334155" font-family="Segoe UI, Arial" font-size="14">Methodology</text>
+  <rect x="86" y="328" width="192" height="36" fill="#ffffff" stroke="#bbf7d0"/>
+  <text x="102" y="351" fill="#334155" font-family="Segoe UI, Arial" font-size="14">Assumptions</text>
+  <rect x="354" y="112" width="252" height="336" rx="16" fill="#eff6ff" stroke="#93c5fd"/>
+  <text x="384" y="152" fill="#1d4ed8" font-family="Segoe UI, Arial" font-size="22" font-weight="700">HTML report</text>
+  <rect x="384" y="184" width="192" height="118" rx="8" fill="#ffffff" stroke="#bfdbfe"/>
+  <polyline points="404,274 444,238 492,258 548,212" fill="none" stroke="#2563eb" stroke-width="5"/>
+  <circle cx="404" cy="274" r="5" fill="#2563eb"/>
+  <circle cx="444" cy="238" r="5" fill="#2563eb"/>
+  <circle cx="492" cy="258" r="5" fill="#2563eb"/>
+  <circle cx="548" cy="212" r="5" fill="#2563eb"/>
+  <text x="384" y="338" fill="#334155" font-family="Segoe UI, Arial" font-size="15">Inline chart and</text>
+  <text x="384" y="362" fill="#334155" font-family="Segoe UI, Arial" font-size="15">auditable methodology</text>
+  <rect x="652" y="112" width="252" height="336" rx="16" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="682" y="152" fill="#c2410c" font-family="Segoe UI, Arial" font-size="22" font-weight="700">PDF handout</text>
+  <rect x="698" y="184" width="158" height="214" rx="6" fill="#ffffff" stroke="#fed7aa"/>
+  <line x1="724" y1="226" x2="832" y2="226" stroke="#94a3b8" stroke-width="4"/>
+  <line x1="724" y1="258" x2="832" y2="258" stroke="#94a3b8" stroke-width="4"/>
+  <line x1="724" y1="290" x2="812" y2="290" stroke="#94a3b8" stroke-width="4"/>
+  <line x1="724" y1="322" x2="832" y2="322" stroke="#94a3b8" stroke-width="4"/>
+  <text x="682" y="430" fill="#334155" font-family="Segoe UI, Arial" font-size="15">Facilitator fallback</text>
+</svg>

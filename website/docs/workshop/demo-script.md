@@ -11,6 +11,8 @@ You're an Account Executive at Wide World Importers preparing for a Quarterly Bu
 
 This demo shows the same workflow in two surfaces.
 
+![Copilot CLI report flow](/img/workshop/cli-report-flow.svg)
+
 ## Act 1 — CLI (Developer Audience)
 
 > "Let's start where every agent begins — prototyping in the CLI."
@@ -53,6 +55,8 @@ Now give me an aggressive and a conservative version of that quota
 - Scenarios are deterministic, not model guesses
 - The Excel workbook includes an Assumptions sheet for auditability
 - HTML artifacts embed the chart inline for easy sharing
+
+![Generated quota artifacts](/img/workshop/quota-artifacts.svg)
 
 > "That's the prototype. Same MCP servers, zero custom code. Now let's see the business user experience."
 

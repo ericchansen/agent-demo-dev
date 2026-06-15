@@ -52,7 +52,9 @@ Use Unity Catalog table descriptions and trusted SQL examples. Prefer the last
 
 ## API integration pattern
 
-Use the Genie Spaces API from a thin data-agent adapter:
+Use the Genie Spaces API from a thin data-agent adapter. This repo includes a Databricks SDK-backed adapter in
+`src/orchestrator/databricks_genie.py` and exposes it as the `databricks_query` tool in the Foundry and hosted
+agent surfaces.
 
 1. Start or continue a conversation for the user request.
 2. Poll until the answer is complete.
@@ -60,9 +62,26 @@ Use the Genie Spaces API from a thin data-agent adapter:
 4. Rename columns only when needed; the estimator already accepts Databricks aliases.
 5. Attach `source_platform: "databricks"` to each row.
 
+Configure these environment variables for a live smoke test:
+
+```dotenv
+DATABRICKS_WORKSPACE_URL=https://adb-<workspace-id>.<region>.azuredatabricks.net
+DATABRICKS_GENIE_SPACE_ID=<genie-space-id>
+# Optional, but recommended for governance and repeatability:
+DATABRICKS_GENIE_WAREHOUSE_ID=<sql-warehouse-id>
+```
+
+Then ask the hosted or Foundry agent for a Databricks-backed sales question:
+
+```powershell
+uv run python -m src.orchestrator "Use Databricks Genie to show sales by territory for Tailspin Toys"
+```
+
+The tool returns `rows`, `conversation_id`, `message_id`, and `source_platform: "databricks"` so the quota pipeline
+can call `generate_quota_estimation_report` without changing the estimator.
+
 The multi-agent proof of concept in `src/orchestrator/multi_agent/` demonstrates this boundary with deterministic
-Databricks-shaped rows. Replace the demo data-agent function with a real Genie API caller when you connect a
-workspace.
+Databricks-shaped rows when a live workspace is not configured.
 
 ## Further reading
 

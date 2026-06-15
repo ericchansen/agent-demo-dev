@@ -66,6 +66,16 @@ Use these exact prompts to keep the room synchronized:
 | `What's our pipeline coverage ratio by salesperson?` | Tool routing beyond quota reports. |
 | `Create a competitive analysis for Wingtip Toys` | Research + sales synthesis. |
 
+## Visual checkpoints
+
+Use the workshop visuals as stage gates instead of decoration:
+
+| Checkpoint | Asset | What it proves |
+|---|---|---|
+| CLI report flow | `website/static/img/workshop/cli-report-flow.svg` | Participants can run a prompt and produce report artifacts. |
+| Generated artifacts | `website/static/img/workshop/quota-artifacts.svg` | XLSX, HTML, and PDF outputs are concrete demo deliverables. |
+| Foundry playground | `website/static/img/workshop/foundry-playground.svg` | The Foundry project, agent, Playground, and trace story are ready for Day 2. |
+
 ## Prerequisites for participants
 
 See [Setup Guide](./setup) for full details. At minimum:
