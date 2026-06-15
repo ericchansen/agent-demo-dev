@@ -9,10 +9,11 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-from azure.identity import DefaultAzureCredential
+from azure.identity import ClientSecretCredential, DefaultAzureCredential
 
 _FABRIC_SCOPE = "https://api.fabric.microsoft.com/.default"
 _DEFAULT_TIMEOUT_SECONDS = 120
+_FABRIC_SPN_ENV_VARS = ("FABRIC_CLIENT_ID", "FABRIC_CLIENT_SECRET", "FABRIC_TENANT_ID")
 
 
 class TokenCredential(Protocol):
@@ -52,7 +53,7 @@ class FabricMcpClient:
         return cls(
             endpoint_url=endpoint_url,
             tool_name=tool_name,
-            credential=credential or DefaultAzureCredential(),
+            credential=credential or build_fabric_credential(),
         )
 
     def query(self, question: str) -> dict[str, Any]:
@@ -143,6 +144,52 @@ class FabricMcpClient:
             message = error.get("message", "Unknown Fabric MCP error")
             raise FabricMcpError(str(message))
         return payload
+
+
+def fabric_spn_status() -> tuple[str, list[str]]:
+    """Classify the Fabric service-principal auth configuration.
+
+    Returns ``(mode, missing)`` where ``mode`` is one of:
+
+    - ``"service-principal"`` — all three Fabric SPN env vars are set; the client
+      authenticates with :class:`ClientSecretCredential`.
+    - ``"default"`` — no Fabric SPN env vars are set; the client falls back to
+      :class:`DefaultAzureCredential` (managed identity, Azure CLI, OIDC, etc.).
+    - ``"partial"`` — some but not all SPN env vars are set; ``missing`` lists the
+      variables still required to complete service-principal auth.
+    """
+    present = [name for name in _FABRIC_SPN_ENV_VARS if os.environ.get(name, "").strip()]
+    if not present:
+        return ("default", [])
+    missing = [name for name in _FABRIC_SPN_ENV_VARS if not os.environ.get(name, "").strip()]
+    if missing:
+        return ("partial", missing)
+    return ("service-principal", [])
+
+
+def build_fabric_credential() -> TokenCredential:
+    """Select the Fabric token credential from the environment.
+
+    Explicit Fabric service-principal secrets win when all three are present;
+    otherwise the standard :class:`DefaultAzureCredential` chain is used. A partial
+    SPN configuration is treated as an operator error so the auth mode is never
+    silently downgraded.
+    """
+    mode, missing = fabric_spn_status()
+    if mode == "partial":
+        raise FabricMcpConfigurationError(
+            "Fabric service-principal auth is partially configured. Set the remaining "
+            f"variables to use ClientSecretCredential: {', '.join(missing)}. "
+            "Unset all of FABRIC_CLIENT_ID/FABRIC_CLIENT_SECRET/FABRIC_TENANT_ID to fall "
+            "back to DefaultAzureCredential."
+        )
+    if mode == "service-principal":
+        return ClientSecretCredential(
+            tenant_id=os.environ["FABRIC_TENANT_ID"].strip(),
+            client_id=os.environ["FABRIC_CLIENT_ID"].strip(),
+            client_secret=os.environ["FABRIC_CLIENT_SECRET"].strip(),
+        )
+    return DefaultAzureCredential()
 
 
 def _resolve_endpoint_url() -> str:

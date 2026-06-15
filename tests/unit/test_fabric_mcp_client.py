@@ -10,7 +10,20 @@ from typing import Any
 
 import pytest
 
-from src.orchestrator.fabric_mcp_client import FabricMcpClient, FabricMcpConfigurationError, FabricMcpError
+from src.orchestrator.fabric_mcp_client import (
+    FabricMcpClient,
+    FabricMcpConfigurationError,
+    FabricMcpError,
+    build_fabric_credential,
+    fabric_spn_status,
+)
+
+_FABRIC_SPN_ENV_VARS = ("FABRIC_CLIENT_ID", "FABRIC_CLIENT_SECRET", "FABRIC_TENANT_ID")
+
+
+def _clear_fabric_spn_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in _FABRIC_SPN_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
 
 
 class _Credential:
@@ -160,3 +173,82 @@ def test_fabric_mcp_client_surfaces_http_errors(monkeypatch: pytest.MonkeyPatch)
 
     with pytest.raises(FabricMcpError, match="HTTP 401"):
         client.query("Top customers")
+
+
+def test_fabric_spn_status_defaults_when_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear_fabric_spn_env(monkeypatch)
+
+    assert fabric_spn_status() == ("default", [])
+
+
+def test_fabric_spn_status_service_principal_when_complete(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FABRIC_CLIENT_ID", "client-1")
+    monkeypatch.setenv("FABRIC_CLIENT_SECRET", "secret-1")
+    monkeypatch.setenv("FABRIC_TENANT_ID", "tenant-1")
+
+    assert fabric_spn_status() == ("service-principal", [])
+
+
+def test_fabric_spn_status_reports_missing_when_partial(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear_fabric_spn_env(monkeypatch)
+    monkeypatch.setenv("FABRIC_CLIENT_ID", "client-1")
+
+    mode, missing = fabric_spn_status()
+
+    assert mode == "partial"
+    assert missing == ["FABRIC_CLIENT_SECRET", "FABRIC_TENANT_ID"]
+
+
+def test_build_fabric_credential_uses_default_chain(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear_fabric_spn_env(monkeypatch)
+    captured: dict[str, Any] = {}
+
+    def fake_default(*args: Any, **kwargs: Any) -> str:
+        captured["default"] = True
+        return "default-credential"
+
+    monkeypatch.setattr("src.orchestrator.fabric_mcp_client.DefaultAzureCredential", fake_default)
+
+    assert build_fabric_credential() == "default-credential"
+    assert captured["default"] is True
+
+
+def test_build_fabric_credential_uses_client_secret(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FABRIC_CLIENT_ID", "client-1")
+    monkeypatch.setenv("FABRIC_CLIENT_SECRET", "secret-1")
+    monkeypatch.setenv("FABRIC_TENANT_ID", "tenant-1")
+    captured: dict[str, Any] = {}
+
+    def fake_client_secret(*, tenant_id: str, client_id: str, client_secret: str) -> str:
+        captured.update(tenant_id=tenant_id, client_id=client_id, client_secret=client_secret)
+        return "spn-credential"
+
+    monkeypatch.setattr("src.orchestrator.fabric_mcp_client.ClientSecretCredential", fake_client_secret)
+
+    assert build_fabric_credential() == "spn-credential"
+    assert captured == {"tenant_id": "tenant-1", "client_id": "client-1", "client_secret": "secret-1"}
+
+
+def test_build_fabric_credential_rejects_partial_config(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear_fabric_spn_env(monkeypatch)
+    monkeypatch.setenv("FABRIC_TENANT_ID", "tenant-1")
+
+    with pytest.raises(FabricMcpConfigurationError, match="FABRIC_CLIENT_ID"):
+        build_fabric_credential()
+
+
+def test_from_env_selects_service_principal_credential(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FABRIC_MCP_URL", "https://fabric.example/mcp")
+    monkeypatch.delenv("FABRIC_MCP_TOOL_NAME", raising=False)
+    monkeypatch.setenv("FABRIC_CLIENT_ID", "client-1")
+    monkeypatch.setenv("FABRIC_CLIENT_SECRET", "secret-1")
+    monkeypatch.setenv("FABRIC_TENANT_ID", "tenant-1")
+
+    monkeypatch.setattr(
+        "src.orchestrator.fabric_mcp_client.ClientSecretCredential",
+        lambda **_kwargs: "spn-credential",
+    )
+
+    client = FabricMcpClient.from_env()
+
+    assert client.credential == "spn-credential"

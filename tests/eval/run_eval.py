@@ -166,6 +166,15 @@ def _missing_live_config() -> list[str]:
         or (os.environ.get("FABRIC_WORKSPACE_ID") and os.environ.get("FABRIC_DATA_AGENT_ID"))
     ):
         missing.append("FABRIC_MCP_URL or FABRIC_WORKSPACE_ID + FABRIC_DATA_AGENT_ID")
+
+    # Auth config is independent of endpoint config: a complete Fabric SPN triple selects
+    # ClientSecretCredential, an empty one falls back to DefaultAzureCredential, but a
+    # partially-set triple is a misconfiguration we surface before question 1.
+    from src.orchestrator.fabric_mcp_client import fabric_spn_status
+
+    mode, spn_missing = fabric_spn_status()
+    if mode == "partial":
+        missing.append("Fabric service-principal auth is partial; also set " + " + ".join(spn_missing))
     return missing
 
 

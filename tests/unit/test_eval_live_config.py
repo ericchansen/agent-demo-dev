@@ -32,3 +32,13 @@ def test_live_eval_config_accepts_workspace_and_agent_ids(monkeypatch: pytest.Mo
     monkeypatch.setenv("FABRIC_DATA_AGENT_ID", "agent")
 
     validate_live_eval_config()
+
+
+def test_live_eval_config_blocks_on_partial_service_principal(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FABRIC_MCP_URL", "https://fabric.example/mcp")
+    monkeypatch.delenv("FABRIC_CLIENT_SECRET", raising=False)
+    monkeypatch.delenv("FABRIC_TENANT_ID", raising=False)
+    monkeypatch.setenv("FABRIC_CLIENT_ID", "client-1")
+
+    with pytest.raises(LiveEvalConfigurationError, match="service-principal auth is partial"):
+        validate_live_eval_config()
