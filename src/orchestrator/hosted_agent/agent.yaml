@@ -1,0 +1,38 @@
+# Azure AI Foundry Hosted Agent deployment manifest.
+#
+# Declares the container protocol so the Foundry managed runtime knows how to
+# route invocations to this bring-your-own-code agent. The HTTP contract is
+# implemented in ``server.py`` (see ``route_request``): a JSON POST carrying an
+# ``input`` (or ``message``) field, answered with a JSON ``output`` field.
+#
+# Reference:
+#   https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agents
+#   https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/agent-to-agent
+name: WWISalesHostedAgent
+description: >-
+  Bring-your-own-code hosted agent for the Wide World Importers sales scenario.
+  Wraps Fabric MCP, quota forecasting, web research, attainment, activity, and
+  report-generation tools behind a single managed-container endpoint.
+
+runtime:
+  kind: container
+  port: 8080
+
+# Protocol declaration consumed by the Foundry Hosted Agent runtime. The
+# Invocations protocol matches the synchronous request/response contract that
+# ``server.route_request`` already implements on the POST routes below.
+protocols:
+  - type: invocations
+    version: "1.0"
+    path: /invoke
+    request:
+      content_type: application/json
+      # Either field is accepted; ``input`` is preferred.
+      fields: [input, message]
+    response:
+      content_type: application/json
+      field: output
+
+health:
+  liveness: /healthz
+  readiness: /readyz

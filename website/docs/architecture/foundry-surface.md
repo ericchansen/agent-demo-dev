@@ -226,6 +226,23 @@ References (verified 2026):
 
 ## Hosted runtime configuration
 
+The hosted agent ships a deployment manifest at
+[`src/orchestrator/hosted_agent/agent.yaml`](https://github.com/ericchansen/agent-demo-dev/blob/main/src/orchestrator/hosted_agent/agent.yaml).
+Azure AI Foundry Hosted Agents must declare a supported container **protocol** —
+a bare `/invoke` route is not deployable on its own. The manifest declares the
+`invocations` protocol bound to the `POST /invoke` route implemented in
+`server.route_request`, plus `/healthz` (liveness) and `/readyz` (readiness)
+probes. A unit test (`tests/unit/test_hosted_agent_manifest.py`) keeps the
+manifest and server contract in sync.
+
+| Manifest field | Value | Served by |
+|---|---|---|
+| `protocols[].type` | `invocations` | `POST /invoke` (and `/`) |
+| `protocols[].request.fields` | `input`, `message` | JSON body parsing |
+| `protocols[].response.field` | `output` | JSON response |
+| `health.liveness` | `/healthz` | `GET /healthz` |
+| `health.readiness` | `/readyz` | `GET /readyz` |
+
 Set these environment variables on the hosted container:
 
 | Variable | Purpose |
