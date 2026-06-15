@@ -53,6 +53,19 @@ param foundryHubPnaExemptionAssignmentId string = ''
 @description('Resource tags applied to every resource.')
 param tags object = {}
 
+@description('Optional budget name. The budget is deployed only when budgetAlertEmails has at least one address.')
+param budgetName string = 'fsa-demo-monthly-budget'
+
+@description('Monthly budget amount in USD for the workshop resource group.')
+@minValue(1)
+param budgetAmount int = 350
+
+@description('Budget alert start date. Azure requires the first day of a month in ISO 8601 format.')
+param budgetStartDate string = utcNow('yyyy-MM-01T00:00:00Z')
+
+@description('Email addresses for budget alerts. Leave empty to skip budget creation in shared/dev automation.')
+param budgetAlertEmails array = []
+
 // ── Modules ─────────────────────────────────────────────────────────────────
 
 module fabricCapacity './modules/fabric-capacity.bicep' = {
@@ -134,6 +147,16 @@ module policies './modules/policy.bicep' = {
   name: 'policies'
   params: {
     foundryHubPnaExemptionAssignmentId: foundryHubPnaExemptionAssignmentId
+  }
+}
+
+module monthlyBudget './modules/budget.bicep' = if (length(budgetAlertEmails) > 0) {
+  name: 'monthlyBudget'
+  params: {
+    name: budgetName
+    amount: budgetAmount
+    startDate: budgetStartDate
+    contactEmails: budgetAlertEmails
   }
 }
 

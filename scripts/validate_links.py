@@ -99,6 +99,10 @@ def check_url(url: str, timeout_seconds: float) -> LinkCheck:
             if method == "HEAD":
                 continue
             return LinkCheck(url=url, status=None, ok=False, reason=str(exc.reason))
+        except TimeoutError:
+            if method == "HEAD":
+                continue
+            return LinkCheck(url=url, status=None, ok=False, reason="timeout")
     return LinkCheck(url=url, status=None, ok=False, reason="unknown")
 
 

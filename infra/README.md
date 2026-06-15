@@ -60,6 +60,38 @@ az deployment group create \
 
 > `fabricAdminUpn` is passed on the command line so it doesn't need to live in source control.
 
+### Preview changes before deploy
+
+Run a what-if before changing a shared demo environment:
+
+```bash
+az deployment group what-if \
+  --resource-group rg-fsa-demo \
+  --template-file infra/main.bicep \
+  --parameters infra/parameters/dev.bicepparam \
+  --result-format FullResourcePayloads
+```
+
+The GitHub deploy workflow runs the same what-if as a non-blocking guardrail before `az deployment group create`.
+
+### Optional monthly budget
+
+The template includes an opt-in Azure Cost Management budget. It is skipped by default because Azure requires at
+least one notification email or action group at resource-group scope, and facilitator email addresses should not be
+stored in source control.
+
+Enable the budget during manual deploys:
+
+```bash
+az deployment group create \
+  --resource-group rg-fsa-demo \
+  --template-file infra/main.bicep \
+  --parameters infra/parameters/dev.bicepparam \
+  --parameters budgetAlertEmails='["facilitator@example.com"]'
+```
+
+The dev default is `$350/month`, with notifications at 80% actual spend and 100% forecasted spend.
+
 ### Entra ID App Registration (manual step)
 
 Bicep cannot create Entra app registrations. After the deployment above, run the
@@ -88,10 +120,12 @@ az group delete --name rg-fsa-demo --yes --no-wait
 
 ```
 infra/
+├── bicepconfig.json             # Bicep analyzer rules
 ├── main.bicep                  # Top-level orchestration
 ├── parameters/
 │   └── dev.bicepparam          # Dev / demo parameter values
 ├── modules/
+│   ├── budget.bicep            # Optional Cost Management budget
 │   ├── fabric-capacity.bicep   # Microsoft.Fabric/capacities
 │   ├── keyvault.bicep          # Microsoft.KeyVault/vaults
 │   └── entra-app.bicep         # Placeholder + CLI instructions
