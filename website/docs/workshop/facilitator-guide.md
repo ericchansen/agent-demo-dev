@@ -88,6 +88,44 @@ Run these before participants arrive and record each as **passed** or **blocked 
 | Publish prerequisites | `az provider show --namespace Microsoft.BotService --query registrationState -o tsv` | `Registered`; then verify published-agent RBAC and @mention visibility. |
 | Live smoke workflow | `gh workflow run live-smoke.yml` | GitHub Actions shows passing jobs or clear blocked notices for unconfigured live services. |
 
+### Configure Live Smoke secrets
+
+The workflow has two modes:
+
+| Mode | Command | Use |
+|---|---|---|
+| Demo mode | `gh workflow run live-smoke.yml` | Best-effort live checks. Missing Foundry, Fabric, or Databricks config is reported as blocked and captured in `demo-readiness-report.json`. |
+| Required mode | `gh workflow run live-smoke.yml -f require_live_backends=true` | Pre-customer gate. Missing live backend config fails the workflow instead of producing a green-but-skipped run. |
+
+Set only the secrets for the live backends you plan to prove. Databricks Managed MCP is preferred for Genie smoke
+coverage because Unity Catalog permissions are enforced by the platform-managed MCP server.
+
+```powershell
+gh secret set AZURE_CLIENT_ID
+gh secret set AZURE_TENANT_ID
+gh secret set AZURE_SUBSCRIPTION_ID
+gh secret set FOUNDRY_PROJECT_ENDPOINT
+gh secret set MODEL_DEPLOYMENT_NAME
+
+# Fabric live eval: use a direct MCP endpoint, or workspace + Data Agent IDs.
+gh secret set FABRIC_MCP_URL
+gh secret set FABRIC_MCP_TOOL_NAME
+gh secret set FABRIC_WORKSPACE_ID
+gh secret set FABRIC_DATA_AGENT_ID
+
+# Databricks Genie preferred path.
+gh secret set DATABRICKS_GENIE_MCP_URL
+
+# SDK-direct fallback when Managed MCP is unavailable.
+gh secret set DATABRICKS_WORKSPACE_URL
+gh secret set DATABRICKS_GENIE_SPACE_ID
+gh secret set DATABRICKS_GENIE_WAREHOUSE_ID
+gh secret set DATABRICKS_TOKEN
+```
+
+After each run, download the uploaded **demo-readiness-report** artifact. Treat `"status": "skipped"` for a live backend
+as an explicit gap, not as evidence that the integration works.
+
 ## Prerequisites for participants
 
 See [Setup Guide](./setup) for full details. At minimum:

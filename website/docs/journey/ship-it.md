@@ -176,6 +176,16 @@ independent proofs:
 | Published site | The GitHub Pages workshop site is reachable and docs links resolve. | Always runs; failures indicate a public docs issue. |
 | Demo readiness | Mock eval and `demo_check.py` still pass. | Always runs; failures indicate an offline regression. |
 
+Manual runs default to demo mode, where missing live secrets are recorded as blocked in the uploaded
+`demo-readiness-report.json` artifact. Use required mode before a customer delivery:
+
+```powershell
+gh workflow run live-smoke.yml -f require_live_backends=true
+```
+
+In required mode, Foundry, Fabric, and Databricks live backend skips fail the workflow so a green run means those
+configured integrations actually ran.
+
 ## Other surfaces
 
 This accelerator supports five architecture options for exposing the agent to end users:
