@@ -2,7 +2,13 @@ name: Deploy Docusaurus to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ['website/**']
+    paths:
+      - 'website/**'
+      - 'docs/**'
+      - 'README.md'
+      - 'CONTRIBUTING.md'
+      - 'src/cli/skills/**'
+      - 'fabric/**'
   workflow_dispatch:
 
 permissions:

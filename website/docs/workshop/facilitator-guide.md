@@ -96,6 +96,7 @@ Run these before participants arrive and record each as **passed** or **blocked 
 | Databricks Genie | `uv run python -m src.orchestrator "Use Databricks Genie to show sales by territory for Tailspin Toys"` | JSON includes `status: "ok"`, rows, `conversation_id`, and `message_id`, or `configuration_error` when the customer chose Fabric. |
 | Publish prerequisites | `az provider show --namespace Microsoft.BotService --query registrationState -o tsv` | `Registered`; then verify published-agent RBAC and @mention visibility. |
 | Live smoke workflow | `gh workflow run live-smoke.yml` | GitHub Actions shows passing jobs or clear blocked notices for unconfigured live services. |
+| Public links | `gh workflow run link-check.yml` | The scheduled/manual Link Check workflow resolves public links and validates fragments. |
 
 ### Facilitator dev environment values
 
