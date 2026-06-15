@@ -227,3 +227,74 @@ def test_execute_tool_logs_and_reraises_failure(caplog: pytest.LogCaptureFixture
 
     messages = [record.getMessage() for record in caplog.records]
     assert any("status=error" in message and "exception=ValueError" in message for message in messages)
+
+
+def test_tracing_disabled_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in hosted_agent._TRACING_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
+
+    assert hosted_agent.is_tracing_enabled() is False
+
+
+@pytest.mark.parametrize("env_var", list(hosted_agent._TRACING_ENV_VARS))
+def test_tracing_enabled_when_any_env_var_set(env_var: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in hosted_agent._TRACING_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv(env_var, "configured")
+
+    assert hosted_agent.is_tracing_enabled() is True
+
+
+def test_emit_trace_event_is_silent_when_disabled(
+    caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    for name in hosted_agent._TRACING_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
+
+    with caplog.at_level("INFO", logger="src.orchestrator.hosted_agent.trace"):
+        hosted_agent.emit_trace_event("hosted_tool", tool_name="fabric_query", status="success")
+
+    assert caplog.records == []
+
+
+def test_emit_trace_event_emits_payload_free_metadata(
+    caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    for name in hosted_agent._TRACING_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("APPLICATIONINSIGHTS_CONNECTION_STRING", "InstrumentationKey=demo")
+
+    with caplog.at_level("INFO", logger="src.orchestrator.hosted_agent.trace"):
+        hosted_agent.emit_trace_event(
+            "hosted_tool",
+            tool_name="fabric_query",
+            status="success",
+            artifact_count=2,
+            duration_ms="12.3",
+        )
+
+    assert len(caplog.records) == 1
+    message = caplog.records[0].getMessage()
+    assert "event=hosted_tool" in message
+    assert "tool_name=fabric_query" in message
+    assert "status=success" in message
+    assert "artifact_count=2" in message
+
+
+def test_execute_tool_emits_payload_free_trace_when_enabled(
+    caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    secret_question = "What are the revenue numbers for ACME Top Secret division?"
+    monkeypatch.setenv("APPLICATIONINSIGHTS_CONNECTION_STRING", "InstrumentationKey=demo")
+    monkeypatch.delenv("FABRIC_MCP_URL", raising=False)
+
+    with caplog.at_level("INFO", logger="src.orchestrator.hosted_agent.trace"):
+        hosted_agent.execute_tool("fabric_query", {"question": secret_question})
+
+    trace_messages = [record.getMessage() for record in caplog.records]
+    assert trace_messages, "expected a trace event to be emitted"
+    combined = "\n".join(trace_messages)
+    assert "event=hosted_tool" in combined
+    assert "tool_name=fabric_query" in combined
+    assert secret_question not in combined
+    assert "Top Secret" not in combined

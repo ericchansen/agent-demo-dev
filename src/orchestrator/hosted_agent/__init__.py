@@ -6,7 +6,6 @@ import json
 import logging
 import os
 import time
-from pathlib import Path
 from typing import Any, Protocol
 
 from src.agents.quota_estimator.pipeline import demo_research_data, demo_sales_rows, demo_workiq_activity
@@ -27,10 +26,12 @@ from src.orchestrator.tool_runtime import (
 )
 
 logger = logging.getLogger(__name__)
+trace_logger = logging.getLogger(f"{__name__}.trace")
 
 MODEL_ENDPOINT = os.environ.get("MODEL_ENDPOINT", "")
 MODEL_DEPLOYMENT = os.environ.get("MODEL_DEPLOYMENT", "gpt-4o")
 _MAX_TOOL_CALL_ROUNDS = 15
+_TRACING_ENV_VARS = ("APPLICATIONINSIGHTS_CONNECTION_STRING", "OTEL_EXPORTER_OTLP_ENDPOINT")
 
 _READY_MESSAGE = (
     "Hosted WWI sales agent is ready. Ask for Fabric sales analysis, market research, "
@@ -119,7 +120,7 @@ TOOLS = [
 def handle_fabric_query(arguments: dict[str, Any]) -> dict[str, Any]:
     """Forward a natural-language question to the configured Fabric Data Agent MCP endpoint."""
     question = str(arguments.get("question", "")).strip()
-    logger.info("Fabric query: %s", question[:100])
+    logger.info("Fabric query requested question_chars=%d", len(question))
     try:
         return FabricMcpClient.from_env().query(question)
     except FabricMcpConfigurationError as exc:
@@ -174,6 +175,19 @@ TOOL_HANDLERS = {
 }
 
 
+def is_tracing_enabled() -> bool:
+    """Return whether hosted-agent metadata tracing should be emitted."""
+    return any(os.environ.get(name) for name in _TRACING_ENV_VARS)
+
+
+def emit_trace_event(event: str, **attributes: object) -> None:
+    """Emit an opt-in, payload-free trace event through structured logs."""
+    if not is_tracing_enabled():
+        return
+    safe_attributes = " ".join(f"{key}={value}" for key, value in sorted(attributes.items()))
+    trace_logger.info("event=%s %s", event, safe_attributes)
+
+
 def execute_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     """Execute one hosted tool by name with structured, content-free observability."""
     handler = TOOL_HANDLERS.get(name)
@@ -185,6 +199,13 @@ def execute_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         result = handler(arguments)
     except Exception as exc:
         duration_ms = (time.perf_counter() - start) * 1000.0
+        emit_trace_event(
+            "hosted_tool",
+            artifact_count=0,
+            duration_ms=f"{duration_ms:.1f}",
+            status="error",
+            tool_name=name,
+        )
         logger.warning(
             "tool=%s status=error duration_ms=%.1f exception=%s",
             name,
@@ -194,6 +215,14 @@ def execute_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         raise
 
     duration_ms = (time.perf_counter() - start) * 1000.0
+    artifact_count = _artifact_count(result)
+    emit_trace_event(
+        "hosted_tool",
+        artifact_count=artifact_count,
+        duration_ms=f"{duration_ms:.1f}",
+        status="success",
+        tool_name=name,
+    )
     logger.info(
         "tool=%s status=success duration_ms=%.1f %s",
         name,
@@ -203,21 +232,19 @@ def execute_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def _artifact_count(result: dict[str, Any]) -> int:
+    if not isinstance(result, dict):
+        return 0
+    artifacts = result.get("artifacts")
+    if isinstance(artifacts, dict):
+        return len(artifacts)
+    file_path = result.get("file_path")
+    return 1 if isinstance(file_path, str) and file_path else 0
+
+
 def _artifact_summary(result: dict[str, Any]) -> str:
     """Summarize artifact metadata without logging tool payload content."""
-    if not isinstance(result, dict):
-        return "artifacts=0"
-
-    artifacts = result.get("artifacts")
-    if isinstance(artifacts, dict) and artifacts:
-        names = sorted(Path(str(path)).name for path in artifacts.values())
-        return f"artifacts={len(names)} files={','.join(names)}"
-
-    file_path = result.get("file_path")
-    if isinstance(file_path, str) and file_path:
-        return f"artifacts=1 files={Path(file_path).name}"
-
-    return "artifacts=0"
+    return f"artifacts={_artifact_count(result)}"
 
 
 def process_invocation(user_message: str, adapter: HostedChatAdapter | None = None) -> str:
@@ -227,12 +254,23 @@ def process_invocation(user_message: str, adapter: HostedChatAdapter | None = No
     ``HOSTED_AGENT_ADAPTER``. If the factory returns ``None`` (the default in offline and
     demo environments) the deterministic local runtime is used instead.
     """
-    logger.info("Processing hosted invocation: %s", user_message[:100])
-    if adapter is None:
-        adapter = build_adapter()
-    if adapter is not None:
-        return _process_with_adapter(user_message, adapter)
-    return _process_with_local_runtime(user_message)
+    logger.info("Processing hosted invocation message_chars=%d", len(user_message))
+    start = time.perf_counter()
+    try:
+        if adapter is None:
+            adapter = build_adapter()
+        if adapter is not None:
+            response = _process_with_adapter(user_message, adapter)
+        else:
+            response = _process_with_local_runtime(user_message)
+    except Exception:
+        duration_ms = (time.perf_counter() - start) * 1000.0
+        emit_trace_event("hosted_invocation", duration_ms=f"{duration_ms:.1f}", status="error")
+        raise
+
+    duration_ms = (time.perf_counter() - start) * 1000.0
+    emit_trace_event("hosted_invocation", duration_ms=f"{duration_ms:.1f}", status="success")
+    return response
 
 
 def _process_with_adapter(user_message: str, adapter: HostedChatAdapter) -> str:
@@ -271,7 +309,8 @@ def _process_with_local_runtime(user_message: str) -> str:
 
     if "quota" in message and any(term in message for term in ("report", "estimate", "estimation", "artifact")):
         output_dir = os.environ.get("HOSTED_AGENT_OUTPUT_DIR", "output/hosted-agent")
-        result = handle_generate_quota_estimation_report(
+        result = execute_tool(
+            "generate_quota_estimation_report",
             {
                 "customer_name": customer_name,
                 "sales_rows": demo_sales_rows(),
@@ -280,7 +319,7 @@ def _process_with_local_runtime(user_message: str) -> str:
                 "scenario": "base",
                 "output_dir": output_dir,
                 "formats": ["xlsx", "html", "pdf"],
-            }
+            },
         )
         artifacts = result.get("artifacts", {})
         return (
@@ -290,27 +329,28 @@ def _process_with_local_runtime(user_message: str) -> str:
         )
 
     if "attainment" in message or "pipeline coverage" in message:
-        result = handle_compute_quota_attainment(
+        result = execute_tool(
+            "compute_quota_attainment",
             {
                 "annual_target": 1_200_000,
                 "ytd_actual": 590_000,
                 "open_pipeline": 950_000,
                 "months_elapsed": 6,
                 "days_elapsed": 180,
-            }
+            },
         )
         return f"Quota attainment snapshot:\n\n```json\n{json.dumps(result, indent=2)}\n```"
 
     if "forecast" in message or "quota" in message:
-        result = handle_forecast_quota({"customer_name": customer_name, "scenario": "base"})
+        result = execute_tool("forecast_quota", {"customer_name": customer_name, "scenario": "base"})
         return f"Quota forecast for {customer_name}:\n\n```json\n{json.dumps(result, indent=2)}\n```"
 
     if "research" in message or "market" in message or "news" in message:
-        result = handle_web_research({"query": user_message, "customer_name": customer_name})
+        result = execute_tool("web_research", {"query": user_message, "customer_name": customer_name})
         return f"Market research for {customer_name}:\n\n```json\n{json.dumps(result, indent=2)}\n```"
 
     if any(term in message for term in ("sales", "revenue", "customer", "product", "territory")):
-        result = handle_fabric_query({"question": user_message})
+        result = execute_tool("fabric_query", {"question": user_message})
         return f"Fabric query result:\n\n```json\n{json.dumps(result, indent=2)}\n```"
 
     return _READY_MESSAGE
