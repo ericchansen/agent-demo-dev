@@ -51,6 +51,16 @@ copilot
 
 See the [full setup guide](https://ericchansen.github.io/agent-demo/docs/setup) for all options (uv, pip+venv, `copilot mcp add`, Foundry surface).
 
+## Pre-demo validation
+
+Before presenting, run the full readiness path:
+
+```bash
+python scripts/predemo.py
+```
+
+Add `--azure` to include live dev Azure reachability checks and `--docker` to build and smoke-test the hosted-agent container.
+
 ## Tech Stack
 
 - **Microsoft Fabric** — shared data agent and OneLake analytics
