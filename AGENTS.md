@@ -34,7 +34,11 @@ The workshop must show agents running INSIDE Azure AI Foundry, not just as local
   * The same agent created via Python SDK (`azure-ai-projects`)
   * Testing in the Foundry playground
   * Monitoring/tracing agent runs in the portal
-  * Publishing to M365 Copilot as an Agent Application
+  * Publishing the agent to M365 Copilot and Teams channels. In the current Foundry
+    Agent object model the stable endpoint, Entra identity, version, and agent card live
+    on the Agent itself — there is no separate "Agent Application" resource. Publishing
+    now means exposing the agent through M365/Teams channels via its agent card. See
+    [Migrate to the new Foundry Agent Service](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/migrate).
 - **Multi-agent pipelines**: Build a WORKING proof-of-concept. The exact architecture is
   aspirational -- use /research to discover what Foundry's SDK actually supports today for
   agent-to-agent communication, then build the best PoC that's actually achievable. Push
@@ -106,7 +110,7 @@ This demo is scoped to **two delivery surfaces** that share the same WWI sales s
    - `wwi-sales-data` for Fabric Data Agent queries
    - `workiq` for M365 activity context (**mocked in the demo tenant**)
    - `quota-forecast` skill for inline report output
-2. **M365 Copilot + Teams (production path)** — Azure AI Foundry agent published via Agent Application
+2. **M365 Copilot + Teams (production path)** — Azure AI Foundry agent published to M365/Teams channels via its agent card (the stable endpoint and Entra identity live on the Agent object; the legacy "Agent Application" resource is being [retired](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/migrate))
    - `FabricIQPreviewTool` for Fabric-backed NL→SQL
    - `WorkIQPreviewTool` for M365 activity data in production
    - Custom function tools for report generation and business actions
