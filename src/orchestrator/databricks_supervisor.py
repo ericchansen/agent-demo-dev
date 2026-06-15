@@ -170,9 +170,7 @@ def databricks_supervisor_query_func(arguments: Mapping[str, object]) -> dict[st
         return {
             "status": "configuration_error",
             "message": str(exc),
-            "required_environment": [
-                "DATABRICKS_SUPERVISOR_GENIE_SPACE_ID or DATABRICKS_SUPERVISOR_QUOTA_FUNCTION"
-            ],
+            "required_environment": ["DATABRICKS_SUPERVISOR_GENIE_SPACE_ID or DATABRICKS_SUPERVISOR_QUOTA_FUNCTION"],
             "question": question,
         }
 
