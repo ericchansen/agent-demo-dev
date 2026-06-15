@@ -69,6 +69,105 @@ class CheckResult:
     detail: str
 
 
+@dataclass(frozen=True)
+class BackendReadiness:
+    name: str
+    ready: bool
+    auth: str
+    hint: str
+
+
+def _env_set(name: str) -> bool:
+    return bool(os.environ.get(name, "").strip())
+
+
+def live_backend_readiness() -> list[BackendReadiness]:
+    """Report which live backends are configured and what is missing to prove each.
+
+    Purely informational: a backend being unconfigured is expected for offline runs and
+    never fails the readiness gate. The matrix tells a facilitator exactly which secrets
+    to add to flip a backend from skipped to live-proven.
+    """
+    from src.orchestrator.fabric_mcp_client import fabric_spn_status
+
+    rows: list[BackendReadiness] = []
+
+    # Foundry — account-based project registration.
+    foundry_required = [
+        "AZURE_CLIENT_ID",
+        "AZURE_TENANT_ID",
+        "AZURE_SUBSCRIPTION_ID",
+        "FOUNDRY_PROJECT_ENDPOINT",
+        "MODEL_DEPLOYMENT_NAME",
+    ]
+    foundry_missing = [name for name in foundry_required if not _env_set(name)]
+    rows.append(
+        BackendReadiness(
+            name="Foundry",
+            ready=not foundry_missing,
+            auth="OIDC / DefaultAzureCredential",
+            hint="ready" if not foundry_missing else "set " + ", ".join(foundry_missing),
+        )
+    )
+
+    # Fabric — endpoint config plus an auth mode (SPN triple or DefaultAzureCredential).
+    fabric_endpoint_ok = _env_set("FABRIC_MCP_URL") or (
+        _env_set("FABRIC_WORKSPACE_ID") and _env_set("FABRIC_DATA_AGENT_ID")
+    )
+    fabric_mode, fabric_spn_missing = fabric_spn_status()
+    fabric_auth = {
+        "service-principal": "service-principal (ClientSecretCredential)",
+        "default": "DefaultAzureCredential",
+        "partial": "partial service-principal",
+    }[fabric_mode]
+    fabric_hints: list[str] = []
+    if not fabric_endpoint_ok:
+        fabric_hints.append("set FABRIC_MCP_URL or FABRIC_WORKSPACE_ID + FABRIC_DATA_AGENT_ID")
+    if fabric_mode == "partial":
+        fabric_hints.append("complete Fabric SPN: also set " + " + ".join(fabric_spn_missing))
+    rows.append(
+        BackendReadiness(
+            name="Fabric",
+            ready=fabric_endpoint_ok and fabric_mode != "partial",
+            auth=fabric_auth,
+            hint="ready" if not fabric_hints else "; ".join(fabric_hints),
+        )
+    )
+
+    # Databricks Genie — managed MCP or SDK-direct transport, with a token or OAuth M2M.
+    dbx_auth_ok = _env_set("DATABRICKS_TOKEN") or (
+        _env_set("DATABRICKS_CLIENT_ID") and _env_set("DATABRICKS_CLIENT_SECRET")
+    )
+    dbx_managed = _env_set("DATABRICKS_GENIE_MCP_URL")
+    dbx_direct = (_env_set("DATABRICKS_HOST") or _env_set("DATABRICKS_WORKSPACE_URL")) and _env_set(
+        "DATABRICKS_GENIE_SPACE_ID"
+    )
+    dbx_hints = []
+    if not (dbx_managed or dbx_direct):
+        dbx_hints.append("set DATABRICKS_GENIE_MCP_URL (managed MCP) or DATABRICKS_HOST + DATABRICKS_GENIE_SPACE_ID")
+    if not dbx_auth_ok:
+        dbx_hints.append("set DATABRICKS_TOKEN or DATABRICKS_CLIENT_ID + DATABRICKS_CLIENT_SECRET")
+    rows.append(
+        BackendReadiness(
+            name="Databricks",
+            ready=(dbx_managed or dbx_direct) and dbx_auth_ok,
+            auth="OAuth M2M"
+            if (_env_set("DATABRICKS_CLIENT_ID") and not _env_set("DATABRICKS_TOKEN"))
+            else "token/PAT",
+            hint="ready" if not dbx_hints else "; ".join(dbx_hints),
+        )
+    )
+    return rows
+
+
+def print_backend_readiness(rows: list[BackendReadiness]) -> None:
+    print("\nLive backend readiness")
+    print("----------------------")
+    for row in rows:
+        status = "READY" if row.ready else "SKIP "
+        print(f"[{status}] {row.name:<11s} auth={row.auth} :: {row.hint}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run demo-readiness checks.")
     parser.add_argument("--azure", action="store_true", help="Check live dev Azure public network access.")
@@ -98,6 +197,8 @@ def main() -> int:
     for result in results:
         status = "PASS" if result.passed else "FAIL"
         print(f"[{status}] {result.name}: {result.detail}")
+
+    print_backend_readiness(live_backend_readiness())
 
     return 0 if all(result.passed for result in results) else 1
 
