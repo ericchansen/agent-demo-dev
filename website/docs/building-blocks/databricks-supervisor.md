@@ -63,20 +63,60 @@ Common subagent permissions include `CAN RUN` on Genie spaces, `SELECT` plus `US
 
 ## API request helper
 
-Build a Supervisor API payload for the same WWI quota workflow:
+Build a Supervisor API payload for the same WWI quota workflow. The helper now wires the full set of hosted tool
+types the Supervisor API supports — Genie spaces, UC functions, AI/BI dashboards, Knowledge Assistants, and custom
+agents served from Model Serving endpoints — and an optional Unity Catalog trace destination:
 
 ```python
-from src.orchestrator.databricks_supervisor import build_quota_supervisor_request
+from src.orchestrator.databricks_supervisor import (
+    SupervisorTraceDestination,
+    build_quota_supervisor_request,
+)
 
 request = build_quota_supervisor_request(
     "Generate an aggressive quota report for Tailspin Toys",
     customer_name="Tailspin Toys",
     genie_space_id="<genie-space-id>",
     quota_function_name="<catalog>.<schema>.generate_quota_report",
+    dashboard_id="<dashboard-id>",                       # optional AI/BI dashboard tool
+    knowledge_assistant_id="<knowledge-assistant-id>",   # optional unstructured retrieval
+    serving_endpoint_name="<serving-endpoint-name>",     # optional custom agent
+    trace_destination=SupervisorTraceDestination(        # optional UC trace tables
+        catalog_name="<catalog>",
+        schema_name="<schema>",
+        table_prefix="supervisor_traces",
+    ),
 )
 
 payload = request.to_payload()
 ```
+
+Each tool maps to the exact nested configuration the Supervisor API expects (the nested key matches the `type`
+discriminator):
+
+| Tool type | Helper | Nested config |
+|---|---|---|
+| `genie_space` | `SupervisorToolSpec.genie_space` | `{"space_id": ...}` |
+| `uc_function` | `SupervisorToolSpec.uc_function` | `{"name": "<catalog>.<schema>.<function>"}` |
+| `uc_table` | `SupervisorToolSpec.unity_catalog_table` | `{"name": "<catalog>.<schema>.<table>"}` |
+| `dashboard` | `SupervisorToolSpec.dashboard` | `{"dashboard_id": ...}` |
+| `knowledge_assistant` | `SupervisorToolSpec.knowledge_assistant` | `{"knowledge_assistant_id": ...}` |
+| `serving_endpoint` | `SupervisorToolSpec.serving_endpoint` | `{"name": "<endpoint-name>"}` |
+
+### Tracing the agent loop
+
+The Supervisor API writes OpenTelemetry traces to Unity Catalog only when you pass a `trace_destination`. The helper
+serializes it through the Databricks client's `extra_body`, matching the API reference. Set it directly (above) or via
+environment for the tool entry point:
+
+```powershell
+$env:DATABRICKS_SUPERVISOR_TRACE_CATALOG="<catalog>"
+$env:DATABRICKS_SUPERVISOR_TRACE_SCHEMA="<schema>"
+$env:DATABRICKS_SUPERVISOR_TRACE_TABLE_PREFIX="supervisor_traces"
+```
+
+Storing traces in Unity Catalog and the Unity AI Gateway are **Beta** previews a workspace admin enables on the
+**Previews** page before the Supervisor API will accept requests.
 
 For a live call, install the optional Databricks client and provide Databricks unified-auth credentials:
 
