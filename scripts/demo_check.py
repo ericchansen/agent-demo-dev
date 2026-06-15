@@ -36,11 +36,30 @@ EXPECTED_FOUNDRY_HANDLERS = {
     "get_account_activity",
 }
 EXPECTED_HOSTED_TOOLS = EXPECTED_FOUNDRY_HANDLERS | {"fabric_query"}
-DEV_RESOURCE_GROUP = "rg-fabric-agent-dev"
-HUB_RESOURCE_ID = (
-    "/subscriptions/9450bd3b-96c5-48b2-bfdf-3374304efbd7/resourceGroups/rg-fabric-agent-dev/"
-    "providers/Microsoft.MachineLearningServices/workspaces/fabric-agent-hub-dev"
-)
+DEFAULT_RESOURCE_GROUP = "rg-fabric-agent-dev"
+DEFAULT_HUB_NAME = "fabric-agent-hub-dev"
+
+
+def _resource_group() -> str:
+    return os.environ.get("AZURE_RESOURCE_GROUP", DEFAULT_RESOURCE_GROUP)
+
+
+def _hub_resource_id() -> str:
+    """Resolve the Foundry hub resource ID from env, never a hardcoded subscription."""
+    explicit = os.environ.get("FSA_HUB_RESOURCE_ID", "").strip()
+    if explicit:
+        return explicit
+    subscription = os.environ.get("AZURE_SUBSCRIPTION_ID", "").strip()
+    if not subscription:
+        raise RuntimeError(
+            "Set FSA_HUB_RESOURCE_ID, or AZURE_SUBSCRIPTION_ID (with optional "
+            "AZURE_RESOURCE_GROUP / FSA_HUB_NAME), before running the --azure check."
+        )
+    hub_name = os.environ.get("FSA_HUB_NAME", DEFAULT_HUB_NAME)
+    return (
+        f"/subscriptions/{subscription}/resourceGroups/{_resource_group()}/"
+        f"providers/Microsoft.MachineLearningServices/workspaces/{hub_name}"
+    )
 
 
 @dataclass(frozen=True)
@@ -212,7 +231,8 @@ def check_azure_public_network_access() -> str:
     if _az_command() is None:
         raise RuntimeError("Azure CLI is not available on PATH.")
 
-    hub_pna = _az_json(["resource", "show", "--ids", HUB_RESOURCE_ID, "--query", "properties.publicNetworkAccess"])
+    resource_group = _resource_group()
+    hub_pna = _az_json(["resource", "show", "--ids", _hub_resource_id(), "--query", "properties.publicNetworkAccess"])
     if hub_pna != "Enabled":
         raise ValueError(f"Foundry hub publicNetworkAccess is {hub_pna!r}, expected 'Enabled'.")
 
@@ -221,7 +241,7 @@ def check_azure_public_network_access() -> str:
             "resource",
             "list",
             "-g",
-            DEV_RESOURCE_GROUP,
+            resource_group,
             "--resource-type",
             "Microsoft.CognitiveServices/accounts",
             "--query",
@@ -249,7 +269,7 @@ def check_azure_public_network_access() -> str:
             "account",
             "list",
             "-g",
-            DEV_RESOURCE_GROUP,
+            resource_group,
             "--query",
             "[].{name:name,pna:publicNetworkAccess,defaultAction:networkRuleSet.defaultAction}",
         ]

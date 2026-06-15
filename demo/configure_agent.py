@@ -2,12 +2,14 @@
 
 import base64
 import json
+import os
+import shutil
 import subprocess
 import time
 
 import requests
 
-AZ = r"C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin\az.cmd"
+AZ = os.environ.get("AZ_CLI") or shutil.which("az") or shutil.which("az.cmd") or "az"
 
 
 def get_token():
@@ -30,9 +32,9 @@ def get_token():
     )
 
 
-WS = "6cf857b8-a0d0-4029-af88-62a83b4116e5"
-AGENT = "f89ca52e-8d23-4020-b0ab-489ab57d0d14"
-LH = "94178450-6f04-44a5-9a54-eabfbe6ea292"
+WS = os.environ.get("FABRIC_WORKSPACE_ID", "6cf857b8-a0d0-4029-af88-62a83b4116e5")
+AGENT = os.environ.get("FABRIC_DATA_AGENT_ID", "f89ca52e-8d23-4020-b0ab-489ab57d0d14")
+LH = os.environ.get("FABRIC_LAKEHOUSE_ID", "94178450-6f04-44a5-9a54-eabfbe6ea292")
 
 data_agent_json = {
     "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/dataAgent/definition/dataAgent/2.1.0/schema.json",

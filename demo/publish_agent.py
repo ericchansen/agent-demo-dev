@@ -1,10 +1,12 @@
 """Publish the Fabric Data Agent."""
 
+import os
+import shutil
 import subprocess
 
 import requests
 
-AZ = r"C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin\az.cmd"
+AZ = os.environ.get("AZ_CLI") or shutil.which("az") or shutil.which("az.cmd") or "az"
 token = (
     subprocess.check_output(
         [
@@ -23,8 +25,8 @@ token = (
     .strip()
 )
 
-WS = "6cf857b8-a0d0-4029-af88-62a83b4116e5"
-AGENT = "f89ca52e-8d23-4020-b0ab-489ab57d0d14"
+WS = os.environ.get("FABRIC_WORKSPACE_ID", "6cf857b8-a0d0-4029-af88-62a83b4116e5")
+AGENT = os.environ.get("FABRIC_DATA_AGENT_ID", "f89ca52e-8d23-4020-b0ab-489ab57d0d14")
 headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
 endpoints = [

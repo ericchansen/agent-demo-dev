@@ -6,12 +6,15 @@ End-to-end walkthrough showing multi-source sales analysis across surfaces.
 
 ## Pre-Demo Checklist
 
+> Set `AZURE_SUBSCRIPTION_ID` to your subscription first (`export AZURE_SUBSCRIPTION_ID=<your-sub-id>`)
+> so the capacity commands below target the right tenant.
+
 ```bash
 # 1. Resume Fabric capacity (auto-pauses at midnight)
 az fabric capacity resume \
   --capacity-name fabricagentdemo \
   --resource-group rg-fabric-agent \
-  --subscription 9450bd3b-96c5-48b2-bfdf-3374304efbd7
+  --subscription "$AZURE_SUBSCRIPTION_ID"
 
 # 2. Verify Fabric Data Agent is responding
 # In Copilot CLI, run: @wwi-sales-data "What tables are available?"
@@ -136,5 +139,5 @@ computation, report generation) extend beyond what Fabric alone provides.
 az fabric capacity suspend \
   --capacity-name fabricagentdemo \
   --resource-group rg-fabric-agent \
-  --subscription 9450bd3b-96c5-48b2-bfdf-3374304efbd7
+  --subscription "$AZURE_SUBSCRIPTION_ID"
 ```
