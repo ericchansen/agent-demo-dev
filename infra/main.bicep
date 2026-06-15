@@ -50,6 +50,9 @@ param publicNetworkAccess string = 'Disabled'
 @description('Optional existing role assignment name for the Foundry hub managed identity on storage. Use only to make redeploys idempotent when the assignment already exists with a non-default name.')
 param foundryHubStorageRoleAssignmentName string = ''
 
+@description('Whether to create RBAC role assignments. Requires Owner or User Access Administrator; dev CI uses false because the OIDC principal is Contributor-scoped.')
+param enableRoleAssignments bool = true
+
 @description('Optional resource ID of an external (management-group) policy assignment whose "modify" effect forces Foundry hubs to publicNetworkAccess=Disabled. When set, a Waiver exemption is created so the dev hub stays reachable. Leave empty in production.')
 param foundryHubPnaExemptionAssignmentId string = ''
 
@@ -145,6 +148,7 @@ module aiFoundry './modules/ai-foundry.bicep' = {
     storageAccountId: storage.outputs.storageAccountId
     publicNetworkAccess: publicNetworkAccess
     storageRoleAssignmentName: foundryHubStorageRoleAssignmentName
+    enableRoleAssignments: enableRoleAssignments
     tags: tags
   }
 }

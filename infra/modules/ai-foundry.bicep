@@ -36,6 +36,9 @@ param publicNetworkAccess string = 'Disabled'
 @description('Optional role assignment resource name when the storage RBAC assignment already exists.')
 param storageRoleAssignmentName string = ''
 
+@description('Whether to create the hub managed identity storage role assignment. Requires Owner or User Access Administrator; set false for Contributor-only CI deploys when the assignment already exists.')
+param enableRoleAssignments bool = true
+
 // ── Storage account reference (for scoping the RBAC assignment) ─────────────
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
   name: last(split(storageAccountId, '/'))
@@ -70,7 +73,7 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2025-06-01' = {
 // systemDatastoresAuthMode from 'accesskey' to 'identity'.
 var storageBlobDataContributorRoleId = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
 
-resource hubStorageRbac 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource hubStorageRbac 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (enableRoleAssignments) {
   name: empty(storageRoleAssignmentName) ? guid(storageAccount.id, hub.id, storageBlobDataContributorRoleId) : storageRoleAssignmentName
   scope: storageAccount
   properties: {

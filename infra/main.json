@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "7322471787786278785"
+      "templateHash": "12339238536282840261"
     }
   },
   "parameters": {
@@ -113,6 +113,13 @@
       "defaultValue": "",
       "metadata": {
         "description": "Optional existing role assignment name for the Foundry hub managed identity on storage. Use only to make redeploys idempotent when the assignment already exists with a non-default name."
+      }
+    },
+    "enableRoleAssignments": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Whether to create RBAC role assignments. Requires Owner or User Access Administrator; dev CI uses false because the OIDC principal is Contributor-scoped."
       }
     },
     "foundryHubPnaExemptionAssignmentId": {
@@ -929,6 +936,9 @@
           "storageRoleAssignmentName": {
             "value": "[parameters('foundryHubStorageRoleAssignmentName')]"
           },
+          "enableRoleAssignments": {
+            "value": "[parameters('enableRoleAssignments')]"
+          },
           "tags": {
             "value": "[parameters('tags')]"
           }
@@ -940,7 +950,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.41.2.15936",
-              "templateHash": "1451419975574334635"
+              "templateHash": "8665946723141727233"
             }
           },
           "parameters": {
@@ -992,6 +1002,13 @@
               "metadata": {
                 "description": "Optional role assignment resource name when the storage RBAC assignment already exists."
               }
+            },
+            "enableRoleAssignments": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Whether to create the hub managed identity storage role assignment. Requires Owner or User Access Administrator; set false for Contributor-only CI deploys when the assignment already exists."
+              }
             }
           },
           "variables": {
@@ -1021,6 +1038,7 @@
               }
             },
             {
+              "condition": "[parameters('enableRoleAssignments')]",
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[resourceId('Microsoft.Storage/storageAccounts', last(split(parameters('storageAccountId'), '/')))]",

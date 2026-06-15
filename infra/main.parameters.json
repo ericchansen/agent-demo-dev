@@ -15,6 +15,7 @@
     "foundryHubName": { "value": "${FOUNDRY_HUB_NAME=fabric-agent-hub}" },
     "foundryProjectName": { "value": "${FOUNDRY_PROJECT_NAME=fsa-project}" },
     "publicNetworkAccess": { "value": "${PUBLIC_NETWORK_ACCESS=Disabled}" },
+    "enableRoleAssignments": { "value": "${ENABLE_ROLE_ASSIGNMENTS=false}" },
     "enablePolicyAssignments": { "value": "${ENABLE_POLICY_ASSIGNMENTS=false}" },
     "tags": { "value": {} }
   }
