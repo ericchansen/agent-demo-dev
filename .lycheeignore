@@ -4,6 +4,10 @@
 ^https?://0\.0\.0\.0
 example\.com
 example\.ai\.azure\.com
+# Docusaurus extensionless local routes and root-relative static assets are
+# validated by `website npm run build`; lychee checks public/external links.
+^file://
+^/img/
 # Authenticated portals that always redirect to a login wall for anonymous bots.
 ^https://portal\.azure\.com
 ^https://app\.fabric\.microsoft\.com
