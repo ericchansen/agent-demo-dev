@@ -42,14 +42,20 @@ jobs:
       # again in the final step so the run nets back to the cost-safe paused state.
       - name: Resume Fabric capacity
         run: |
-          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+          capacity_id="/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-fabric-agent-dev/providers/Microsoft.Fabric/capacities/fabricagentdemodev"
+          for attempt in $(seq 1 30); do
+            state="$(az resource show --ids "$capacity_id" --api-version 2023-11-01 --query properties.state -o tsv || true)"
+            if [ "$state" = "Active" ]; then
+              echo "Fabric capacity is already Active."
+              exit 0
+            fi
             if az resource invoke-action \
-              --ids /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-fabric-agent-dev/providers/Microsoft.Fabric/capacities/fabricagentdemodev \
+              --ids "$capacity_id" \
               --action resume \
               --api-version 2023-11-01; then
               exit 0
             fi
-            echo "Fabric capacity resume attempt ${attempt} failed; waiting before retry."
+            echo "Fabric capacity resume attempt ${attempt} failed while state='${state}'; waiting before retry."
             sleep 30
           done
           echo "::error title=Fabric capacity::Unable to resume capacity after retries."
@@ -65,14 +71,20 @@ jobs:
       - name: Suspend Fabric capacity
         if: always()
         run: |
+          capacity_id="/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-fabric-agent-dev/providers/Microsoft.Fabric/capacities/fabricagentdemodev"
           for attempt in 1 2 3 4 5; do
+            state="$(az resource show --ids "$capacity_id" --api-version 2023-11-01 --query properties.state -o tsv || true)"
+            if [ "$state" = "Paused" ]; then
+              echo "Fabric capacity is already Paused."
+              exit 0
+            fi
             if az resource invoke-action \
-              --ids /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-fabric-agent-dev/providers/Microsoft.Fabric/capacities/fabricagentdemodev \
+              --ids "$capacity_id" \
               --action suspend \
               --api-version 2023-11-01; then
               exit 0
             fi
-            echo "Fabric capacity suspend attempt ${attempt} failed; waiting before retry."
+            echo "Fabric capacity suspend attempt ${attempt} failed while state='${state}'; waiting before retry."
             sleep 30
           done
           echo "::warning title=Fabric capacity::Unable to suspend capacity after retries; check cost guardrails manually."
