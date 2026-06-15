@@ -25,6 +25,11 @@ dev = [
     "ruff",
     "mypy",
 ]
+# Optional: enables the Databricks managed MCP Genie transport
+# (DATABRICKS_GENIE_MCP_URL). The SDK-direct Genie path needs no extras.
+databricks-mcp = [
+    "databricks-mcp >= 0.2",
+]
 
 [tool.ruff]
 line-length = 120

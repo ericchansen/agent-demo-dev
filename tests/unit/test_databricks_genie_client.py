@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import patch
@@ -12,6 +13,8 @@ from src.orchestrator.databricks_genie import (
     DatabricksGenieClient,
     DatabricksGenieConfig,
     DatabricksGenieConfigurationError,
+    DatabricksGenieMcpClient,
+    DatabricksGenieMcpConfig,
     databricks_genie_query_func,
 )
 
@@ -129,6 +132,7 @@ def test_tool_handler_returns_configuration_error(monkeypatch: pytest.MonkeyPatc
     monkeypatch.delenv("DATABRICKS_WORKSPACE_URL", raising=False)
     monkeypatch.delenv("DATABRICKS_HOST", raising=False)
     monkeypatch.delenv("DATABRICKS_GENIE_SPACE_ID", raising=False)
+    monkeypatch.delenv("DATABRICKS_GENIE_MCP_URL", raising=False)
 
     result = databricks_genie_query_func({"question": "sales"})
 
@@ -153,3 +157,134 @@ def test_inline_mapping_rows_are_preserved() -> None:
     rows = result["rows"]
     assert isinstance(rows, list)
     assert rows == [{"sales_territory": "Southwest", "units_sold": 7, "source_platform": "databricks"}]
+
+
+class _FakeMcpTool:
+    def __init__(self, name: str, properties: dict[str, Any] | None = None, description: str = "") -> None:
+        self.name = name
+        self.description = description
+        self.inputSchema = {"type": "object", "properties": properties or {}}
+
+
+class _FakeMcpResponse:
+    def __init__(self, text: str) -> None:
+        self.content = [SimpleNamespace(type="text", text=text)]
+
+
+class _FakeMcpClient:
+    def __init__(self, tools: list[_FakeMcpTool], response_text: str) -> None:
+        self._tools = tools
+        self._response_text = response_text
+        self.calls: list[dict[str, Any]] = []
+
+    def list_tools(self) -> list[_FakeMcpTool]:
+        return self._tools
+
+    def call_tool(self, name: str, arguments: dict[str, Any]) -> _FakeMcpResponse:
+        self.calls.append({"name": name, "arguments": arguments})
+        return _FakeMcpResponse(self._response_text)
+
+
+def test_mcp_config_from_env_derives_workspace_host() -> None:
+    env = {"DATABRICKS_GENIE_MCP_URL": "https://adb-9.azuredatabricks.net/api/2.0/mcp/genie/space-9/"}
+    with patch.dict("os.environ", env, clear=True):
+        config = DatabricksGenieMcpConfig.from_env()
+
+    assert config.mcp_url == "https://adb-9.azuredatabricks.net/api/2.0/mcp/genie/space-9"
+    assert config.workspace_url == "https://adb-9.azuredatabricks.net"
+
+
+def test_mcp_config_requires_https_url() -> None:
+    env = {"DATABRICKS_GENIE_MCP_URL": "http://adb-9.azuredatabricks.net/api/2.0/mcp/genie/space-9"}
+    with patch.dict("os.environ", env, clear=True), pytest.raises(DatabricksGenieConfigurationError):
+        DatabricksGenieMcpConfig.from_env()
+
+
+def test_mcp_client_queries_and_normalizes_json_rows() -> None:
+    tool = _FakeMcpTool(
+        "query_genie_space",
+        properties={"query": {"type": "string", "description": "natural language question"}},
+    )
+    payload = json.dumps(
+        [
+            {"sales_territory": "Northwest", "net_sales_amount": 100.0},
+            {"sales_territory": "Southwest", "net_sales_amount": 200.0},
+        ]
+    )
+    mcp_client = _FakeMcpClient([tool], payload)
+    client = DatabricksGenieMcpClient(
+        DatabricksGenieMcpConfig(mcp_url="https://adb-9.azuredatabricks.net/api/2.0/mcp/genie/space-9"),
+        mcp_client=mcp_client,
+    )
+
+    result = client.query("Show sales by territory")
+
+    assert result["status"] == "ok"
+    assert result["transport"] == "managed-mcp"
+    assert result["tool_name"] == "query_genie_space"
+    assert result["row_count"] == 2
+    rows = result["rows"]
+    assert isinstance(rows, list)
+    assert rows[0]["sales_territory"] == "Northwest"
+    assert rows[0]["source_platform"] == "databricks"
+    assert mcp_client.calls[0] == {"name": "query_genie_space", "arguments": {"query": "Show sales by territory"}}
+
+
+def test_mcp_client_handles_statement_response_payload() -> None:
+    tool = _FakeMcpTool("genie", properties={"question": {"type": "string"}})
+    payload = json.dumps(
+        {
+            "statement_response": {
+                "result": {"data_array": [["Northwest", 5]]},
+                "manifest": {"schema": {"columns": [{"name": "territory"}, {"name": "units"}]}},
+            }
+        }
+    )
+    mcp_client = _FakeMcpClient([tool], payload)
+    client = DatabricksGenieMcpClient(
+        DatabricksGenieMcpConfig(mcp_url="https://adb-9.azuredatabricks.net/api/2.0/mcp/genie/space-9"),
+        mcp_client=mcp_client,
+    )
+
+    result = client.query("totals")
+
+    assert mcp_client.calls[0]["arguments"] == {"question": "totals"}
+    rows = result["rows"]
+    assert isinstance(rows, list)
+    assert rows == [{"territory": "Northwest", "units": 5, "source_platform": "databricks"}]
+
+
+def test_mcp_client_raises_when_no_tools() -> None:
+    mcp_client = _FakeMcpClient([], "")
+    client = DatabricksGenieMcpClient(
+        DatabricksGenieMcpConfig(mcp_url="https://adb-9.azuredatabricks.net/api/2.0/mcp/genie/space-9"),
+        mcp_client=mcp_client,
+    )
+
+    with pytest.raises(Exception):
+        client.query("anything")
+
+
+def test_tool_handler_uses_mcp_when_configured(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABRICKS_GENIE_MCP_URL", "https://adb-9.azuredatabricks.net/api/2.0/mcp/genie/space-9")
+    tool = _FakeMcpTool("genie_query", properties={"query": {"type": "string"}})
+    mcp_client = _FakeMcpClient([tool], json.dumps([{"territory": "Northwest"}]))
+
+    captured: dict[str, Any] = {}
+
+    def _fake_from_env() -> DatabricksGenieMcpClient:
+        client = DatabricksGenieMcpClient(
+            DatabricksGenieMcpConfig(mcp_url="https://adb-9.azuredatabricks.net/api/2.0/mcp/genie/space-9"),
+            mcp_client=mcp_client,
+        )
+        captured["client"] = client
+        return client
+
+    monkeypatch.setattr(DatabricksGenieMcpClient, "from_env", staticmethod(_fake_from_env))
+
+    result = databricks_genie_query_func({"question": "sales by territory"})
+
+    assert result["status"] == "ok"
+    assert result["transport"] == "managed-mcp"
+    assert "client" in captured
+    assert mcp_client.calls[0]["arguments"] == {"query": "sales by territory"}

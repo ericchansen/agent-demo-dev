@@ -113,11 +113,19 @@ jobs:
       DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
       DATABRICKS_GENIE_SPACE_ID: ${{ secrets.DATABRICKS_GENIE_SPACE_ID }}
       DATABRICKS_GENIE_WAREHOUSE_ID: ${{ secrets.DATABRICKS_GENIE_WAREHOUSE_ID }}
+      DATABRICKS_GENIE_MCP_URL: ${{ secrets.DATABRICKS_GENIE_MCP_URL }}
     steps:
       - uses: actions/checkout@v4
       - name: Check Databricks configuration
         id: config
         run: |
+          # Two supported transports: managed MCP (DATABRICKS_GENIE_MCP_URL) or
+          # SDK-direct (DATABRICKS_WORKSPACE_URL + DATABRICKS_GENIE_SPACE_ID).
+          if [ -n "$DATABRICKS_GENIE_MCP_URL" ]; then
+            echo "::notice title=Databricks transport::Using managed MCP Genie server ($DATABRICKS_GENIE_MCP_URL)."
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           missing=()
           for name in DATABRICKS_WORKSPACE_URL DATABRICKS_GENIE_SPACE_ID; do
             if [ -z "${!name}" ]; then missing+=("$name"); fi
@@ -126,7 +134,7 @@ jobs:
             echo "::notice title=Databricks auth::DATABRICKS_TOKEN is unset; the SDK will try other configured auth methods."
           fi
           if [ "${#missing[@]}" -gt 0 ]; then
-            echo "::notice title=Databricks Genie smoke blocked::Missing secrets/env: ${missing[*]}"
+            echo "::notice title=Databricks Genie smoke blocked::Set DATABRICKS_GENIE_MCP_URL (managed MCP) or ${missing[*]} (SDK-direct)."
             echo "configured=false" >> "$GITHUB_OUTPUT"
           else
             echo "configured=true" >> "$GITHUB_OUTPUT"

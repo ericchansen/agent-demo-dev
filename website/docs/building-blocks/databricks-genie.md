@@ -58,7 +58,7 @@ to managed MCP when your Databricks workspace and governance model are ready for
 | Path | How it works | Use it when |
 |---|---|---|
 | SDK Conversation API | `src/orchestrator/databricks_genie.py` uses the Databricks SDK `WorkspaceClient.genie` adapter and normalizes query results. | You want the simplest live smoke and a Python function tool in Foundry/hosted agent. |
-| Managed MCP | Databricks exposes governed tools through managed MCP over Unity Catalog resources. | You want a platform-managed MCP surface for agents instead of custom adapter code. |
+| Managed MCP | `src/orchestrator/databricks_genie.py` selects `DatabricksGenieMcpClient` when `DATABRICKS_GENIE_MCP_URL` is set, calling the Databricks-hosted Genie MCP server (Unity Catalog permissions enforced server-side). | You want a platform-managed MCP surface for agents instead of custom adapter code. |
 | Offline fallback | The multi-agent PoC emits deterministic Databricks-shaped rows. | You need to teach the architecture without a live workspace or DBU spend. |
 
 The SDK path uses the Genie Spaces API from a thin data-agent adapter. This repo includes that adapter in
@@ -95,6 +95,52 @@ calls the SDK adapter and prints JSON. A configured run returns `status: "ok"`, 
 The multi-agent proof of concept in `src/orchestrator/multi_agent/` demonstrates this boundary with deterministic
 Databricks-shaped rows when a live workspace is not configured.
 
+## Managed MCP transport (DATABRICKS_GENIE_MCP_URL)
+
+The same `databricks_query` tool can talk to a **Databricks managed MCP Genie server** instead of the SDK
+Conversation API. The selection is explicit and non-breaking: set `DATABRICKS_GENIE_MCP_URL` and the adapter
+routes through `DatabricksGenieMcpClient`; leave it unset and the SDK-direct path is used unchanged.
+
+The managed MCP Genie endpoint has the shape:
+
+```text
+https://<workspace-hostname>/api/2.0/mcp/genie/<genie-space-id>
+```
+
+Find it in your workspace under **AI Gateway → MCPs**. Enable the optional dependency, then configure the URL:
+
+```powershell
+# Install the optional managed-MCP client (the SDK-direct path needs no extras).
+uv sync --extra dev --extra databricks-mcp
+```
+
+```dotenv
+# When set, the agent uses the managed MCP Genie server instead of the SDK adapter.
+DATABRICKS_GENIE_MCP_URL=https://adb-<workspace-id>.<region>.azuredatabricks.net/api/2.0/mcp/genie/<genie-space-id>
+```
+
+The adapter discovers the Genie query tool via `list_tools()`, calls it with the natural-language question, and
+normalizes the returned content into the same quota-row contract (`source_platform: "databricks"`), so the quota
+pipeline is unchanged regardless of transport. The response includes `transport: "managed-mcp"` and the resolved
+`tool_name` so you can confirm which path ran.
+
+### Authentication modes
+
+Databricks managed MCP servers are secure by default and enforce Unity Catalog permissions server-side. The
+`WorkspaceClient` backing the MCP client resolves credentials from the standard Databricks unified auth chain, so
+pick the mode that matches where the agent runs:
+
+| Mode | When to use | How to configure |
+|---|---|---|
+| **PAT** (personal access token) | Quick local testing for a single user. | `DATABRICKS_HOST` + `DATABRICKS_TOKEN`. |
+| **U2M** (user-to-machine OAuth) | Interactive development; actions run as you. | `databricks auth login --host https://<workspace-hostname>`, then reference the CLI profile. |
+| **M2M** (machine-to-machine OAuth) | Unattended agents / CI service principals. | Service principal `DATABRICKS_CLIENT_ID` + `DATABRICKS_CLIENT_SECRET` (+ `DATABRICKS_HOST`). |
+| **OBO** (on-behalf-of-user) | Hosted agents that must act as the calling user so UC permissions are evaluated per user. | Provide the user token to the MCP client per request; include the Genie OAuth scope for the server. |
+
+For unattended workshop CI, prefer **M2M** with a service principal that has `SELECT` on the Genie Space tables.
+For published Foundry/M365 agents where each user should only see their own governed data, use **OBO** so Unity
+Catalog enforces per-user access on every query.
+
 ## Live smoke test (environment-gated)
 
 A **live** Genie call is optional and only runs when you point the adapter at a real workspace. Treat it as
@@ -109,6 +155,12 @@ still use deterministic Databricks-shaped rows so the workshop can be completed 
 3. **A SQL warehouse** attached to the Genie Space (or referenced via `DATABRICKS_GENIE_WAREHOUSE_ID`).
 4. **Authentication** — the `databricks-sdk` `WorkspaceClient` resolves credentials from the standard Databricks
    auth chain (env vars, `~/.databrickscfg` profile, or Azure CLI / managed identity).
+
+:::tip Smoke either transport
+The same smoke command exercises whichever transport is configured. Set `DATABRICKS_GENIE_MCP_URL` to run it over
+the managed MCP server, or set `DATABRICKS_WORKSPACE_URL` + `DATABRICKS_GENIE_SPACE_ID` for the SDK-direct path.
+The Live Smoke workflow reports the Databricks check as RAN, SKIPPED, or FAILED accordingly.
+:::
 
 **Run the smoke test** once the three environment variables are set:
 
