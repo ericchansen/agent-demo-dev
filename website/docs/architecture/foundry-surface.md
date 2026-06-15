@@ -151,17 +151,42 @@ Use the multi-agent pattern when you need independent observability, separate ow
 evaluation. Use the single-agent pattern when speed, fewer registrations, and simpler publishing matter more.
 
 > **Scope honesty.** The multi-agent pipeline shipped in this repo is a **local, deterministic proof of
-> concept** (`src/orchestrator/multi_agent/`). It runs the planner → data → research → context → report
-> stages in-process to mirror the single-agent output, so you can demo and unit-test the decomposition
-> without provisioning six Foundry agents. It is **not** live Foundry agent-to-agent chaining yet: the
-> stage names map to the `foundry_agent_name` slots that *would* be registered, but no inter-agent
-> Foundry calls are made. Promote it to live chaining only after registering each stage as its own
-> Foundry agent and validating SDK support — then add portal traces here. The working PoC is invocable with:
+> concept** (`src/orchestrator/multi_agent/pipeline.py`). It runs the planner → data → research → context →
+> report stages in-process to mirror the single-agent output, so you can demo and unit-test the decomposition
+> without provisioning Foundry agents. It is **not** live Foundry agent-to-agent chaining: the stage names map
+> to the `foundry_agent_name` slots that *would* be registered, but no inter-agent Foundry calls are made.
 
 ```powershell
 uv run python -m src.orchestrator.multi_agent "Generate a quota report for Tailspin Toys" --customer "Tailspin Toys" --data-source fabric
 uv run python -m src.orchestrator.multi_agent "Generate a quota report for Tailspin Toys" --customer "Tailspin Toys" --data-source databricks
 ```
+
+### Promotion path to real Foundry multi-agent (verified against the SDK)
+
+Because this repo is on the **new** Responses API path (`PromptAgentDefinition` + `create_version` +
+`openai.responses.create`), the classic `ConnectedAgentTool` does **not** apply — it belongs to the deprecated
+threads/runs API and its agents cannot be referenced from prompt agents. The new-API options are:
+
+| Option | What it is | Setup cost | Status |
+|---|---|---|---|
+| **A2A tool** (`A2APreviewTool`) | One prompt agent calls another agent exposed as an A2A endpoint; one tool per sub-agent. | Each sub-agent needs an A2A **connection created in the Foundry portal** — no SDK-only path. | Public Preview |
+| **Foundry Workflows** (`WorkflowAgentDefinition`) | Declarative sequential / group-chat / human-in-the-loop graph, authored as Power Fx **YAML** in the portal or VS Code Foundry Toolkit, invoked by name. | Portal/VS Code authoring; YAML is portal-proprietary. | Portal feature |
+| **Microsoft Agent Framework** | Pure-Python orchestration (`SequentialBuilder`, `HandoffBuilder`) over `FoundryChatClient`, runs against the same Responses API. | `pip install agent-framework agent-framework-foundry`; no portal A2A setup. | Recommended code path |
+
+`src/orchestrator/multi_agent/foundry_promotion.py` is the **import-validated bridge**: it builds genuine
+`PromptAgentDefinition` (with one `A2APreviewTool` per sub-agent connection) and `WorkflowAgentDefinition` objects
+from the installed SDK, and is unit-tested offline in `tests/unit/test_foundry_promotion.py`. It does not make
+live calls — registering A2A connections / workflows requires the portal setup noted above — so wire it into a
+live project once those connections exist. Use the **single-agent pattern** when speed, fewer registrations, and
+simpler publishing matter more; use a **multi-agent** option when you need independent observability, separate
+ownership, or agent-specific evaluation.
+
+References (verified 2026):
+
+- [Migrate to the new Foundry Agent Service](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate) — Connected Agents is not available on the new API
+- [Agent-to-agent (A2A) tool](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/agent-to-agent)
+- [Foundry workflows concept](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/workflow)
+- [Agent Framework sequential orchestration](https://learn.microsoft.com/en-us/agent-framework/workflows/orchestrations/sequential)
 
 ## Key characteristics
 
