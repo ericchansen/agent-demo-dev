@@ -38,7 +38,15 @@ The workshop must show agents running INSIDE Azure AI Foundry, not just as local
   * Each agent should be a separate Foundry agent registration (visible independently in portal)
   * The pipeline should be invocable as a single command or skill
   * Add tests that verify the pipeline end-to-end with mocked agent responses
-  * Compare single-agent (current, simpler) vs multi-agent (more capable, more observable) in docs
+  * The multi-agent pipeline must produce THE SAME outputs as the single-agent flows:
+    - Same quota estimation reports (XLSX/HTML/PDF)
+    - Same sales analysis capabilities
+    - Same data queries against Fabric/Databricks
+    The point is to show THREE ways to achieve the same business outcome:
+    1. Copilot CLI (prototype, developer-facing)
+    2. Single Foundry agent with tools (simple production path)
+    3. Multi-agent pipeline (advanced, more observable, more composable)
+    Workshop attendees should be able to compare all three side by side.
 - **The hosted agent** in `src/orchestrator/hosted_agent/` should be deployable to the project
   as a managed compute endpoint, not just a local Docker container.
 - **Never rewrite published git history** — no force-push on shared branches
