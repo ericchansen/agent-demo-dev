@@ -87,6 +87,9 @@ jobs:
       FABRIC_WORKSPACE_ID: ${{ secrets.FABRIC_WORKSPACE_ID }}
       FABRIC_DATA_AGENT_ID: ${{ secrets.FABRIC_DATA_AGENT_ID }}
       FABRIC_MCP_TOOL_NAME: ${{ secrets.FABRIC_MCP_TOOL_NAME }}
+      FABRIC_CLIENT_ID: ${{ secrets.FABRIC_CLIENT_ID }}
+      FABRIC_CLIENT_SECRET: ${{ secrets.FABRIC_CLIENT_SECRET }}
+      FABRIC_TENANT_ID: ${{ secrets.FABRIC_TENANT_ID }}
     steps:
       - uses: actions/checkout@v5
       - name: Check Fabric configuration
@@ -96,8 +99,23 @@ jobs:
           for name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID; do
             if [ -z "${!name}" ]; then missing+=("$name"); fi
           done
+          # Endpoint config: explicit MCP URL or the workspace + data-agent pair.
           if [ -z "$FABRIC_MCP_URL" ] && { [ -z "$FABRIC_WORKSPACE_ID" ] || [ -z "$FABRIC_DATA_AGENT_ID" ]; }; then
             missing+=("FABRIC_MCP_URL or FABRIC_WORKSPACE_ID + FABRIC_DATA_AGENT_ID")
+          fi
+          # Auth config is independent of endpoint config. A complete Fabric SPN triple
+          # selects ClientSecretCredential; an empty one falls back to the azure/login
+          # OIDC identity via DefaultAzureCredential; a partial triple is a hard error.
+          spn_set=0
+          for name in FABRIC_CLIENT_ID FABRIC_CLIENT_SECRET FABRIC_TENANT_ID; do
+            if [ -n "${!name}" ]; then spn_set=$((spn_set + 1)); fi
+          done
+          if [ "$spn_set" -eq 3 ]; then
+            echo "::notice title=Fabric auth::Using Fabric service-principal (ClientSecretCredential)."
+          elif [ "$spn_set" -eq 0 ]; then
+            echo "::notice title=Fabric auth::Using DefaultAzureCredential (GitHub OIDC federated identity)."
+          else
+            missing+=("Fabric SPN auth is partial: set all of FABRIC_CLIENT_ID + FABRIC_CLIENT_SECRET + FABRIC_TENANT_ID, or none")
           fi
           if [ "${#missing[@]}" -gt 0 ]; then
             echo "::notice title=Fabric live eval blocked::Missing secrets/env: ${missing[*]}"
