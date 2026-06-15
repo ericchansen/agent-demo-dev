@@ -100,9 +100,10 @@ invocation locally before deploying to managed compute:
 docker build -f src/orchestrator/hosted_agent/Dockerfile -t wwi-hosted-agent .
 
 # Run and probe
-docker run -d --name wwi-agent -p 8080:8080 wwi-hosted-agent
+docker run -d --name wwi-agent -p 8080:8088 wwi-hosted-agent
 curl http://127.0.0.1:8080/healthz   # -> {"status": "alive"}
 curl http://127.0.0.1:8080/readyz    # -> {"status": "ready", "adapter": "local-runtime"}
+curl http://127.0.0.1:8080/readiness # -> {"status": "ready", "adapter": "local-runtime"}
 
 # Invoke custom automation (LocalDeterministicAdapter answers without Azure creds)
 curl -X POST http://127.0.0.1:8080/invoke -H "Content-Type: application/json" `
@@ -117,7 +118,7 @@ curl -X POST http://127.0.0.1:8080/responses -H "Content-Type: application/json"
 docker rm -f wwi-agent
 ```
 
-`/healthz` is the liveness probe and `/readyz` is the readiness probe; wire both into your managed
+`/healthz` is the liveness probe and `/readyz` plus `/readiness` are readiness probes; wire them into your managed
 compute health checks. The container responds to both `/responses` (conversational Hosted Agent protocol)
 and `/invoke` (custom automation protocol) even without Azure credentials because it falls back to a local
 deterministic adapter — set the Azure environment variables to route through a real model instead.

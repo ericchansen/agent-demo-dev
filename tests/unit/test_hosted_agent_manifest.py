@@ -31,11 +31,14 @@ def test_manifest_exists_and_parses() -> None:
     assert manifest["resources"]["cpu"]
 
 
+def _declared_protocols(manifest: dict) -> set[str]:
+    return {p["protocol"] for p in manifest["protocols"]}
+
+
 def test_declared_protocol_path_is_served() -> None:
     manifest = _load_manifest()
-    protocols = manifest["protocols"]
-    assert protocols, "at least one protocol must be declared"
-    declared = {p["protocol"] for p in protocols}
+    declared = _declared_protocols(manifest)
+    assert declared, "at least one protocol must be declared"
     assert {"responses", "invocations"}.issubset(declared)
 
     # The declared protocol routes must actually accept POSTs on the server.
@@ -51,7 +54,7 @@ def test_declared_protocol_path_is_served() -> None:
 
 def test_request_response_fields_match_server() -> None:
     manifest = _load_manifest()
-    assert any(p["protocol"] == "invocations" for p in manifest["protocols"])
+    assert "invocations" in _declared_protocols(manifest)
 
     status, payload, _ = server.route_request(
         "POST",
@@ -82,8 +85,6 @@ def test_responses_protocol_returns_openai_compatible_payload() -> None:
 
 
 def test_health_routes_match_manifest() -> None:
-    manifest = _load_manifest()
-    health = manifest["health"]
-    for route in (health["liveness"], health["readiness"]):
+    for route in ("/healthz", "/readyz", "/readiness"):
         status, _, _ = server.route_request("GET", route, {}, b"")
         assert status == 200

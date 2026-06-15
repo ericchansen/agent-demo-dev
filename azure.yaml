@@ -1,28 +1,37 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+requiredVersions:
+    extensions:
+        azure.ai.agents: '>=0.1.0-preview'
 name: agent-demo-dev
 metadata:
-  template: agent-demo-dev@0.1.0
-
-# Provisions the workshop's Azure footprint (Fabric capacity, Key Vault, AI Foundry
-# hub + project, storage, and Cognitive Services) from the resource-group-scoped
-# Bicep in ./infra. Parameter values are read from the azd environment with the
-# defaults declared in infra/main.parameters.json.
-#
-# Quick start:
-#   azd env new dev
-#   azd env set FABRIC_CAPACITY_NAME        fabricagentdemodev
-#   azd env set KEY_VAULT_NAME              fsa-agent-kv-dev-2026
-#   azd env set STORAGE_ACCOUNT_NAME        fsaagentstorage2026d
-#   azd env set COG_SERVICES_NAME           fabricagentaidev2026
-#   azd env set FOUNDRY_HUB_COG_SERVICES_NAME fsa-hub-dev-2026
-#   azd env set PUBLIC_NETWORK_ACCESS       Enabled
-#   azd env set AZURE_RESOURCE_GROUP        rg-fabric-agent-dev
-#   azd provision
-#
-# The classic, fully-pinned path remains:
-#   az deployment group create -g rg-fabric-agent-dev \
-#     -f infra/main.bicep -p infra/parameters/dev.bicepparam
+    template: agent-demo-dev@0.1.0
+services:
+    wwi-sales-hosted:
+        project: ./src/orchestrator/hosted_agent
+        host: azure.ai.agent
+        language: docker
+        docker:
+            path: ./Dockerfile
+            context: ../../..
+            registry: ${AZURE_CONTAINER_REGISTRY_ENDPOINT}
+            remoteBuild: false
+        config:
+            container:
+                resources:
+                    cpu: "1"
+                    memory: 2Gi
+            deployments:
+                - model:
+                    format: OpenAI
+                    name: gpt-4o
+                    version: "2024-11-20"
+                  name: gpt-4o
+                  sku:
+                    capacity: 10
+                    name: GlobalStandard
+            startupCommand: python -m src.orchestrator.hosted_agent.server
 infra:
-  provider: bicep
-  path: infra
-  module: main
+    provider: bicep
+    path: infra
+    module: main

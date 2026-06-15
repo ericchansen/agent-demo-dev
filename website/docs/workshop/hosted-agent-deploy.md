@@ -27,13 +27,15 @@ in `route_request`, which is unit-tested without sockets (`tests/unit/test_hoste
 |---|---|---|
 | `GET /healthz` | Liveness probe | `200 {"status":"alive"}` |
 | `GET /readyz` | Readiness probe (reports adapter) | `200 {"status":"ready","adapter":"..."}` |
+| `GET /readiness` | Foundry Hosted Agent readiness alias | `200 {"status":"ready","adapter":"..."}` |
 | `GET /` | Legacy health payload | `200 {"status":"healthy","agent":"wwi-sales-hosted"}` |
 | `POST /invoke` (or `/`) | Invocations protocol | `200 {"output":"..."}` |
 | `POST /responses` | OpenAI-compatible Responses protocol | `200 {"object":"response","output_text":"...",...}` |
 
 Every response carries an `X-Request-Id` header (echoed from the request or freshly minted). The
-[deployment manifest](https://github.com/ericchansen/agent-demo-dev/blob/main/src/orchestrator/hosted_agent/agent.yaml)
-declares both `responses` and `invocations` protocols and the `/healthz` / `/readyz` probes. A unit test
+[deployment definition](https://github.com/ericchansen/agent-demo-dev/blob/main/src/orchestrator/hosted_agent/agent.yaml)
+declares both `responses` and `invocations` protocols. The server exposes `/healthz`, `/readyz`, and the Foundry
+`/readiness` alias. A unit test
 (`tests/unit/test_hosted_agent_manifest.py`) keeps the manifest and the server in sync.
 
 ## 1. Validate locally before you build
@@ -59,29 +61,31 @@ In a second terminal, exercise both protocols:
 
 ```powershell
 # Liveness / readiness
-curl http://127.0.0.1:8080/healthz
-curl http://127.0.0.1:8080/readyz
+curl http://127.0.0.1:8088/healthz
+curl http://127.0.0.1:8088/readyz
+curl http://127.0.0.1:8088/readiness
 
 # Invocations protocol
-curl -X POST http://127.0.0.1:8080/invoke `
+curl -X POST http://127.0.0.1:8088/invoke `
   -H "Content-Type: application/json" `
   -d '{"input":"Compute quota attainment: target 1,000,000, ytd 600,000, pipeline 500,000, 6 months, 180 days"}'
 
 # Responses protocol (OpenAI-compatible, non-streaming)
-curl -X POST http://127.0.0.1:8080/responses `
+curl -X POST http://127.0.0.1:8088/responses `
   -H "Content-Type: application/json" `
   -d '{"input":"Forecast quota for Tailspin Toys"}'
 ```
 
-Expected: `/healthz` → `{"status":"alive"}`, `/readyz` → `{"status":"ready","adapter":"..."}`, `/invoke` →
+Expected: `/healthz` → `{"status":"alive"}`, `/readyz` or `/readiness` →
+`{"status":"ready","adapter":"..."}`, `/invoke` →
 `{"output":"..."}`, `/responses` → a `{"object":"response","status":"completed","output_text":"..."}` payload.
-Sending `Content-Type: text/plain` returns `415`; sending `{"stream":true}` to `/responses` returns
-`400 streaming_not_supported`.
+Sending `Content-Type: text/plain` returns `415`; the server accepts the `stream` flag used by `azd ai agent invoke`
+and still returns a completed JSON payload.
 
 ## 3. Build the container
 
 The [Dockerfile](https://github.com/ericchansen/agent-demo-dev/blob/main/src/orchestrator/hosted_agent/Dockerfile)
-installs `requirements-hosted.txt`, copies `src/`, `schemas/`, and `fabric/`, exposes `8080`, and declares a
+installs `requirements-hosted.txt`, copies `src/`, `schemas/`, and `fabric/`, exposes `8088`, and declares a
 `HEALTHCHECK` against `/healthz`. Build it from the **repo root** (the build context needs `src/`):
 
 ```powershell
@@ -91,7 +95,7 @@ docker build -t wwi-hosted-agent:dev -f src/orchestrator/hosted_agent/Dockerfile
 Run it and confirm Docker reports the container **healthy** (the HEALTHCHECK polls `/healthz`):
 
 ```powershell
-docker run --rm -p 8080:8080 --name wwi-hosted wwi-hosted-agent:dev
+docker run --rm -p 8080:8088 --name wwi-hosted wwi-hosted-agent:dev
 # in another terminal:
 docker ps --filter name=wwi-hosted --format "{{.Status}}"   # -> "Up ... (healthy)"
 curl http://127.0.0.1:8080/readyz
@@ -100,18 +104,19 @@ curl http://127.0.0.1:8080/readyz
 For live model-backed runs, pass the same environment the manifest declares:
 
 ```powershell
-docker run --rm -p 8080:8080 `
-  -e MODEL_ENDPOINT=$env:FOUNDRY_PROJECT_ENDPOINT `
-  -e MODEL_DEPLOYMENT=gpt-4o `
+docker run --rm -p 8080:8088 `
+  -e FOUNDRY_PROJECT_ENDPOINT=$env:FOUNDRY_PROJECT_ENDPOINT `
+  -e AZURE_AI_MODEL_DEPLOYMENT_NAME=gpt-4o `
   -e HOSTED_AGENT_ADAPTER=auto `
   wwi-hosted-agent:dev
 ```
 
 | Variable | Purpose |
 |---|---|
-| `MODEL_ENDPOINT` | Foundry project endpoint for the injected chat adapter |
-| `MODEL_DEPLOYMENT` | Model deployment name (defaults to `gpt-4o`) |
-| `HOSTED_AGENT_ADAPTER` | `auto` selects a model adapter when configured, else the local runtime |
+| `FOUNDRY_PROJECT_ENDPOINT` | Foundry project endpoint injected by the hosted platform; set locally for model-backed runs |
+| `AZURE_AI_MODEL_DEPLOYMENT_NAME` | Model deployment name (defaults to `gpt-4o` in the deployment definition) |
+| `MODEL_ENDPOINT` / `MODEL_DEPLOYMENT` | Local aliases still accepted by the adapter |
+| `HOSTED_AGENT_ADAPTER` | Deployment default is `local` for deterministic workshop smoke tests; set `auto` or `azure` after granting the hosted identity Foundry model permissions |
 | `FABRIC_MCP_URL` / `FABRIC_MCP_TOOL_NAME` | Live Fabric Data Agent MCP wiring |
 | `HOSTED_AGENT_OUTPUT_DIR` | Where generated quota artifacts are written |
 
@@ -186,14 +191,11 @@ for the current type list and auth options.
 
 Once Foundry reports the agent **active / Ready**, test it three ways:
 
-**Probes (curl):**
+**CLI status + invocation:**
 
 ```powershell
-curl https://<your-hosted-endpoint>/healthz
-curl https://<your-hosted-endpoint>/readyz
-curl -X POST https://<your-hosted-endpoint>/responses `
-  -H "Content-Type: application/json" `
-  -d '{"input":"Generate a quota report for Tailspin Toys"}'
+azd ai agent show wwi-sales-hosted --output json
+azd ai agent invoke wwi-sales-hosted "Generate a quota report for Tailspin Toys" --protocol responses
 ```
 
 **Agent Inspector (local):** `azd ai agent run` opens the **Foundry Toolkit Agent Inspector** in your browser (or
@@ -242,9 +244,9 @@ For the hosted-agent versioning model, see
 
 | Symptom | Fix |
 |---|---|
-| `/readyz` reports `adapter unavailable` | Model env vars missing; set `MODEL_ENDPOINT` / `MODEL_DEPLOYMENT`, or run the credential-free local runtime. |
+| `session_not_ready` from `azd ai agent invoke` | Confirm the container listens on `8088` and that `/readiness` returns HTTP 200 locally. |
+| `/readyz` reports `adapter unavailable` | Model env vars missing; set `FOUNDRY_PROJECT_ENDPOINT` / `AZURE_AI_MODEL_DEPLOYMENT_NAME` (or local aliases `MODEL_ENDPOINT` / `MODEL_DEPLOYMENT`), or run the credential-free local runtime. |
 | `415 unsupported_media_type` | Send `Content-Type: application/json`. |
-| `400 streaming_not_supported` | The Responses route is non-streaming; send `stream=false` (or omit it). |
 | `413 payload_too_large` | Invocation bodies are capped at 1 MiB. |
 | Container build can't find `src/` | Build from the **repo root** with `-f src/orchestrator/hosted_agent/Dockerfile .`. |
 

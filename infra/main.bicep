@@ -28,6 +28,9 @@ param fabricAdminUpn string = ''
 @description('Name of the Azure Storage account used by AI Foundry.')
 param storageAccountName string
 
+@description('Name of the Azure Container Registry used for Foundry Hosted Agent images.')
+param containerRegistryName string
+
 @description('Name of the primary Cognitive Services / AI Services account (fabricagentai2026).')
 param cogServicesName string
 
@@ -92,6 +95,16 @@ module storage './modules/storage.bicep' = {
   name: 'storage'
   params: {
     name: storageAccountName
+    location: location
+    publicNetworkAccess: publicNetworkAccess
+    tags: tags
+  }
+}
+
+module containerRegistry './modules/container-registry.bicep' = {
+  name: 'containerRegistry'
+  params: {
+    name: containerRegistryName
     location: location
     publicNetworkAccess: publicNetworkAccess
     tags: tags
@@ -179,6 +192,9 @@ output keyVaultUri string = keyVault.outputs.vaultUri
 
 @description('Resource ID of the Storage account.')
 output storageAccountId string = storage.outputs.storageAccountId
+
+@description('Login server for the Container Registry used by hosted-agent deployments.')
+output containerRegistryEndpoint string = containerRegistry.outputs.loginServer
 
 @description('Resource ID of the AI Foundry Hub.')
 output foundryHubId string = aiFoundry.outputs.hubId

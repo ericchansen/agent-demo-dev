@@ -9,6 +9,7 @@
     "entraAppName": { "value": "${ENTRA_APP_NAME=FSA-WorkIQ-Agent}" },
     "fabricAdminUpn": { "value": "${FABRIC_ADMIN_UPN=}" },
     "storageAccountName": { "value": "${STORAGE_ACCOUNT_NAME}" },
+    "containerRegistryName": { "value": "${CONTAINER_REGISTRY_NAME}" },
     "cogServicesName": { "value": "${COG_SERVICES_NAME}" },
     "foundryHubCogServicesName": { "value": "${FOUNDRY_HUB_COG_SERVICES_NAME}" },
     "foundryHubName": { "value": "${FOUNDRY_HUB_NAME=fabric-agent-hub}" },

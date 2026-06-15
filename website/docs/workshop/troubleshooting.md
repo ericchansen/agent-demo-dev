@@ -158,17 +158,19 @@ The principal needs `CAN RUN` on the Genie space and `SELECT` on the underlying 
 
 ## Hosted agent
 
-### Container builds but `/readyz` never turns ready
+### Container builds but hosted invoke returns `session_not_ready`
 
-`/readyz` reports the adapter selection and never raises. If it reports `adapter unavailable`, the model
-environment variables are missing. Set `MODEL_ENDPOINT` / `MODEL_DEPLOYMENT` (or run with the local runtime
-adapter, which is always available). Full build/deploy/test steps are on
+The Foundry Hosted Agent platform expects the container to listen on port `8088` and return HTTP 200 from
+`/readiness`. The local server also keeps `/readyz` for humans and CI. If `/readyz` reports `adapter unavailable`,
+the model environment variables are missing. Set `FOUNDRY_PROJECT_ENDPOINT` / `AZURE_AI_MODEL_DEPLOYMENT_NAME`
+(or local aliases `MODEL_ENDPOINT` / `MODEL_DEPLOYMENT`), or run with the local runtime adapter, which is always
+available. Full build/deploy/test steps are on
 [Deploy the Hosted Agent](hosted-agent-deploy).
 
 ### `POST /responses` returns `415 unsupported_media_type`
 
-Send `Content-Type: application/json`. The Responses route also rejects `stream=true` with
-`400 streaming_not_supported` — the hosted server returns non-streaming Responses payloads only.
+Send `Content-Type: application/json`. The Responses route accepts the `stream` flag used by `azd ai agent invoke`,
+but still returns a completed JSON payload rather than server-sent events.
 
 ## Website build and links
 

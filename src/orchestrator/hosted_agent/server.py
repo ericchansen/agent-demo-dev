@@ -9,6 +9,7 @@ Endpoints:
     GET  /          -> legacy health payload (preserved for existing probes)
     GET  /healthz   -> liveness probe
     GET  /readyz    -> readiness probe (reports adapter selection)
+    GET  /readiness -> Foundry Hosted Agent readiness alias
     POST /          -> agent invocation (alias of /invoke)
     POST /invoke    -> agent invocation
     POST /responses -> OpenAI-compatible Responses protocol for Hosted Agents
@@ -23,6 +24,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import uuid
 from collections.abc import Callable, Mapping
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -33,7 +35,7 @@ from src.orchestrator.hosted_agent import build_adapter, process_invocation
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-PORT = 8080
+PORT = int(os.environ.get("PORT", "8088"))
 REQUEST_ID_HEADER = "X-Request-Id"
 #: Reject invocation bodies larger than this to bound memory use (1 MiB).
 MAX_PAYLOAD_BYTES = 1_048_576
@@ -144,7 +146,7 @@ def route_request(
     if method == "GET":
         if route == "/healthz":
             return 200, {"status": "alive"}, request_id
-        if route == "/readyz":
+        if route in ("/readyz", "/readiness"):
             return 200, {"status": "ready", "adapter": _readiness_detail()}, request_id
         if route == "/":
             return 200, {"status": "healthy", "agent": "wwi-sales-hosted"}, request_id
@@ -178,8 +180,6 @@ def route_request(
             return 400, {"error": "invalid_payload", "expected": "json object"}, request_id
 
         if route in _RESPONSES_ROUTES:
-            if payload.get("stream") is True:
-                return 400, {"error": "streaming_not_supported", "expected": "stream=false"}, request_id
             user_message = _extract_response_input(payload)
         else:
             user_message = str(payload.get("input", payload.get("message", ""))).strip()

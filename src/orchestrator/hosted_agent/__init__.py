@@ -513,7 +513,6 @@ class AzureManagedIdentityChatAdapter:
         model_deployment: str,
         credential: Any | None = None,
         client: Any | None = None,
-        api_version: str = "2024-10-21",
     ) -> None:
         if not project_endpoint:
             raise HostedAgentConfigurationError("project_endpoint is required for the Azure hosted adapter.")
@@ -530,7 +529,7 @@ class AzureManagedIdentityChatAdapter:
 
         resolved_credential = credential or DefaultAzureCredential()
         project_client = AIProjectClient(endpoint=project_endpoint, credential=resolved_credential)
-        self._client = project_client.get_openai_client(api_version=api_version)
+        self._client = project_client.get_openai_client()
 
     def complete(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> dict[str, Any]:
         response = self._client.chat.completions.create(
@@ -555,14 +554,29 @@ class AzureManagedIdentityChatAdapter:
         return {"content": choice.content or "", "tool_calls": tool_calls}
 
 
+def _model_endpoint_env() -> str:
+    return (os.environ.get("MODEL_ENDPOINT") or os.environ.get("FOUNDRY_PROJECT_ENDPOINT") or "").strip()
+
+
+def _model_deployment_env() -> str:
+    return (os.environ.get("MODEL_DEPLOYMENT") or os.environ.get("AZURE_AI_MODEL_DEPLOYMENT_NAME") or "").strip()
+
+
 def _azure_env_ready() -> bool:
-    return bool(os.environ.get("MODEL_ENDPOINT")) and bool(os.environ.get("MODEL_DEPLOYMENT"))
+    return bool(_model_endpoint_env()) and bool(_model_deployment_env())
 
 
 def _build_azure_adapter() -> AzureManagedIdentityChatAdapter:
-    endpoint = os.environ.get("MODEL_ENDPOINT", "").strip()
-    deployment = os.environ.get("MODEL_DEPLOYMENT", "").strip()
-    missing = [name for name, value in (("MODEL_ENDPOINT", endpoint), ("MODEL_DEPLOYMENT", deployment)) if not value]
+    endpoint = _model_endpoint_env()
+    deployment = _model_deployment_env()
+    missing = [
+        name
+        for name, value in (
+            ("MODEL_ENDPOINT or FOUNDRY_PROJECT_ENDPOINT", endpoint),
+            ("MODEL_DEPLOYMENT or AZURE_AI_MODEL_DEPLOYMENT_NAME", deployment),
+        )
+        if not value
+    ]
     if missing:
         raise HostedAgentConfigurationError(
             f"Azure hosted adapter requires {', '.join(missing)} to be set. "
@@ -576,8 +590,8 @@ def build_adapter(mode: str | None = None) -> HostedChatAdapter | None:
 
     - ``local``: always returns the offline deterministic adapter.
     - ``azure``: returns the managed-identity adapter, raising if config is missing.
-    - ``auto`` (default): returns the Azure adapter only when ``MODEL_ENDPOINT`` and
-      ``MODEL_DEPLOYMENT`` are set; otherwise returns ``None`` so the local runtime is used.
+    - ``auto`` (default): returns the Azure adapter only when the model endpoint
+      and deployment are set; otherwise returns ``None`` so the local runtime is used.
     """
     resolved = (mode or os.environ.get("HOSTED_AGENT_ADAPTER", "auto")).strip().lower()
     if resolved == "local":

@@ -1,10 +1,10 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/AgentSchema/refs/heads/main/schemas/v1.0/ContainerAgent.yaml
-# Azure AI Foundry Hosted Agent deployment manifest.
+# Azure AI Foundry Hosted Agent deployment definition consumed by `azd deploy`.
 #
-# Current Hosted Agents use the ContainerAgent schema. The Responses protocol is
-# the conversational surface that can be bridged by Foundry to Activity for
-# Microsoft 365 Copilot and Teams. The Invocations protocol remains available
-# for custom callers and non-conversational automation.
+# The `azd ai agent init -m ...` command accepts an AgentManifest wrapper, but
+# once a service is in azure.yaml, the service directory contains this generated
+# ContainerAgent definition. Keep this file aligned with the current Foundry
+# sample output so `azd ai agent doctor` validates it.
 #
 # Reference:
 #   https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agents
@@ -14,10 +14,12 @@ description: >-
   Bring-your-own-code hosted agent for the Wide World Importers sales scenario.
   Wraps Fabric MCP, quota forecasting, web research, attainment, activity, and
   report-generation tools behind a single managed-container endpoint.
-
-resources:
-  cpu: "1"
-  memory: 2Gi
+metadata:
+  tags:
+    - Wide World Importers
+    - Hosted Agent
+    - Responses Protocol
+    - Invocations Protocol
 
 protocols:
   - protocol: responses
@@ -25,14 +27,12 @@ protocols:
   - protocol: invocations
     version: 1.0.0
 
-environment_variables:
-  - name: MODEL_ENDPOINT
-    value: ${FOUNDRY_PROJECT_ENDPOINT}
-  - name: MODEL_DEPLOYMENT
-    value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
-  - name: HOSTED_AGENT_ADAPTER
-    value: auto
+resources:
+  cpu: "1"
+  memory: 2Gi
 
-health:
-  liveness: /healthz
-  readiness: /readyz
+environment_variables:
+  - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
+    value: gpt-4o
+  - name: HOSTED_AGENT_ADAPTER
+    value: local

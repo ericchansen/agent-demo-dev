@@ -31,6 +31,13 @@ def test_readyz_reports_adapter() -> None:
     assert "adapter" in payload
 
 
+def test_readiness_alias_reports_adapter() -> None:
+    status, payload, _ = server.route_request("GET", "/readiness", {}, b"")
+    assert status == 200
+    assert payload["status"] == "ready"
+    assert "adapter" in payload
+
+
 def test_unknown_get_path_is_404() -> None:
     status, payload, _ = server.route_request("GET", "/nope", {}, b"")
     assert status == 404
@@ -68,11 +75,12 @@ def test_post_responses_success_with_message_list() -> None:
     assert payload["output_text"] == "echo:hello"
 
 
-def test_post_responses_rejects_streaming_until_protocol_library_is_enabled() -> None:
+def test_post_responses_accepts_streaming_request_shape() -> None:
     body = json.dumps({"input": "hello", "stream": True}).encode("utf-8")
     status, payload, _ = server.route_request("POST", "/responses", {}, body, invoke=_invoke_ok)
-    assert status == 400
-    assert payload["error"] == "streaming_not_supported"
+    assert status == 200
+    assert payload["status"] == "completed"
+    assert payload["output_text"] == "echo:hello"
 
 
 def test_post_accepts_message_alias_and_root_path() -> None:

@@ -245,15 +245,16 @@ Microsoft 365 Copilot or Teams, Foundry bridges Responses to the **Activity** pr
 for channel delivery. The manifest therefore declares both `responses` and
 `invocations`: `POST /responses` is the hosted conversational surface, while
 `POST /invoke` stays available for non-conversational automation and custom callers.
-`/healthz` and `/readyz` remain the liveness/readiness probes. A unit test
+`/healthz`, `/readyz`, and the Foundry `/readiness` alias remain the liveness/readiness probes. A unit test
 (`tests/unit/test_hosted_agent_manifest.py`) keeps the manifest and server contract in sync.
 
 | Manifest field | Value | Served by |
 |---|---|---|
 | `protocols[].protocol` | `responses` | `POST /responses` (OpenAI-compatible non-streaming response) |
 | `protocols[].protocol` | `invocations` | `POST /invoke` (and `/`) |
-| `health.liveness` | `/healthz` | `GET /healthz` |
-| `health.readiness` | `/readyz` | `GET /readyz` |
+| Server route | `/healthz` | `GET /healthz` |
+| Server route | `/readyz` | `GET /readyz` |
+| Server route | `/readiness` | `GET /readiness` |
 
 Set these environment variables on the hosted container:
 
@@ -261,8 +262,9 @@ Set these environment variables on the hosted container:
 |---|---|
 | `FABRIC_MCP_URL` | Fabric Data Agent MCP endpoint |
 | `FABRIC_MCP_TOOL_NAME` | MCP tool name to invoke for natural-language Fabric questions |
-| `MODEL_ENDPOINT` | Optional endpoint for an injected Copilot SDK-compatible chat adapter |
-| `MODEL_DEPLOYMENT` | Model deployment name, defaulting to `gpt-4o` |
+| `FOUNDRY_PROJECT_ENDPOINT` | Foundry project endpoint injected by the hosted platform |
+| `AZURE_AI_MODEL_DEPLOYMENT_NAME` | Model deployment name, defaulting to `gpt-4o` |
+| `MODEL_ENDPOINT` / `MODEL_DEPLOYMENT` | Local aliases accepted by the adapter |
 | `HOSTED_AGENT_OUTPUT_DIR` | Output directory for generated quota artifacts |
 | `COPILOT_HOME` | Optional credential/cache path if your Copilot SDK adapter requires it |
 

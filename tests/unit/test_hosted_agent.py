@@ -155,6 +155,8 @@ def test_build_adapter_local_returns_deterministic_adapter() -> None:
 def test_build_adapter_auto_without_azure_env_returns_none(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("MODEL_ENDPOINT", raising=False)
     monkeypatch.delenv("MODEL_DEPLOYMENT", raising=False)
+    monkeypatch.delenv("FOUNDRY_PROJECT_ENDPOINT", raising=False)
+    monkeypatch.delenv("AZURE_AI_MODEL_DEPLOYMENT_NAME", raising=False)
 
     assert hosted_agent.build_adapter("auto") is None
 
@@ -162,9 +164,34 @@ def test_build_adapter_auto_without_azure_env_returns_none(monkeypatch: pytest.M
 def test_build_adapter_azure_missing_config_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("MODEL_ENDPOINT", raising=False)
     monkeypatch.delenv("MODEL_DEPLOYMENT", raising=False)
+    monkeypatch.delenv("FOUNDRY_PROJECT_ENDPOINT", raising=False)
+    monkeypatch.delenv("AZURE_AI_MODEL_DEPLOYMENT_NAME", raising=False)
 
-    with pytest.raises(hosted_agent.HostedAgentConfigurationError, match="MODEL_ENDPOINT"):
+    with pytest.raises(hosted_agent.HostedAgentConfigurationError, match="FOUNDRY_PROJECT_ENDPOINT"):
         hosted_agent.build_adapter("azure")
+
+
+def test_build_adapter_accepts_foundry_injected_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, str] = {}
+
+    class _Adapter:
+        def __init__(self, *, project_endpoint: str, model_deployment: str) -> None:
+            captured["project_endpoint"] = project_endpoint
+            captured["model_deployment"] = model_deployment
+
+    monkeypatch.delenv("MODEL_ENDPOINT", raising=False)
+    monkeypatch.delenv("MODEL_DEPLOYMENT", raising=False)
+    monkeypatch.setenv("FOUNDRY_PROJECT_ENDPOINT", "https://example.services.ai.azure.com/api/projects/demo")
+    monkeypatch.setenv("AZURE_AI_MODEL_DEPLOYMENT_NAME", "gpt-4o")
+    monkeypatch.setattr(hosted_agent, "AzureManagedIdentityChatAdapter", _Adapter)
+
+    adapter = hosted_agent._build_azure_adapter()
+
+    assert isinstance(adapter, _Adapter)
+    assert captured == {
+        "project_endpoint": "https://example.services.ai.azure.com/api/projects/demo",
+        "model_deployment": "gpt-4o",
+    }
 
 
 def test_build_adapter_unknown_mode_raises() -> None:
