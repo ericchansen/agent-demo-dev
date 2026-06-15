@@ -30,57 +30,49 @@ jobs:
 
       - name: What-if Bicep
         continue-on-error: true
-        uses: azure/cli@v3
-        with:
-          inlineScript: |
-            az deployment group what-if \
-              --resource-group rg-fabric-agent-dev \
-              --template-file infra/main.bicep \
-              --parameters infra/parameters/dev.bicepparam \
-              --result-format FullResourcePayloads
+        run: |
+          az deployment group what-if \
+            --resource-group rg-fabric-agent-dev \
+            --template-file infra/main.bicep \
+            --parameters infra/parameters/dev.bicepparam \
+            --result-format FullResourcePayloads
 
       # A paused Fabric capacity rejects updates with "Service is not ready to be
       # updated", which fails the Bicep deploy. Resume it first, then always suspend
       # again in the final step so the run nets back to the cost-safe paused state.
       - name: Resume Fabric capacity
-        uses: azure/cli@v3
-        with:
-          inlineScript: |
-            for attempt in 1 2 3 4 5 6 7 8 9 10; do
-              if az resource invoke-action \
-                --ids /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-fabric-agent-dev/providers/Microsoft.Fabric/capacities/fabricagentdemodev \
-                --action resume \
-                --api-version 2023-11-01; then
-                exit 0
-              fi
-              echo "Fabric capacity resume attempt ${attempt} failed; waiting before retry."
-              sleep 30
-            done
-            echo "::error title=Fabric capacity::Unable to resume capacity after retries."
-            exit 1
+        run: |
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if az resource invoke-action \
+              --ids /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-fabric-agent-dev/providers/Microsoft.Fabric/capacities/fabricagentdemodev \
+              --action resume \
+              --api-version 2023-11-01; then
+              exit 0
+            fi
+            echo "Fabric capacity resume attempt ${attempt} failed; waiting before retry."
+            sleep 30
+          done
+          echo "::error title=Fabric capacity::Unable to resume capacity after retries."
+          exit 1
 
       - name: Deploy Bicep
-        uses: azure/cli@v3
-        with:
-          inlineScript: |
-            az deployment group create \
-              --resource-group rg-fabric-agent-dev \
-              --template-file infra/main.bicep \
-              --parameters infra/parameters/dev.bicepparam
+        run: |
+          az deployment group create \
+            --resource-group rg-fabric-agent-dev \
+            --template-file infra/main.bicep \
+            --parameters infra/parameters/dev.bicepparam
 
       - name: Suspend Fabric capacity
         if: always()
-        uses: azure/cli@v3
-        with:
-          inlineScript: |
-            for attempt in 1 2 3 4 5; do
-              if az resource invoke-action \
-                --ids /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-fabric-agent-dev/providers/Microsoft.Fabric/capacities/fabricagentdemodev \
-                --action suspend \
-                --api-version 2023-11-01; then
-                exit 0
-              fi
-              echo "Fabric capacity suspend attempt ${attempt} failed; waiting before retry."
-              sleep 30
-            done
-            echo "::warning title=Fabric capacity::Unable to suspend capacity after retries; check cost guardrails manually."
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if az resource invoke-action \
+              --ids /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-fabric-agent-dev/providers/Microsoft.Fabric/capacities/fabricagentdemodev \
+              --action suspend \
+              --api-version 2023-11-01; then
+              exit 0
+            fi
+            echo "Fabric capacity suspend attempt ${attempt} failed; waiting before retry."
+            sleep 30
+          done
+          echo "::warning title=Fabric capacity::Unable to suspend capacity after retries; check cost guardrails manually."
