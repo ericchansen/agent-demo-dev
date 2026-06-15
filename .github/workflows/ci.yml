@@ -61,10 +61,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Setup Azure CLI
-        uses: azure/cli@v3
-        with:
-          inlineScript: az bicep build --file infra/main.bicep
+      - name: Validate Bicep
+        run: az bicep build --file infra/main.bicep
 
   hosted-agent-smoke:
     runs-on: ubuntu-latest
