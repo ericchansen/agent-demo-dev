@@ -32,6 +32,7 @@ from __future__ import annotations
 import sys
 from dataclasses import replace
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -46,6 +47,26 @@ _LOCAL_TOOL_QUESTION = (
     "months_elapsed = 6, days_elapsed = 180. "
     "Use the compute_quota_attainment tool; do not query the sales database."
 )
+
+
+def check_agent_identity(agent: Any) -> tuple[bool, str]:
+    """Return ``(ok, message)`` asserting the agent uses the new agent object model.
+
+    In the new Azure AI Foundry agent object model, a registered agent owns its own
+    ``identity`` (used for M365 / Teams publishing and downstream RBAC). Legacy agents
+    expose ``identity == None`` and cannot use the new publish-to-Copilot path without
+    migration. This guard makes that distinction explicit so the workshop never ships an
+    agent that silently fails at publish time.
+    """
+    identity = getattr(agent, "identity", None)
+    name = getattr(agent, "name", "<unknown>")
+    if identity is None:
+        return (
+            False,
+            f"agent '{name}' has identity=None (legacy agent model); "
+            "the new agent object model is required for M365/Teams publishing",
+        )
+    return True, f"agent '{name}' exposes identity ({type(identity).__name__}) — new agent model"
 
 
 def main() -> int:
@@ -73,6 +94,12 @@ def main() -> int:
         ) as project_client:
             agent = _get_or_create_agent(project_client, config)
             print(f"[register] created {agent.name} version {getattr(agent, 'version', '?')}")
+
+            identity_ok, identity_msg = check_agent_identity(agent)
+            print(f"[identity] {identity_msg}")
+            if not identity_ok:
+                print("[FAIL] agent does not use the new agent object model")
+                return 1
 
             names = sorted({getattr(a, "name", "") for a in project_client.agents.list()})
             print(f"[portal]   agents visible in project: {names}")
