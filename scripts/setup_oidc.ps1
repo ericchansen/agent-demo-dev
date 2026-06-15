@@ -228,7 +228,7 @@ foreach ($name in $secrets.Keys) {
         Write-Skip "would set secret $name"
     }
     else {
-        $value | gh secret set $name --repo $Repo --body -
+        gh secret set $name --repo $Repo --body $value
         Write-Host "    Set $name"
     }
 }
