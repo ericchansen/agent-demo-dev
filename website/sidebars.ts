@@ -23,6 +23,7 @@ const sidebars: SidebarsConfig = {
         'building-blocks/choose-data-platform',
         'building-blocks/fabric-data-agent',
         'building-blocks/databricks-genie',
+        'building-blocks/databricks-supervisor',
         'building-blocks/workiq',
         'building-blocks/mcp',
         'building-blocks/foundry',

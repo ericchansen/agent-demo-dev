@@ -31,6 +31,7 @@ flowchart LR
 |---|---|---|---|
 | **Microsoft Fabric** | Your workshop data is in a Lakehouse and you want native MCP from Fabric Data Agent. | `api.fabric.microsoft.com/v1/mcp/workspaces/{workspace-id}/dataagent` | Fabric workspace roles and OneLake permissions |
 | **Databricks** | Your customer already curates sales data in Azure Databricks and governs it with Unity Catalog. | Genie Spaces Conversation API or a thin MCP adapter around it | Unity Catalog catalogs, schemas, tables, and permissions |
+| **Databricks-native multi-agent** | Your customer wants routing, subagents, and UC tools configured inside Databricks. | Databricks Supervisor Agent or Supervisor API | Unity Catalog plus AI Gateway permissions |
 
 ## Shared row contract
 
@@ -60,10 +61,17 @@ citation text. You can also pass `data_source: "fabric"` or `data_source: "datab
 4. **Generate the report.** Pass those rows to the quota estimator from the CLI, Foundry function tool, or
    multi-agent pipeline.
 
+## Advanced Databricks-native path
+
+After the core report works, compare the same outcome with [Databricks Supervisor Agent](./databricks-supervisor).
+Supervisor can route to a Genie Space, UC function, table/search tool, or custom agent while Unity Catalog continues
+to enforce permissions. Treat it as an advanced Day 2 comparison, not a prerequisite for the main workshop path.
+
 ## Further reading
 
 - [Fabric Data Agent](./fabric-data-agent)
 - [Databricks Genie](./databricks-genie)
+- [Databricks Supervisor Agent](./databricks-supervisor)
 - [Quota Estimation Pipeline](./quota-pipeline)
 - [Genie Spaces](https://learn.microsoft.com/en-us/azure/databricks/genie/)
 - [Unity Catalog](https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog/)

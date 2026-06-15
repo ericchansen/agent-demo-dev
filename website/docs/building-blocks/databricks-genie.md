@@ -28,6 +28,20 @@ sequenceDiagram
     Agent->>Agent: Normalize to quota row contract
 ```
 
+## Genie, managed MCP, and Supervisor
+
+Genie is the semantic data agent for governed sales questions. You can expose it to the workshop through:
+
+| Pattern | What it does | Workshop role |
+|---|---|---|
+| Genie Conversation API | Direct SDK adapter in `src/orchestrator/databricks_genie.py`. | Simple live smoke and Foundry function-tool path. |
+| Genie managed MCP | Databricks-hosted MCP server, selected with `DATABRICKS_GENIE_MCP_URL`. | Platform-managed tool endpoint for agents. |
+| Genie inside Supervisor Agent | Genie Space becomes one subagent/tool inside a Databricks Supervisor Agent. | Advanced Databricks-native multi-agent comparison. |
+
+Use [Databricks Supervisor Agent](./databricks-supervisor) when the customer wants Databricks to own multi-agent
+routing across Genie, UC functions, tables, search, and custom agents. Use this page when the task is simply "ask a
+Genie Space for governed rows and feed the quota pipeline."
+
 ## Setup checklist
 
 | Step | What to do | Validation |
@@ -192,5 +206,6 @@ and prefer the deterministic offline fallback for large groups. See the
 - [Create and manage a Genie Space](https://learn.microsoft.com/en-us/azure/databricks/genie/set-up)
 - [Use the Genie Spaces API](https://learn.microsoft.com/en-us/azure/databricks/genie/conversation-api)
 - [Managed MCP servers in Azure Databricks](https://learn.microsoft.com/en-us/azure/databricks/generative-ai/mcp/managed-mcp)
+- [Databricks Supervisor Agent](https://learn.microsoft.com/en-us/azure/databricks/generative-ai/agent-bricks/multi-agent-supervisor)
 - [Manage budgets and cost controls for Genie](https://learn.microsoft.com/en-us/azure/databricks/genie/budgets)
 - [Unity Catalog](https://learn.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog/)
