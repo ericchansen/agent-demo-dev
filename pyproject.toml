@@ -6,6 +6,7 @@ dependencies = [
     "aiohttp >= 3.9",
     "azure-ai-projects >= 2.2.0",
     "azure-identity >= 1.17",
+    "databricks-sdk >= 0.59",
     "matplotlib >= 3.8",
     "mcp >= 1.0",
     "openai >= 1.40",

@@ -13,12 +13,14 @@ from src.orchestrator.fabric_mcp_client import FabricMcpClient, FabricMcpConfigu
 from src.orchestrator.tool_runtime import (
     ACCOUNT_ACTIVITY_SCHEMA,
     COMPUTE_ATTAINMENT_SCHEMA,
+    DATABRICKS_QUERY_SCHEMA,
     FABRIC_QUERY_SCHEMA,
     FORECAST_QUOTA_SCHEMA,
     GENERATE_QUOTA_ESTIMATION_REPORT_SCHEMA,
     GENERATE_REPORT_SCHEMA,
     WEB_RESEARCH_SCHEMA,
     compute_attainment_func,
+    databricks_genie_query_func,
     forecast_quota_func,
     generate_quota_estimation_report_func,
     generate_report_func,
@@ -43,9 +45,10 @@ SYSTEM_PROMPT = """You are a sales analyst for Wide World Importers (WWI).
 
 You have access to:
 1. Fabric Data Agent - query structured sales data (revenue, customers, products, geography)
-2. Web Research - find market trends, customer news, competitive intelligence
-3. Quota Attainment - compute pipeline coverage, run rate, and risk rating
-4. Report Generation - produce formatted DOCX, XLSX, HTML, and PDF output files
+2. Databricks Genie - query Unity Catalog sales tables when configured
+3. Web Research - find market trends, customer news, competitive intelligence
+4. Quota Attainment - compute pipeline coverage, run rate, and risk rating
+5. Report Generation - produce formatted DOCX, XLSX, HTML, and PDF output files
 
 Always cite data sources. Use markdown tables for structured data.
 Proactively surface insights the user might not have asked for."""
@@ -74,6 +77,11 @@ TOOLS = [
         "fabric_query",
         "Query the WWI sales data warehouse via Fabric Data Agent MCP.",
         FABRIC_QUERY_SCHEMA,
+    ),
+    _function_tool(
+        "databricks_query",
+        "Query a Databricks Genie Space backed by Unity Catalog.",
+        DATABRICKS_QUERY_SCHEMA,
     ),
     _function_tool(
         "forecast_quota",
@@ -125,6 +133,12 @@ def handle_fabric_query(arguments: dict[str, Any]) -> dict[str, Any]:
         return {"status": "error", "message": str(exc), "question": question}
 
 
+def handle_databricks_query(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Forward a natural-language question to the configured Databricks Genie Space."""
+
+    return dict(databricks_genie_query_func(arguments))
+
+
 def handle_forecast_quota(arguments: dict[str, Any]) -> dict[str, Any]:
     """Run the shared deterministic quota forecast."""
     return forecast_quota_func(arguments)
@@ -157,6 +171,7 @@ def handle_get_account_activity(arguments: dict[str, Any]) -> dict[str, Any]:
 
 TOOL_HANDLERS = {
     "fabric_query": handle_fabric_query,
+    "databricks_query": handle_databricks_query,
     "forecast_quota": handle_forecast_quota,
     "generate_quota_estimation_report": handle_generate_quota_estimation_report,
     "generate_report": handle_generate_report,
@@ -341,6 +356,9 @@ def _process_with_local_runtime(user_message: str) -> str:
         return f"Market research for {customer_name}:\n\n```json\n{json.dumps(result, indent=2)}\n```"
 
     if any(term in message for term in ("sales", "revenue", "customer", "product", "territory")):
+        if any(term in message for term in ("databricks", "genie", "unity catalog")):
+            result = execute_tool("databricks_query", {"question": user_message})
+            return f"Databricks Genie result:\n\n```json\n{json.dumps(result, indent=2)}\n```"
         result = execute_tool("fabric_query", {"question": user_message})
         return f"Fabric query result:\n\n```json\n{json.dumps(result, indent=2)}\n```"
 
@@ -434,6 +452,8 @@ def _route_to_tool_call(user_message: str) -> tuple[str, dict[str, Any]] | None:
         return "web_research", {"query": user_message, "customer_name": customer_name}
 
     if any(term in message for term in ("sales", "revenue", "customer", "product", "territory")):
+        if any(term in message for term in ("databricks", "genie", "unity catalog")):
+            return "databricks_query", {"question": user_message}
         return "fabric_query", {"question": user_message}
 
     return None

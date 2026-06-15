@@ -16,6 +16,7 @@ def test_hosted_agent_exposes_all_demo_tools() -> None:
 
     assert {
         "fabric_query",
+        "databricks_query",
         "forecast_quota",
         "generate_quota_estimation_report",
         "generate_report",
@@ -35,6 +36,17 @@ def test_fabric_query_returns_clear_configuration_error(monkeypatch: pytest.Monk
     assert result["status"] == "configuration_error"
     assert "FABRIC_MCP_URL" in result["message"]
     assert result["required_environment"] == ["FABRIC_MCP_URL", "FABRIC_MCP_TOOL_NAME"]
+
+
+def test_databricks_query_returns_clear_configuration_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("DATABRICKS_WORKSPACE_URL", raising=False)
+    monkeypatch.delenv("DATABRICKS_HOST", raising=False)
+    monkeypatch.delenv("DATABRICKS_GENIE_SPACE_ID", raising=False)
+
+    result = hosted_agent.handle_databricks_query({"question": "Top customers by revenue"})
+
+    assert result["status"] == "configuration_error"
+    assert result["required_environment"] == ["DATABRICKS_WORKSPACE_URL", "DATABRICKS_GENIE_SPACE_ID"]
 
 
 def test_process_invocation_generates_quota_artifacts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -97,6 +109,7 @@ def test_execute_tool_rejects_unknown_tool() -> None:
         ("Forecast quota for Contoso", "forecast_quota"),
         ("Show recent account activity for Fabrikam", "get_account_activity"),
         ("Find market news about Northwind", "web_research"),
+        ("Ask Databricks Genie for sales by territory", "databricks_query"),
         ("What were total sales revenue by territory?", "fabric_query"),
     ],
 )

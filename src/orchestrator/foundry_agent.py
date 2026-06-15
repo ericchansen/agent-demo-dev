@@ -37,10 +37,12 @@ from src.agents.quota_estimator.pipeline import (
     generate_quota_estimation_report,
 )
 from src.orchestrator.config import OrchestratorConfig
+from src.orchestrator.databricks_genie import databricks_genie_query_func
 from src.orchestrator.tool_runtime import demo_fabric_query_func
 from src.orchestrator.tool_schemas import (
     ACCOUNT_ACTIVITY_SCHEMA,
     COMPUTE_ATTAINMENT_SCHEMA,
+    DATABRICKS_QUERY_SCHEMA,
     FABRIC_QUERY_SCHEMA,
     FORECAST_QUOTA_SCHEMA,
     GENERATE_QUOTA_ESTIMATION_REPORT_SCHEMA,
@@ -351,6 +353,7 @@ def _build_tools(config: OrchestratorConfig) -> tuple[list[ToolDefinition], dict
     """Build the tool list and local function handlers for the prompt agent."""
     tools: list[ToolDefinition] = []
     handlers: dict[str, ToolHandler] = {
+        "databricks_query": databricks_genie_query_func,
         "forecast_quota": forecast_quota_func,
         "generate_quota_estimation_report": generate_quota_estimation_report_func,
         "generate_report": generate_report_func,
@@ -411,6 +414,14 @@ def _build_tools(config: OrchestratorConfig) -> tuple[list[ToolDefinition], dict
 
     tools.extend(
         [
+            _build_function_tool(
+                name="databricks_query",
+                description=(
+                    "Query a Databricks Genie Space over Unity Catalog. Returns normalized sales rows "
+                    "when DATABRICKS_WORKSPACE_URL and DATABRICKS_GENIE_SPACE_ID are configured."
+                ),
+                parameters=DATABRICKS_QUERY_SCHEMA,
+            ),
             _build_function_tool(
                 name="forecast_quota",
                 description="Compatibility wrapper that returns a structured FY quota projection payload.",

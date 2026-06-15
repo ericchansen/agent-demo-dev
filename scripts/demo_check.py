@@ -27,6 +27,7 @@ EXPECTED_MCP_SERVERS = {
     "quota-estimator",
 }
 EXPECTED_FOUNDRY_HANDLERS = {
+    "databricks_query",
     "forecast_quota",
     "generate_quota_estimation_report",
     "generate_report",

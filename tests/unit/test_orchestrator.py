@@ -249,6 +249,25 @@ def test_config_market_data_absent() -> None:
         assert config.market_data_connection_id is None
 
 
+def test_config_databricks_genie_from_env() -> None:
+    """OrchestratorConfig should pick up Databricks Genie settings from env."""
+    config_cls = _load_attr("src.orchestrator.config", "OrchestratorConfig")
+
+    env = {
+        "FOUNDRY_PROJECT_ENDPOINT": "https://test.endpoint",
+        "MODEL_DEPLOYMENT_NAME": "gpt-4o",
+        "DATABRICKS_WORKSPACE_URL": "https://adb-123.azuredatabricks.net",
+        "DATABRICKS_GENIE_SPACE_ID": "space-123",
+        "DATABRICKS_GENIE_WAREHOUSE_ID": "warehouse-123",
+    }
+
+    with patch.dict("os.environ", env, clear=True), patch("dotenv.load_dotenv"):
+        config = config_cls.from_env()
+        assert config.databricks_workspace_url == "https://adb-123.azuredatabricks.net"
+        assert config.databricks_genie_space_id == "space-123"
+        assert config.databricks_warehouse_id == "warehouse-123"
+
+
 def test_generate_report_forecast_missing_fields(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Report handles partial forecast items when downstream validation is lenient."""
     generate_report_func = _load_attr("src.orchestrator.foundry_agent", "generate_report_func")
@@ -358,6 +377,8 @@ def test_build_tools_without_workiq() -> None:
     assert isinstance(tools, list)
     assert len(tools) >= 2
     assert "forecast_quota" in tool_names
+    assert "databricks_query" in tool_names
+    assert "databricks_query" in handlers
     assert "generate_quota_estimation_report" in tool_names
     assert "generate_quota_estimation_report" in handlers
     assert "generate_report" in tool_names

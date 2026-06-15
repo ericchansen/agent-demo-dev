@@ -37,6 +37,22 @@ FABRIC_QUERY_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+DATABRICKS_QUERY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "question": {
+            "type": "string",
+            "description": "Natural language question for a Databricks Genie Space over Unity Catalog.",
+        },
+        "conversation_id": {
+            "type": "string",
+            "description": "Optional existing Genie conversation id for a follow-up question.",
+        },
+    },
+    "required": ["question"],
+    "additionalProperties": False,
+}
+
 FORECAST_QUOTA_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
@@ -244,6 +260,7 @@ COMPUTE_ATTAINMENT_SCHEMA: dict[str, Any] = {
 TOOL_NAMES: frozenset[str] = frozenset(
     {
         "fabric_query",
+        "databricks_query",
         "forecast_quota",
         "generate_quota_estimation_report",
         "generate_report",
@@ -256,6 +273,7 @@ TOOL_NAMES: frozenset[str] = frozenset(
 __all__ = [
     "ACCOUNT_ACTIVITY_SCHEMA",
     "COMPUTE_ATTAINMENT_SCHEMA",
+    "DATABRICKS_QUERY_SCHEMA",
     "FABRIC_QUERY_SCHEMA",
     "FORECAST_QUOTA_SCHEMA",
     "GENERATE_QUOTA_ESTIMATION_REPORT_SCHEMA",

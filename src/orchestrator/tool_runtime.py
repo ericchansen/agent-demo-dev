@@ -16,9 +16,11 @@ from src.agents.quota_estimator.pipeline import (
     forecast_payload_from_estimate,
     generate_quota_estimation_report,
 )
+from src.orchestrator.databricks_genie import databricks_genie_query_func
 from src.orchestrator.tool_schemas import (
     ACCOUNT_ACTIVITY_SCHEMA,
     COMPUTE_ATTAINMENT_SCHEMA,
+    DATABRICKS_QUERY_SCHEMA,
     FABRIC_QUERY_SCHEMA,
     FORECAST_QUOTA_SCHEMA,
     GENERATE_QUOTA_ESTIMATION_REPORT_SCHEMA,
@@ -29,12 +31,14 @@ from src.orchestrator.tool_schemas import (
 __all__ = [
     "ACCOUNT_ACTIVITY_SCHEMA",
     "COMPUTE_ATTAINMENT_SCHEMA",
+    "DATABRICKS_QUERY_SCHEMA",
     "FABRIC_QUERY_SCHEMA",
     "FORECAST_QUOTA_SCHEMA",
     "GENERATE_QUOTA_ESTIMATION_REPORT_SCHEMA",
     "GENERATE_REPORT_SCHEMA",
     "WEB_RESEARCH_SCHEMA",
     "compute_attainment_func",
+    "databricks_genie_query_func",
     "demo_fabric_query_func",
     "forecast_quota_func",
     "generate_quota_estimation_report_func",
