@@ -19,7 +19,7 @@ A skill is a structured prompt that:
 
 Skills are the "glue" between raw tool capabilities and repeatable business workflows.
 
-> 📖 **Learn more:** [Copilot CLI skills overview](https://docs.github.com/copilot/github-copilot-in-the-cli/using-copilot-cli-skills) · [Skill authoring guide](https://docs.github.com/copilot/github-copilot-in-the-cli/creating-custom-skills)
+> 📖 **Learn more:** [Copilot CLI custom instructions](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions) · [Add MCP servers to Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers)
 
 ## Example: quota-forecast skill
 

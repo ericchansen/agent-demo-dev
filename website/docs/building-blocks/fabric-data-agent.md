@@ -5,7 +5,7 @@ title: Fabric Data Agent
 
 # Microsoft Fabric Data Agent
 
-The Fabric Data Agent is the data backbone of this accelerator. It translates natural language questions into SQL queries against a [Fabric Lakehouse](https://learn.microsoft.com/fabric/data-engineering/lakehouse-overview), executes them, and returns structured results. This lets your agent answer questions about real business data without writing SQL.
+The Fabric Data Agent is one supported data backbone for this accelerator. It translates natural language questions into SQL queries against a [Fabric Lakehouse](https://learn.microsoft.com/fabric/data-engineering/lakehouse-overview), executes them, and returns structured results. If your data is in Databricks instead, use [Databricks Genie](./databricks-genie) and keep the same quota row contract.
 
 ## How it works
 
@@ -54,18 +54,18 @@ Configuration for this accelerator lives in `fabric/` in the repo:
 - `fabric/data-agent-instructions.md` — system prompt for query generation
 - `fabric/few-shot-examples.json` — example question→SQL pairs
 
-> 📖 [Create a Data Agent](https://learn.microsoft.com/fabric/data-engineering/data-agent-create) · [Configure instructions](https://learn.microsoft.com/fabric/data-engineering/data-agent-instructions)
+> 📖 [Create a Data Agent](https://learn.microsoft.com/en-us/fabric/data-science/how-to-create-data-agent) · [Data agent as MCP server](https://learn.microsoft.com/en-us/fabric/data-science/data-agent-mcp-server)
 
 ### MCP endpoint
 The Data Agent exposes an HTTP endpoint compatible with the [Model Context Protocol](./mcp):
 
 ```
-https://api.fabric.microsoft.com/v1/mcp/workspaces/{workspace-id}/dataagent
+api.fabric.microsoft.com/v1/mcp/workspaces/{workspace-id}/dataagent
 ```
 
 This is what the `wwi-sales-data` MCP server points to. In the Foundry surface, the same endpoint is wrapped as `FabricIQPreviewTool`.
 
-> 📖 [Data Agent MCP endpoint](https://learn.microsoft.com/fabric/data-engineering/data-agent-mcp) · [Fabric REST API](https://learn.microsoft.com/rest/api/fabric/)
+> 📖 [Data Agent MCP server](https://learn.microsoft.com/en-us/fabric/data-science/data-agent-mcp-server) · [Fabric REST API](https://learn.microsoft.com/rest/api/fabric/)
 
 ## Authentication
 
@@ -82,9 +82,16 @@ The Data Agent uses Entra ID (Azure AD) authentication. Access is controlled at 
 - **Latency** — first query after capacity resume can take 10-15 seconds (cold start). Subsequent queries are typically 1-3 seconds.
 - **Schema changes** — if you modify Lakehouse tables, the Data Agent needs to re-index the schema.
 
+## When to choose Fabric
+
+Choose Fabric when the workshop owner wants a Microsoft-native path with MCP available directly from the Data
+Agent. Choose Databricks when the customer already has curated Unity Catalog tables and Genie Spaces. Both
+platforms feed [the same quota estimator](./quota-pipeline), so the report lab and Foundry publishing lab remain
+identical after the data step.
+
 ## Further reading
 
-- [Fabric Data Agent overview](https://learn.microsoft.com/fabric/data-engineering/data-agent-concept)
-- [Data Agent FAQ](https://learn.microsoft.com/fabric/data-engineering/data-agent-faq)
+- [Fabric Data Agent overview](https://learn.microsoft.com/en-us/fabric/data-science/concept-data-agent)
+- [Create a Fabric data agent](https://learn.microsoft.com/en-us/fabric/data-science/how-to-create-data-agent)
 - [Fabric capacity pricing](https://learn.microsoft.com/fabric/enterprise/licenses)
-- [NL→SQL best practices](https://learn.microsoft.com/fabric/data-engineering/data-agent-instructions)
+- [Data agent as MCP server](https://learn.microsoft.com/en-us/fabric/data-science/data-agent-mcp-server)

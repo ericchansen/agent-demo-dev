@@ -5,13 +5,13 @@ title: Quota Estimation Pipeline
 
 # Quota Estimation Pipeline
 
-The quota pipeline turns Fabric sales history, market context, and WorkIQ activity signals into three concrete
+The quota pipeline turns Fabric or Databricks sales history, market context, and WorkIQ activity signals into three concrete
 artifacts: an Excel workbook for analysis, an HTML report for quick sharing, and a PDF brief for read-only review.
 The same Python package powers both demo surfaces:
 
 ```text
 Copilot CLI skill
-  -> wwi-sales-data Fabric Data Agent MCP
+  -> wwi-sales-data Fabric Data Agent MCP OR Databricks Genie adapter
   -> researcher-agent MCP
   -> synthetic or mock WorkIQ activity
   -> quota-estimator MCP (scenario: conservative | base | aggressive)
@@ -19,7 +19,7 @@ Copilot CLI skill
 
 M365 Copilot / Teams
   -> Azure AI Foundry agent
-  -> FabricIQPreviewTool
+  -> FabricIQPreviewTool OR Databricks data function
   -> WorkIQPreviewTool or get_account_activity mock
   -> generate_quota_estimation_report function tool (scenario aware)
   -> .xlsx, .html, .pdf
@@ -50,7 +50,7 @@ copy-pasteable and runs against the shared `src/agents/quota_estimator/` package
 
 ### 1. Shape your input rows
 
-Each sales row is a flat JSON object. The estimator accepts several field aliases (see
+Each sales row is a flat JSON object. The estimator accepts several Fabric and Databricks field aliases (see
 [Customizing for another dataset](#customizing-for-another-dataset)), but the canonical WWI shape is:
 
 | Field | Type | Required | Notes |
@@ -60,6 +60,10 @@ Each sales row is a flat JSON object. The estimator accepts several field aliase
 | `order_date` | string (`YYYY-MM-DD`) | yes | ISO date. Used to split the trailing window into prior vs. recent halves for the trend. |
 | `revenue` | number | yes | Order revenue in dollars. |
 | `quantity` | number | no | Units sold. Defaults to `0` when absent. |
+
+Databricks Genie / Unity Catalog rows can use `sales_territory`, `productCategory`, `orderDate`,
+`net_sales_amount`, and `units_sold`. Add `source_platform: "databricks"` or pass
+`data_source: "databricks"` so reports cite Genie and Unity Catalog correctly.
 
 A runnable WWI sample (two territories, two categories, recent + prior orders so a trend can be computed):
 
@@ -154,7 +158,7 @@ a strictly increasing total (`conservative < base < aggressive`).
 | Decision | Why it matters |
 |---|---|
 | Shared `src/agents/quota_estimator/` package | Keeps quota math and rendering consistent between CLI prototypes and Foundry production agents. |
-| Fabric-first inputs | The estimator expects rows shaped like `SalesOrderHeader` joined to `SalesTerritory`, so it stays close to WWI source data. |
+| Pluggable data-source inputs | The estimator accepts Fabric Data Agent and Databricks Genie row aliases, then normalizes both to one quota row contract. |
 | Deterministic calculations | Demo results are repeatable and testable without an LLM deciding quota math. |
 | Deterministic scenarios | `conservative`, `base`, and `aggressive` apply fixed growth deltas (-3%, 0%, +3%) so stakeholders can compare bounded outcomes without re-querying. |
 | Mock-safe WorkIQ | The demo uses synthetic M365 activity unless WorkIQ credentials are configured. No real WorkIQ API calls are required. |
@@ -179,8 +183,8 @@ file name, the Excel **Summary** and **Assumptions** sheets, the HTML header, an
 ## Data flow
 
 1. The user asks for a quota forecast report and optionally names a scenario.
-2. The agent queries Fabric for trailing historical sales rows with territory, order date, revenue, quantity, and
-   category when available.
+2. The agent queries Fabric or Databricks for trailing historical sales rows with territory, order date, revenue,
+   quantity, and category when available.
 3. The agent gathers market context from `researcher-agent` or Copilot research.
 4. The agent gathers WorkIQ activity. In demo mode this is realistic synthetic email and meeting activity.
 5. The quota estimator groups rows by territory and category, calculates historical trend, applies market,
@@ -196,14 +200,15 @@ The estimator accepts flexible field names, but every row should provide these c
 
 | Concept | Accepted examples |
 |---|---|
-| Territory | `territory`, `territory_name`, `SalesTerritory`, `TerritoryName` |
-| Category | `category`, `product_category`, `ProductCategory`, `StockItemCategory` |
-| Order date | `order_date`, `OrderDate`, `SalesOrderDate` |
-| Revenue | `revenue`, `total_revenue`, `sales_amount`, `TotalDue`, `ExtendedPrice` |
-| Quantity | `quantity`, `Quantity`, `QuantitySold` |
+| Territory | `territory`, `territory_name`, `SalesTerritory`, `TerritoryName`, `sales_territory`, `salesTerritory` |
+| Category | `category`, `product_category`, `ProductCategory`, `StockItemCategory`, `productCategory` |
+| Order date | `order_date`, `OrderDate`, `SalesOrderDate`, `orderDate`, `order_timestamp` |
+| Revenue | `revenue`, `total_revenue`, `sales_amount`, `TotalDue`, `ExtendedPrice`, `net_sales_amount`, `salesAmount` |
+| Quantity | `quantity`, `Quantity`, `QuantitySold`, `units_sold`, `quantitySold` |
 
-For a non-WWI model, update the Fabric Data Agent prompt or SQL so it returns these concepts. If your dataset does
-not have product categories, omit the category field and the estimator will group those rows under `All Products`.
+For a non-WWI model, update the Fabric Data Agent prompt, Databricks Genie instructions, or SQL so it returns these
+concepts. If your dataset does not have product categories, omit the category field and the estimator will group
+those rows under `All Products`.
 
 ## Running from Copilot CLI
 
@@ -284,4 +289,3 @@ so the portal, Foundry runtime, and hosted container all stay reachable.
 > It should return `Enabled` for the dev hub. Re-apply with
 > `az deployment group create -g rg-fabric-agent-dev -f infra/main.bicep -p infra/parameters/dev.bicepparam` if it
 > has drifted back to `Disabled` (for example, after a governance policy re-applied the production default).
-

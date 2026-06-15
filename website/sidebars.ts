@@ -19,7 +19,9 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: '🧩 Building Blocks',
       items: [
+        'building-blocks/choose-data-platform',
         'building-blocks/fabric-data-agent',
+        'building-blocks/databricks-genie',
         'building-blocks/workiq',
         'building-blocks/mcp',
         'building-blocks/foundry',

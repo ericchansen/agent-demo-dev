@@ -51,7 +51,7 @@ Each CLI concept has a Foundry equivalent:
 | Interactive OAuth | OBO (on-behalf-of) | Foundry acts as the user via Entra |
 | Inline markdown output | Adaptive Card + DOCX link | Richer formatting in Teams |
 
-> 📖 **Learn more:** [Azure AI Foundry Agent Service](https://learn.microsoft.com/azure/ai-foundry/concepts/agents) · [Foundry Responses API](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-responses) · [M365 Copilot extensibility](https://learn.microsoft.com/microsoft-365-copilot/extensibility/)
+> 📖 **Learn more:** [Microsoft Foundry Agent Service](https://learn.microsoft.com/en-us/azure/foundry/agents/overview) · [Microsoft Foundry SDKs and endpoints](https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/sdk-overview) · [M365 Copilot extensibility](https://learn.microsoft.com/microsoft-365-copilot/extensibility/)
 
 ## Setting up the Foundry surface
 
@@ -65,7 +65,19 @@ In Azure AI Foundry, create a new agent and register your tools:
 
 The agent's system prompt encodes the same logic your skills defined: when asked for a customer brief, call both data and context tools, then format the response.
 
-> 📖 **Learn more:** [Creating Foundry agents](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-create) · [Registering tools](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-tools)
+> 📖 **Learn more:** [Microsoft Foundry Agent Service](https://learn.microsoft.com/en-us/azure/foundry/agents/overview) · [Function calling](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/function-calling)
+
+### 1b. Compare single-agent and multi-agent pipelines
+
+Before publishing, run both production patterns and compare their traces:
+
+| Pattern | Command or portal action | Choose it when |
+|---|---|---|
+| Single agent with multiple tools | Test `WWISalesAgent` in Foundry playground. | You want the simplest production path. |
+| Multi-agent pipeline | `uv run python -m src.orchestrator.multi_agent "Generate a quota report for Tailspin Toys" --customer "Tailspin Toys"` | You want separate planner/data/research/context/report ownership and observability. |
+
+Both patterns must produce the same XLSX/HTML/PDF quota artifacts so attendees compare architecture trade-offs,
+not business-output differences.
 
 ### 2. Publish as an Agent Application
 
@@ -75,7 +87,7 @@ Once the agent works in the Foundry playground, publish it as an Agent Applicati
 - **RBAC** — control who can use it
 - **Stable endpoint** — accessible from M365 Copilot and Teams
 
-> 📖 **Learn more:** [Publishing agent applications](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-publish) · [Entra app registration](https://learn.microsoft.com/entra/identity-platform/quickstart-register-app)
+> 📖 **Learn more:** [Publishing agent applications](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot) · [Entra app registration](https://learn.microsoft.com/entra/identity-platform/quickstart-register-app)
 
 ### 3. Use it in M365
 
@@ -91,6 +103,17 @@ Business users @mention the agent in M365 Copilot Chat or Teams:
 
 The agent responds inline (with data tables and summaries) and can attach generated DOCX reports as OneDrive links.
 
+### 4. Monitor and evaluate
+
+Open Foundry tracing after each playground run. For the workshop, point out:
+
+- Which tools or specialist agents ran.
+- The data source citation: Fabric Data Agent or Databricks Genie / Unity Catalog.
+- The generated artifact metadata rather than sensitive file contents.
+- Failures that should become eval cases before production rollout.
+
+> 📖 **Learn more:** [Set up tracing for AI agents](https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-agent-setup)
+
 ## Other surfaces
 
 This accelerator supports five architecture options for exposing the agent to end users:
@@ -105,7 +128,7 @@ This accelerator supports five architecture options for exposing the agent to en
 
 The backend services (Fabric Data Agent, WorkIQ, report generator) don't change. Only the surface does.
 
-> 📖 **Learn more:** [Copilot Studio agents](https://learn.microsoft.com/microsoft-copilot-studio/fundamentals-what-is-copilot-studio) · [Teams AI library](https://learn.microsoft.com/microsoftteams/platform/bots/how-to/teams-conversational-ai/teams-conversation-ai-overview) · [Foundry Hosted Agents](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-hosted)
+> 📖 **Learn more:** [Copilot Studio agents](https://learn.microsoft.com/microsoft-copilot-studio/fundamentals-what-is-copilot-studio) · [Teams AI library](https://learn.microsoft.com/microsoftteams/platform/bots/how-to/teams-conversational-ai/teams-conversation-ai-overview) · [Microsoft Foundry Agent Service](https://learn.microsoft.com/en-us/azure/foundry/agents/overview)
 
 ## What you've accomplished
 

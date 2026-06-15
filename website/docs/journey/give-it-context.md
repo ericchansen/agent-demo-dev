@@ -43,7 +43,7 @@ WorkIQ is available as an MCP server for Copilot CLI:
   "mcpServers": {
     "wwi-sales-data": {
       "type": "http",
-      "url": "https://api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagent"
+      "url": "api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagent"
     },
     "workiq": {
       "type": "npm",
@@ -60,7 +60,7 @@ WorkIQ is available as an MCP server for Copilot CLI:
 
 In the Azure AI Foundry agent, WorkIQ is registered as a platform tool (`WorkIQPreviewTool`) that uses OBO authentication — the agent acts on behalf of the signed-in user to access their M365 data.
 
-> 📖 **Learn more:** [WorkIQ overview](https://learn.microsoft.com/microsoft-365-copilot/extensibility/work-iq-overview) · [On-behalf-of auth flow](https://learn.microsoft.com/entra/identity-platform/v2-oauth2-on-behalf-of-flow)
+> 📖 **Learn more:** [Microsoft Graph overview](https://learn.microsoft.com/graph/overview) · [On-behalf-of auth flow](https://learn.microsoft.com/entra/identity-platform/v2-oauth2-on-behalf-of-flow)
 
 ## Try it
 

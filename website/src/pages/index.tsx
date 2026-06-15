@@ -66,7 +66,9 @@ type BlockInfo = {
 };
 
 const BuildingBlocks: BlockInfo[] = [
+  {emoji: '🔀', title: 'Choose Your Data Platform', link: '/docs/building-blocks/choose-data-platform'},
   {emoji: '📊', title: 'Fabric Data Agent', link: '/docs/building-blocks/fabric-data-agent'},
+  {emoji: '🧱', title: 'Databricks Genie', link: '/docs/building-blocks/databricks-genie'},
   {emoji: '📬', title: 'WorkIQ', link: '/docs/building-blocks/workiq'},
   {emoji: '🔌', title: 'MCP', link: '/docs/building-blocks/mcp'},
   {emoji: '🏭', title: 'Azure AI Foundry', link: '/docs/building-blocks/foundry'},
@@ -108,8 +110,8 @@ function HomepageHeader() {
           {siteConfig.tagline}
         </p>
         <p className={styles.heroContext}>
-          Built on Microsoft Fabric, MCP, Azure AI Foundry, and the Wide World Importers
-          sample dataset. Prototype in GitHub Copilot CLI. Deploy to M365 Copilot + Teams.
+          Built on Microsoft Fabric or Databricks, MCP, Azure AI Foundry, and the Wide World
+          Importers sample dataset. Prototype in GitHub Copilot CLI. Deploy to M365 Copilot + Teams.
         </p>
         <div className={styles.buttons}>
           <Link
@@ -139,8 +141,8 @@ export default function Home(): ReactNode {
           <div className="container">
             <Heading as="h2" className={styles.sectionTitle}>The Journey</Heading>
             <p className={styles.sectionSubtitle}>
-              Six chapters that take you from "talking to AI" to shipping a working agent.
-              Not tied to days — go at your own pace.
+              A two-day hands-on path: Day 1 grounds the agent in data and produces the first
+              report; Day 2 ships the same workflow through Foundry, M365 Copilot, skills, and monitoring.
             </p>
             <div className={styles.journeyGrid}>
               {JourneySteps.map((step, idx) => (
@@ -175,7 +177,7 @@ export default function Home(): ReactNode {
                 <Heading as="h3">🛠️ Workshop Guide</Heading>
                 <p>Facilitator pacing, setup prerequisites, demo scripts, and cost model.</p>
               </Link>
-              <a href="https://github.com/ericchansen/agent-demo" className={styles.linkCard}>
+              <a href="https://github.com/ericchansen/agent-demo-dev" className={styles.linkCard}>
                 <Heading as="h3">📦 Repository</Heading>
                 <p>Source code, MCP servers, Foundry orchestrator, Bicep IaC, and tests.</p>
               </a>

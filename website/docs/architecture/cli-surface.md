@@ -14,11 +14,13 @@ flowchart LR
     User["Developer"] --> CLI["copilot CLI"]
     CLI --> Engine["Copilot CLI Engine\n(orchestrator)"]
     Engine -->|MCP| FDA["Fabric Data Agent\n(WWI + Market)"]
+    Engine -->|HTTP/MCP adapter| DBX["Databricks Genie\n(Unity Catalog)"]
     Engine -->|MCP| WIQ["WorkIQ"]
     Engine -->|MCP| Researcher["Researcher Agent\n(web search)"]
     Engine -->|MCP| SP["SharePoint Agent"]
     Engine --> Skills["Skills"]
     FDA --> LH["Lakehouses"]
+    DBX --> UC["Unity Catalog"]
     WIQ --> Graph["M365 Graph"]
     SP --> Graph
     Researcher -.-> Web["External APIs"]
@@ -58,4 +60,14 @@ flowchart LR
 - **SE demos** — showing the agent to technical audiences
 - **Individual use** — personal productivity with connected tools
 
-> 📖 [GitHub Copilot CLI](https://docs.github.com/copilot/github-copilot-in-the-cli) · [MCP in Copilot CLI](https://docs.github.com/copilot/github-copilot-in-the-cli/using-mcp-servers-with-copilot-cli)
+## Try it now
+
+```powershell
+uv sync --extra dev
+uv run python -m src.orchestrator.multi_agent "Generate a quota report for Tailspin Toys" --customer "Tailspin Toys"
+```
+
+That command runs the same quota report path without Azure credentials, which makes it a safe Day 1 smoke test
+before you connect either Fabric or Databricks.
+
+> 📖 [Add MCP servers to GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers) · [Add custom instructions to Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions)

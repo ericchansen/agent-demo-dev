@@ -7,7 +7,8 @@ title: Report Generation
 
 One of the clearest ways an agent moves beyond "chatbot" is when it produces a real deliverable — not just text in a chat window, but a formatted document you can send to a customer or present to your manager.
 
-This accelerator includes a report generator that produces DOCX files with quota forecasts, charts, citations, and activity summaries.
+This accelerator includes report generators that produce DOCX account briefs and quota-estimation XLSX, HTML,
+and PDF artifacts with forecasts, charts, citations, and activity summaries.
 
 ## What the report contains
 
@@ -22,17 +23,22 @@ A generated QBR forecast report includes:
 
 ## Implementation
 
-The report generator lives in `src/agents/report_generator/` and uses:
+The DOCX report generator lives in `src/agents/report_generator/`; the quota artifact generator lives in
+`src/agents/quota_estimator/`. Together they use:
 
 - **[python-docx](https://python-docx.readthedocs.io/)** — builds formatted DOCX documents
 - **[matplotlib](https://matplotlib.org/)** or chart libraries — generates embedded visualizations
 - **Microsoft Graph API** — uploads to OneDrive and returns a sharing link
+- **openpyxl** — writes workbook tabs for Summary, Recommendations, Sales Detail, Methodology, and Assumptions
 
 ### CLI surface
-In the CLI, reports are rendered as inline markdown (tables, projections, trend indicators). The CLI doesn't produce DOCX files — it's a developer prototype surface.
+In the CLI, the quota estimator writes real XLSX, HTML, and PDF files under `output/`. The DOCX account-plan
+generator remains available as a separate MCP tool for Word-style briefs.
 
 ### Foundry surface
-In Foundry, the report generator runs as a custom function tool. It produces a DOCX, uploads it to the user's OneDrive via Graph API, and returns a download link in the chat.
+In Foundry, report generation runs as custom function tools. Quota reports return local or uploaded
+XLSX/HTML/PDF artifacts; account briefs can produce DOCX and upload through Microsoft Graph when OneDrive
+permissions are configured.
 
 > 📖 [Microsoft Graph: upload files](https://learn.microsoft.com/graph/api/driveitem-put-content) · [OneDrive sharing links](https://learn.microsoft.com/graph/api/driveitem-createlink)
 
@@ -41,9 +47,10 @@ In Foundry, the report generator runs as a custom function tool. It produces a D
 Every generated report in this accelerator includes source attribution. This isn't optional — it's what makes AI-generated reports trustworthy enough to share externally.
 
 Each data point includes:
-- The SQL query that produced it
+- The source query or semantic endpoint that produced it
 - The timestamp of the query
 - Whether the value is raw data or a model inference
+- The data platform: Fabric Data Agent or Databricks Genie / Unity Catalog
 
 This traceability is critical for regulated industries and builds user trust in AI-generated content.
 
@@ -51,4 +58,4 @@ This traceability is critical for regulated industries and builds user trust in 
 
 - [python-docx documentation](https://python-docx.readthedocs.io/)
 - [Microsoft Graph files API](https://learn.microsoft.com/graph/api/resources/driveitem)
-- [Foundry function tools](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-function-calling)
+- [Foundry function tools](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/function-calling)

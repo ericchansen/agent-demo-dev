@@ -7,7 +7,7 @@ title: Ground It in Data
 
 The first thing that separates a useful agent from a chatbot is access to real data. A chatbot can tell you what "sales forecasting" means in general. An agent connected to your Lakehouse can tell you that Tailspin Toys' Q3 sales were $2.4M, up 12% from Q2, driven by novelty gift items.
 
-In this chapter, you'll connect your agent to a [Microsoft Fabric Data Agent](../building-blocks/fabric-data-agent) — a service that translates natural language questions into SQL queries against your Lakehouse tables.
+In this chapter, you'll connect your agent to a governed analytical data surface: [Microsoft Fabric Data Agent](../building-blocks/fabric-data-agent) for Lakehouse tables or [Databricks Genie](../building-blocks/databricks-genie) for Unity Catalog tables.
 
 ## What you're building
 
@@ -15,16 +15,19 @@ In this chapter, you'll connect your agent to a [Microsoft Fabric Data Agent](..
 flowchart LR
     User["You"] <--> CLI["Copilot CLI"]
     CLI <-->|MCP| FDA["Fabric Data Agent"]
+    CLI <-->|API/MCP adapter| Genie["Databricks Genie"]
     FDA <-->|SQL| LH["Lakehouse"]
+    Genie <-->|SQL| UC["Unity Catalog"]
 ```
 
 The chain is: you ask a question → the agent routes it to the [Fabric Data Agent](../building-blocks/fabric-data-agent) over [MCP](../building-blocks/mcp) → the Data Agent translates your question to SQL → the Lakehouse returns results → the answer flows back to you.
 
 ## The data
 
-This accelerator supports **multiple data paths**, each backed by its own Fabric Data Agent and Lakehouse:
+This accelerator supports **multiple data paths**:
 
-- **WWI Sales Data** — [Wide World Importers](../building-blocks/wwi-dataset) simulates a wholesale company with customers, orders, products, and territories. It's the primary demo dataset.
+- **WWI Sales Data in Fabric** — [Wide World Importers](../building-blocks/wwi-dataset) simulates a wholesale company with customers, orders, products, and territories.
+- **WWI-shaped sales data in Databricks** — Unity Catalog tables exposed through a Genie Space.
 - **Market Data** — SEC EDGAR filings provide real-world company financials for competitive intelligence and market research.
 
 Each data path gets its own Data Agent with tailored instructions and few-shot examples. You can also [bring your own data](../building-blocks/wwi-dataset#customizing-for-your-scenario).
@@ -40,19 +43,19 @@ The repo includes a `.github/mcp.json` file that Copilot CLI auto-discovers. Set
   "mcpServers": {
     "wwi-sales-data": {
       "type": "http",
-      "url": "https://api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagent"
+      "url": "api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagent"
     }
   }
 }
 ```
 
-> 📖 **Learn more:** [Fabric Data Agent MCP endpoint](https://learn.microsoft.com/fabric/data-engineering/data-agent-mcp) · [MCP server configuration in Copilot CLI](https://docs.github.com/copilot/github-copilot-in-the-cli/using-mcp-servers-with-copilot-cli)
+> 📖 **Learn more:** [Fabric Data Agent MCP server](https://learn.microsoft.com/en-us/fabric/data-science/data-agent-mcp-server) · [MCP server configuration in Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers)
 
 ### Option B: CLI one-liner
 
 ```bash
 copilot mcp add --transport http wwi-sales-data \
-  "https://api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagent"
+  "api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagent"
 ```
 
 ### Try it
@@ -78,7 +81,7 @@ The Fabric Data Agent does the heavy lifting here. It:
 
 This is called NL→SQL (natural language to SQL). The Data Agent handles schema grounding, query generation, and execution — your MCP server is just the HTTP bridge.
 
-> 📖 **Learn more:** [How Fabric Data Agent works](https://learn.microsoft.com/fabric/data-engineering/data-agent-concept) · [NL→SQL in Fabric](https://learn.microsoft.com/fabric/data-engineering/data-agent-faq)
+> 📖 **Learn more:** [Fabric Data Agent concepts](https://learn.microsoft.com/en-us/fabric/data-science/concept-data-agent) · [Create a Fabric data agent](https://learn.microsoft.com/en-us/fabric/data-science/how-to-create-data-agent)
 
 ## What you've accomplished
 

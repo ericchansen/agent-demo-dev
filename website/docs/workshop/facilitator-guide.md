@@ -7,20 +7,23 @@ title: Facilitator Guide
 
 This page is for people running this workshop with a group. It covers pacing, what to demo vs. hands-on, and how to adapt the material to different time slots.
 
-## The journey structure
+## The two-day journey structure
 
-The workshop follows a progressive narrative. Each chapter builds on the previous one:
+The workshop follows a progressive narrative across two hands-on days. Each block has a demo outcome and a
+participant artifact.
 
-| Chapter | Core concept | Suggested time |
-|---|---|---|
-| [From Chat to Agent](../journey/from-chat-to-agent) | Why agents need connections | 15 min (lecture) |
-| [Ground It in Data](../journey/ground-it-in-data) | Connect Fabric Data Agent | 30-45 min (hands-on) |
-| [Give It Context](../journey/give-it-context) | Connect WorkIQ | 20-30 min (demo + discussion) |
-| [Arm It with Tools](../journey/arm-it-with-tools) | Report generation, real output | 30-45 min (hands-on) |
-| [Build Reusable Skills](../journey/build-reusable-skills) | Compose into workflows | 20-30 min (hands-on) |
-| [Ship It](../journey/ship-it) | CLI → Foundry → M365 | 30-45 min (demo + discussion) |
+| Day | Block | Core concept | Participant artifact |
+|---|---|---|---|
+| Day 1 | Architecture and environment | Why agents need tools, MCP, auth, and real data. | Repo cloned, `uv sync --extra dev` complete. |
+| Day 1 | Azure deploy | Bicep resources, public network access for dev, cost controls. | Resource group validated; Foundry hub reachable. |
+| Day 1 | Data platform | Choose Fabric Data Agent or Databricks Genie. | Golden sales query returns normalized rows. |
+| Day 1 | CLI and first report | Copilot CLI / local Python invokes the quota pipeline. | XLSX, HTML, and PDF quota report. |
+| Day 2 | Foundry agent | Project, agents, playground, tools, tracing. | Agent visible and testable in Foundry portal. |
+| Day 2 | Publish and customize | M365 Copilot publishing, custom data, custom skills. | Workshop attendee knows the changes needed for their own data. |
+| Day 2 | Hosted and multi-agent patterns | Single agent vs planner/data/research/context/report agents. | Multi-agent PoC run and architecture trade-off discussion. |
+| Day 2 | Eval and monitor | Traces, failures, regression prompts, cost monitoring. | Evaluation checklist and troubleshooting path. |
 
-**Total: 2.5 – 4 hours** depending on hands-on depth.
+**Total: 12-14 hours** across two days, including breaks, troubleshooting, and optional customization labs.
 
 ## Pacing options
 
@@ -29,6 +32,10 @@ All six chapters. Chapters 1, 3, and 6 as demos/lectures. Chapters 2, 4, and 5 a
 
 ### Full-day workshop (6 hours)
 All chapters with deep hands-on. Add time for participants to build their own skills and experiment with different queries. Include the architecture section as a midday deep-dive.
+
+### Two-day customer workshop (recommended)
+Day 1 ends only after everyone has generated a local quota report. Day 2 starts in Foundry portal, then compares
+single-agent and multi-agent patterns before publishing and monitoring.
 
 ### 90-minute overview
 Chapters 1, 2, and 6 only. Focus on the narrative arc: why agents need data connections → show it working → show it deployed. Skip skills and tools — reference them as "what comes next."
@@ -47,6 +54,18 @@ One chapter per session (weekly or biweekly). Participants have homework between
 | Build Reusable Skills | **Hands-on** — participants write their own skill |
 | Ship It | **Demo** — show Foundry deployment, M365 chat |
 
+## Golden prompts
+
+Use these exact prompts to keep the room synchronized:
+
+| Prompt | Expected proof |
+|---|---|
+| `What were Tailspin Toys' total sales last quarter?` | Data backend is connected. |
+| `Generate a quota estimation report for Northwest territory` | XLSX/HTML/PDF pipeline works. |
+| `Compare conservative vs aggressive scenarios for FY27` | Deterministic scenario controls work. |
+| `What's our pipeline coverage ratio by salesperson?` | Tool routing beyond quota reports. |
+| `Create a competitive analysis for Wingtip Toys` | Research + sales synthesis. |
+
 ## Prerequisites for participants
 
 See [Setup Guide](./setup) for full details. At minimum:
@@ -61,3 +80,4 @@ See [Setup Guide](./setup) for full details. At minimum:
 - **Show the mermaid diagrams** — architecture visuals help non-technical audiences
 - **Let people break things** — wrong queries, missing data, auth errors are all learning moments
 - **End with "Ship It"** — showing M365 deployment makes the journey feel complete
+- **Keep screenshots current** — when portal UI changes, update screenshots or use step-by-step text instead of stale images.

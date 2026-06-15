@@ -17,14 +17,15 @@ A skill defines:
 
 Skills live as files in your repository (`src/cli/skills/` or `.github/copilot/skills/`) and are auto-discovered by Copilot CLI.
 
-> 📖 [Copilot CLI skills overview](https://docs.github.com/copilot/github-copilot-in-the-cli/using-copilot-cli-skills) · [Creating custom skills](https://docs.github.com/copilot/github-copilot-in-the-cli/creating-custom-skills)
+> 📖 [Copilot CLI custom instructions](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions) · [Add MCP servers to Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers)
 
 ## Skills in this accelerator
 
 | Skill | Purpose | Tools used |
 |---|---|---|
 | `quota-forecast` | QBR quota forecast for a customer | wwi-sales-data, workiq |
-| (more coming) | | |
+| `sales-analysis` | Multi-source customer analysis with Excel output | sales data, research, report generator |
+| `competitive-intel` | Customer and market research brief | web research, market data |
 
 ## Writing a skill
 
@@ -62,10 +63,10 @@ In the CLI, skills are explicit workflow templates. In Foundry, the same logic l
 - Skill steps → Agent system prompt instructions
 - Skill output format → Response formatting instructions
 
-> 📖 [Foundry agent instructions](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-create#configure-agent-instructions)
+> 📖 [Microsoft Foundry Agent Service](https://learn.microsoft.com/en-us/azure/foundry/agents/overview)
 
 ## Further reading
 
-- [Copilot CLI skills](https://docs.github.com/copilot/github-copilot-in-the-cli/using-copilot-cli-skills)
-- [Skill authoring guide](https://docs.github.com/copilot/github-copilot-in-the-cli/creating-custom-skills)
+- [Copilot CLI custom instructions](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions)
+- [Add MCP servers to Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers)
 - [Prompt engineering best practices](https://learn.microsoft.com/azure/ai-services/openai/concepts/prompt-engineering)

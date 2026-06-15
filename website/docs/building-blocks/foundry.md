@@ -15,7 +15,7 @@ The Foundry Agent Service hosts your agent and manages its lifecycle. It handles
 - **Tool orchestration** — routing user intent to registered tools
 - **Response generation** — combining tool outputs into coherent answers
 
-> 📖 [Agent Service overview](https://learn.microsoft.com/azure/ai-foundry/concepts/agents)
+> 📖 [Agent Service overview](https://learn.microsoft.com/en-us/azure/foundry/agents/overview)
 
 ### Responses API
 The Responses API is how the agent calls tools and generates responses. It supports:
@@ -23,7 +23,7 @@ The Responses API is how the agent calls tools and generates responses. It suppo
 - **Streaming** — progressive output for long-running operations
 - **Structured output** — JSON responses for programmatic consumption
 
-> 📖 [Responses API reference](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-responses)
+> 📖 [Microsoft Foundry SDKs and endpoints](https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/sdk-overview)
 
 ### Platform tools vs function tools
 
@@ -35,7 +35,7 @@ The Responses API is how the agent calls tools and generates responses. It suppo
 
 Platform tools handle authentication and data access automatically. Function tools give you full control over logic and output.
 
-> 📖 [Tool types](https://learn.microsoft.com/azure/ai-foundry/concepts/agents-tools) · [Function calling](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-function-calling) · [Code interpreter](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-code-interpreter)
+> 📖 [Function calling](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/function-calling) · [Code interpreter](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/code-interpreter)
 
 ### Agent Applications
 An Agent Application is a published agent with:
@@ -44,7 +44,7 @@ An Agent Application is a published agent with:
 - **RBAC** — control who can discover and use the agent
 - **Monitoring** — usage metrics, error tracking, cost attribution
 
-> 📖 [Publishing agents](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-publish) · [Agent monitoring](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-monitor)
+> 📖 [Publishing agents](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot) · [Agent tracing](https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-agent-setup)
 
 ## How it fits in this accelerator
 
@@ -62,7 +62,24 @@ The primary production path (`src/orchestrator/foundry_agent.py`). Registers too
 ### Hosted Agent (bring-your-own-code)
 A containerized agent (`src/orchestrator/hosted_agent/`) with full control over tool orchestration. It exposes a `HostedChatAdapter` chat surface plus a deterministic local demo flow, and it wires the same production tool set: Fabric MCP queries, quota forecasting, quota estimation artifacts, report generation, web research, quota attainment, and account activity fallback.
 
-> 📖 [Foundry Hosted Agents](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-hosted)
+### Multi-agent pipeline (advanced)
+
+The advanced lab registers separate Foundry-facing agent responsibilities:
+
+| Agent | Responsibility | Local proof-of-concept equivalent |
+|---|---|---|
+| Planner | Decide which specialist agents are needed. | `MultiAgentPipeline.run(...)` |
+| Data | Query Fabric Data Agent or Databricks Genie. | `_demo_data_agent(...)` |
+| Research | Gather market and competitive context. | `web_research_func(...)` |
+| Work Context | Add WorkIQ or synthetic M365 activity. | `mock_workiq_func(...)` |
+| Conversational | Synthesize and interact with the user. | `MultiAgentPipelineResult.response` |
+| Report | Generate XLSX/HTML/PDF quota artifacts. | `generate_quota_estimation_report_func(...)` |
+
+Run it locally before registering agents in Foundry:
+
+```powershell
+uv run python -m src.orchestrator.multi_agent "Generate a quota report for Tailspin Toys" --customer "Tailspin Toys" --data-source databricks
+```
 
 #### Adapter modes
 
@@ -84,7 +101,7 @@ Each tool call emits a structured, content-free log line (`tool=… status=… d
 
 The deterministic local adapter, factory selection, and tool routing are covered by offline unit tests and the `python scripts/demo_check.py --docker` smoke check. The `azure` adapter is unit-tested against a mocked model client; live model validation is **not** exercised in CI and requires a real `MODEL_ENDPOINT` and managed-identity credentials.
 
-The live Fabric Data Agent path **has** been validated out-of-band against the dev workspace. A manual MCP smoke test (`initialize` → `tools/list` → `tools/call`) against the `DataAgent_WWI_Sales_Agent` tool returned real Wide World Importers results — for example, "top 3 customers by total sales" resolved to Wingtip Toys (~$712M) and Tailspin Toys (~$605M) over the WWI warehouse. This confirms token acquisition (`https://api.fabric.microsoft.com`), the MCP endpoint, and natural-language query execution all work end to end; it is exercised manually because CI has no Fabric credentials.
+The live Fabric Data Agent path **has** been validated out-of-band against the dev workspace. A manual MCP smoke test (`initialize` → `tools/list` → `tools/call`) against the `DataAgent_WWI_Sales_Agent` tool returned real Wide World Importers results — for example, "top 3 customers by total sales" resolved to Wingtip Toys (~$712M) and Tailspin Toys (~$605M) over the WWI warehouse. This confirms token acquisition for `api.fabric.microsoft.com`, the MCP endpoint, and natural-language query execution all work end to end; it is exercised manually because CI has no Fabric credentials.
 
 The agent's system prompt encodes the orchestration logic — when to call which tool, how to combine results, and how to format output.
 
@@ -101,9 +118,8 @@ The mental model: CLI is your workbench, Foundry is your factory.
 
 ## Further reading
 
-- [Azure AI Foundry overview](https://learn.microsoft.com/azure/ai-foundry/what-is-ai-foundry)
-- [Agent Service concepts](https://learn.microsoft.com/azure/ai-foundry/concepts/agents)
-- [Creating agents](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-create)
-- [Agent tools](https://learn.microsoft.com/azure/ai-foundry/concepts/agents-tools)
-- [Publishing to M365](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-publish)
-- [Foundry pricing](https://learn.microsoft.com/azure/ai-foundry/concepts/pricing)
+- [Microsoft Foundry overview](https://learn.microsoft.com/en-us/azure/foundry/)
+- [Agent Service overview](https://learn.microsoft.com/en-us/azure/foundry/agents/overview)
+- [Function calling](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/function-calling)
+- [Publishing to M365](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot)
+- [Tracing agents](https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-agent-setup)

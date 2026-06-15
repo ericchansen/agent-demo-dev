@@ -49,6 +49,12 @@ WorkIQ uses the [on-behalf-of (OBO) flow](https://learn.microsoft.com/entra/iden
 
 > ⚠️ **Demo tenant note:** The current demo environment uses mock M365 activity data. Production deployments use real OBO authentication against Microsoft Graph.
 
+## Demo-safe fallback
+
+The quota pipeline accepts synthetic WorkIQ-shaped activity when a tenant does not have WorkIQ provisioned. The
+fallback is clearly cited as synthetic in generated reports, but it still exercises the same engagement adjustment
+logic so Day 1 and CI can run without tenant-specific credentials.
+
 ## Privacy and security
 
 WorkIQ respects Microsoft Graph's permission model:
@@ -62,7 +68,6 @@ WorkIQ respects Microsoft Graph's permission model:
 
 ## Further reading
 
-- [WorkIQ overview](https://learn.microsoft.com/microsoft-365-copilot/extensibility/work-iq-overview)
 - [On-behalf-of auth flow](https://learn.microsoft.com/entra/identity-platform/v2-oauth2-on-behalf-of-flow)
 - [Microsoft Graph API reference](https://learn.microsoft.com/graph/api/overview)
 - [M365 Copilot extensibility](https://learn.microsoft.com/microsoft-365-copilot/extensibility/)

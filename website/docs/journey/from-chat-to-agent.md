@@ -53,7 +53,7 @@ None of that requires the agent to be "smart." It requires the agent to be *conn
 
 Before starting, you'll need:
 - A [Microsoft Fabric](https://learn.microsoft.com/fabric/get-started/fabric-trial) workspace with the WWI sample data loaded
-- [GitHub Copilot CLI](https://docs.github.com/copilot/github-copilot-in-the-cli) installed
+- [GitHub Copilot CLI MCP configuration](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers) ready
 - Python 3.11+ (we recommend [uv](https://docs.astral.sh/uv/) for environment management)
 
 See the [Setup Guide](../workshop/setup) for detailed environment configuration.

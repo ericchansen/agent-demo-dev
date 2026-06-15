@@ -48,7 +48,7 @@ Some examples of tools in this accelerator:
 | `WorkIQPreviewTool` | Same as workiq, registered as Foundry tool | Foundry |
 | Report generator function | Produces DOCX with charts, uploads to OneDrive | Foundry |
 
-> 📖 **Learn more:** [MCP tool specification](https://modelcontextprotocol.io/docs/concepts/tools) · [Foundry tool types](https://learn.microsoft.com/azure/ai-foundry/concepts/agents-tools)
+> 📖 **Learn more:** [MCP tool specification](https://modelcontextprotocol.io/docs/concepts/tools) · [Foundry function calling](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/function-calling)
 
 ## Building a report generator
 
@@ -74,7 +74,7 @@ copilot
 > Based on Tailspin Toys' sales data, generate a quota forecast for FY27
 ```
 
-> 📖 **Learn more:** [Copilot CLI skills](https://docs.github.com/copilot/github-copilot-in-the-cli/using-copilot-cli-skills) · [Creating custom skills](https://docs.github.com/copilot/github-copilot-in-the-cli/creating-custom-skills)
+> 📖 **Learn more:** [Copilot CLI custom instructions](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions) · [Add MCP servers to Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers)
 
 ### In the Foundry surface
 
@@ -86,7 +86,7 @@ The Foundry agent uses a **custom function tool** that wraps the same report gen
 
 The agent generates the DOCX, uploads it to the user's OneDrive, and returns a download link — all within M365 Copilot Chat.
 
-> 📖 **Learn more:** [Azure AI Foundry function tools](https://learn.microsoft.com/azure/ai-foundry/how-to/agents/agents-function-calling) · [Microsoft Graph file upload](https://learn.microsoft.com/graph/api/driveitem-put-content)
+> 📖 **Learn more:** [Microsoft Foundry function tools](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/function-calling) · [Microsoft Graph file upload](https://learn.microsoft.com/graph/api/driveitem-put-content)
 
 ## The citation requirement
 

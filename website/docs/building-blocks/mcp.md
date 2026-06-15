@@ -41,13 +41,13 @@ Tools are registered in `.github/mcp.json` (workspace-scoped) or via `copilot mc
   "mcpServers": {
     "wwi-sales-data": {
       "type": "http",
-      "url": "https://api.fabric.microsoft.com/v1/mcp/workspaces/{id}/dataagent"
+      "url": "api.fabric.microsoft.com/v1/mcp/workspaces/{id}/dataagent"
     }
   }
 }
 ```
 
-> 📖 [Copilot CLI MCP configuration](https://docs.github.com/copilot/github-copilot-in-the-cli/using-mcp-servers-with-copilot-cli) · [MCP server types](https://modelcontextprotocol.io/docs/concepts/transports)
+> 📖 [Copilot CLI MCP configuration](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers) · [MCP server types](https://modelcontextprotocol.io/docs/concepts/transports)
 
 ## HTTP vs stdio transport
 
@@ -94,7 +94,7 @@ async def call_tool(name: str, arguments: dict):
         return [TextContent(type="text", text=f"Customer: {arguments['name']}")]
 ```
 
-> 📖 [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) · [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk) · [Building MCP servers](https://modelcontextprotocol.io/docs/guides/building-servers)
+> 📖 [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) · [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk) · [Build with MCP agent skills](https://modelcontextprotocol.io/docs/develop/build-with-agent-skills.md)
 
 ## MCP vs Foundry tools
 
@@ -113,5 +113,5 @@ The key difference: MCP is a runtime discovery protocol (the agent asks "what to
 - [MCP specification](https://modelcontextprotocol.io/)
 - [MCP concepts: tools](https://modelcontextprotocol.io/docs/concepts/tools)
 - [MCP concepts: transports](https://modelcontextprotocol.io/docs/concepts/transports)
-- [Copilot CLI MCP docs](https://docs.github.com/copilot/github-copilot-in-the-cli/using-mcp-servers-with-copilot-cli)
-- [Foundry tool types](https://learn.microsoft.com/azure/ai-foundry/concepts/agents-tools)
+- [Copilot CLI MCP docs](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers)
+- [Foundry function calling](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/function-calling)

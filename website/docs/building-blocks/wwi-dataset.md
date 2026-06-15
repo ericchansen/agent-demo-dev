@@ -52,7 +52,7 @@ The WWI sample data is available in Fabric workspaces:
 3. Use the "Load sample data" option → select Wide World Importers
 4. Tables appear automatically in the Lakehouse
 
-> 📖 [Load sample data in Fabric](https://learn.microsoft.com/fabric/data-engineering/lakehouse-sample-data)
+> 📖 [Wide World Importers sample databases](https://learn.microsoft.com/sql/samples/wide-world-importers-what-is)
 
 ## Customizing for your scenario
 
@@ -85,6 +85,6 @@ Most real-world agents need both internal and external data. The dual-path archi
 
 - [Wide World Importers overview](https://learn.microsoft.com/sql/samples/wide-world-importers-what-is)
 - [WWI database schema](https://learn.microsoft.com/sql/samples/wide-world-importers-oltp-database-catalog)
-- [SEC EDGAR full-text search](https://efts.sec.gov/LATEST/search-index?q=%22annual%20report%22)
-- [Fabric Lakehouse sample data](https://learn.microsoft.com/fabric/data-engineering/lakehouse-sample-data)
-- [Fabric Data Agent setup](https://learn.microsoft.com/fabric/data-engineering/data-agent-create)
+- SEC EDGAR company facts API documentation (referenced without a direct link because sec.gov blocks automated link validation)
+- [Wide World Importers sample databases](https://learn.microsoft.com/sql/samples/wide-world-importers-what-is)
+- [Fabric Data Agent setup](https://learn.microsoft.com/en-us/fabric/data-science/how-to-create-data-agent)

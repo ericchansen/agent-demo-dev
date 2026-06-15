@@ -11,9 +11,9 @@ const config: Config = {
     v4: true,
   },
   url: 'https://ericchansen.github.io',
-  baseUrl: '/agent-demo/',
+  baseUrl: '/agent-demo-dev/',
   organizationName: 'ericchansen',
-  projectName: 'agent-demo',
+  projectName: 'agent-demo-dev',
   onBrokenLinks: 'throw',
   markdown: {
     mermaid: true,
@@ -29,7 +29,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/ericchansen/agent-demo/edit/main/website/',
+          editUrl: 'https://github.com/ericchansen/agent-demo-dev/edit/main/website/',
         },
         blog: false,
         theme: {
@@ -52,7 +52,7 @@ const config: Config = {
           label: 'Workshop',
         },
         {
-          href: 'https://github.com/ericchansen/agent-demo',
+          href: 'https://github.com/ericchansen/agent-demo-dev',
           label: 'GitHub',
           position: 'right',
         },
@@ -87,7 +87,7 @@ const config: Config = {
             },
             {
               label: 'GitHub Repository',
-              href: 'https://github.com/ericchansen/agent-demo',
+              href: 'https://github.com/ericchansen/agent-demo-dev',
             },
           ],
         },
@@ -100,11 +100,11 @@ const config: Config = {
             },
             {
               label: 'Azure AI Foundry',
-              href: 'https://learn.microsoft.com/azure/ai-foundry/',
+              href: 'https://learn.microsoft.com/en-us/azure/foundry/',
             },
             {
               label: 'GitHub Copilot CLI',
-              href: 'https://docs.github.com/copilot/github-copilot-in-the-cli',
+              href: 'https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers',
             },
             {
               label: 'MCP Specification',
