@@ -30,8 +30,14 @@ This workshop is a hands-on path from a local Copilot CLI prototype to a product
 | 13:00-14:00 | Customize for your data | Swap WWI sample assumptions for the participant's Fabric warehouse, Databricks Genie Space, or enterprise data contract. |
 | 14:00-15:00 | Add reusable skills | Extend the quota workflow with one custom analysis or report-generation skill and add an offline test. |
 | 15:00-16:00 | Hosted agent runtime | Build the hosted-agent container, probe `/healthz` and `/readyz`, and understand when bring-your-own-code hosting is preferable. |
-| 16:00-16:45 | Evaluate and monitor | Run mock evals, review live-smoke readiness output, and map failures to new regression tests. |
+| 16:00-16:45 | Evaluate and monitor | Run Foundry evals, review live-smoke readiness output, and map traces to new regression tests. |
 | 16:45-17:00 | Graduation checkpoint | Present a credible path from local prototype to governed Foundry deployment, including cost and readiness guardrails. |
+
+### Optional cloud-blocked lab
+
+If Foundry portal access is unavailable, use [Foundry Local and DevUI](./foundry-local-devui) during the Day 2
+evaluation block. It runs the deterministic planner -> data -> research -> work-context -> report pipeline, checks
+Foundry Local installation status, and makes clear which proof still requires the live Foundry project.
 
 ## Facilitator checkpoints
 

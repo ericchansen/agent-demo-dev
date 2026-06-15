@@ -175,6 +175,7 @@ threads/runs API and its agents cannot be referenced from prompt agents. The new
 | **A2A tool** (`A2APreviewTool`) | One prompt agent calls another agent exposed as an A2A endpoint; one tool per sub-agent. | Each sub-agent needs an A2A **connection created in the Foundry portal** — no SDK-only path. | Public Preview |
 | **Foundry Workflows** (`WorkflowAgentDefinition`) | Declarative sequential / group-chat / human-in-the-loop graph, authored as Power Fx **YAML** in the portal or VS Code Foundry Toolkit, invoked by name. | Portal/VS Code authoring; YAML is portal-proprietary. | Portal feature |
 | **Microsoft Agent Framework** | Pure-Python orchestration (`SequentialBuilder`, `HandoffBuilder`) over `FoundryChatClient`, runs against the same Responses API. | `pip install agent-framework agent-framework-foundry`; no portal A2A setup. | Recommended code path |
+| **Foundry Local** | On-device model runtime with an OpenAI-compatible local endpoint. | Install the Foundry Local CLI and download a compatible model. | Local model runtime, not portal agent chaining |
 
 `src/orchestrator/multi_agent/agent_framework_runtime.py` is the runnable optional bridge for Microsoft Agent
 Framework. The deterministic local pipeline remains the default, but you can opt into the live framework path when
@@ -191,6 +192,12 @@ The adapter builds a `SequentialBuilder` workflow with planner → data → rese
 participants, and a matching `HandoffBuilder` topology for routing-oriented labs. Offline unit tests mock the framework
 classes so the handoff shape and sequential output collection stay validated without Azure credentials.
 
+For cloud-blocked workshops, [Foundry Local and DevUI](../workshop/foundry-local-devui) shows the offline path:
+run the deterministic multi-agent pipeline as a JSON trace, optionally install Foundry Local for local model prompt
+experiments, then promote to Agent Framework or portal traces only when a live project is available. Treat local proof
+as a tool-contract and artifact-generation check, not as evidence that the Foundry portal, publishing, or eval loop is
+working.
+
 `src/orchestrator/multi_agent/foundry_promotion.py` is the **import-validated bridge** for portal A2A/workflow promotion:
 it builds genuine
 `PromptAgentDefinition` (with one `A2APreviewTool` per sub-agent connection) and `WorkflowAgentDefinition` objects
@@ -206,6 +213,7 @@ References (verified 2026):
 - [Agent-to-agent (A2A) tool](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/agent-to-agent)
 - [Foundry workflows concept](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/workflow)
 - [Agent Framework sequential orchestration](https://learn.microsoft.com/en-us/agent-framework/workflows/orchestrations/sequential)
+- [Foundry Local documentation](https://learn.microsoft.com/en-us/azure/foundry-local/)
 
 ## Key characteristics
 

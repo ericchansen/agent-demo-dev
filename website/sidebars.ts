@@ -53,6 +53,7 @@ const sidebars: SidebarsConfig = {
         'workshop/hosted-agent-deploy',
         'workshop/enable-live-smoke',
         'workshop/evaluation',
+        'workshop/foundry-local-devui',
         'workshop/troubleshooting',
         'workshop/costs',
       ],
