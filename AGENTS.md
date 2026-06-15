@@ -35,7 +35,40 @@ The workshop must show agents running INSIDE Azure AI Foundry, not just as local
   as a managed compute endpoint, not just a local Docker container.
 - **Never rewrite published git history** — no force-push on shared branches
 
-## Project Overview
+## Workshop Experience Requirements
+
+This is a 2-day hands-on workshop. The docs site and repo must deliver a "wow" experience:
+
+**Visual / Interactive elements the docs site MUST have:**
+- Architecture diagrams (Mermaid or SVG) on every architecture page -- not text-only
+- Screenshots of the Foundry portal showing agents, playground, monitoring
+- Screenshots of Copilot CLI in action (terminal output showing a query -> report flow)
+- Screenshots of generated artifacts (Excel opened, HTML report in browser, PDF)
+- An interactive "Try It Now" section with copy-paste commands that work immediately
+- A cost calculator or cost table so attendees know what they're spending
+- A troubleshooting page for common setup issues
+
+**Demo flow that must be smooth and clickable:**
+1. `git clone` -> `uv sync` -> `copilot` -> ask a question -> get a report (< 5 min)
+2. Open Foundry portal -> see the agent -> test in playground -> see traces
+3. Open the generated Excel/HTML/PDF artifacts and show real data
+4. Show the Docusaurus site as the "how we built this" reference
+5. Customize: change the data source, add a skill, regenerate
+
+**Sample prompts / golden queries the docs should include:**
+- "What were Tailspin Toys' total sales last quarter?"
+- "Generate a quota estimation report for Northwest territory"
+- "Compare conservative vs aggressive scenarios for FY27"
+- "What's our pipeline coverage ratio by salesperson?"
+- "Create a competitive analysis for Wingtip Toys"
+
+**Things that KILL a demo (avoid at all costs):**
+- Broken links in the docs site
+- CLI commands that don't work when copy-pasted
+- Azure resources that aren't accessible (network blocked, missing permissions)
+- "Coming soon" or placeholder pages
+- Import errors or missing dependencies
+- Stale screenshots that don't match current UI
 
 **Fabric Sales Agent Accelerator** is an open-source reference implementation demonstrating how to combine Microsoft Fabric Data Agent with agentic AI workflows. It uses the Wide World Importers sample dataset (wholesale novelty goods).
 
