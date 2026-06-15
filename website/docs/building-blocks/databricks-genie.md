@@ -86,8 +86,9 @@ Databricks-shaped rows when a live workspace is not configured.
 ## Live smoke test (environment-gated)
 
 A **live** Genie call is optional and only runs when you point the adapter at a real workspace. Treat it as
-env-gated: without these variables the agent and tests fall back to deterministic Databricks-shaped rows, so the
-workshop still works offline.
+env-gated: without these variables, the Genie adapter returns a clear configuration error and the live Genie
+checkpoint is **blocked**, not equivalent to a Fabric-backed run. The unit tests and multi-agent proof of concept
+still use deterministic Databricks-shaped rows so the workshop can be completed offline.
 
 **Prerequisites for a live run:**
 
@@ -104,8 +105,8 @@ uv run python -m src.orchestrator "Use Databricks Genie to show sales by territo
 ```
 
 A successful run returns normalized rows plus the `conversation_id` / `message_id` that prove the Conversation
-API round-trip worked. If the variables are unset, you'll get the deterministic demo rows instead — which is the
-expected behavior for an offline workshop machine.
+API round-trip worked. If the variables are unset, record live Genie as blocked and use the multi-agent PoC
+command below for the deterministic offline checkpoint.
 
 :::caution Genie Agent Mode billing — know this before you demo live
 Genie runs on a **serverless, pay-as-you-go** model billed in DBUs, not a flat license. Two cost lines stack up:

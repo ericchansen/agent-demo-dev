@@ -97,7 +97,9 @@ uv run python scripts/verify_foundry_agent.py
 
 `verify_foundry_agent.py` is the canonical proof: it registers or reuses the fingerprinted `WWISalesAgent`
 definition, lists the project agents to confirm portal visibility, and runs one Responses-API query (the same
-call the Playground makes). A successful run prints `[OK] live registration + Playground response verified`.
+call the Playground makes). The check intentionally clears preview platform-tool connection ids for this
+single smoke query so it uses the deterministic local `fabric_query` / `get_account_activity` function tools.
+A successful run prints `[OK] live registration + Playground response verified`.
 
 Once it has run successfully at least once, open the Foundry portal (`https://ai.azure.com`):
 

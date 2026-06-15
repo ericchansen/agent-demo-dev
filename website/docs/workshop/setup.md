@@ -215,6 +215,9 @@ uv run python scripts/verify_foundry_agent.py
 # Expect: [OK] live registration + Playground response verified
 ```
 
+This smoke test keeps the live project endpoint and model deployment but forces the local function-tool path,
+so it remains valid even before Fabric IQ or WorkIQ preview tools are enabled in the project.
+
 See [Foundry Surface](../architecture/foundry-surface) for portal testing and [Ship It](../journey/ship-it)
 for publishing. It covers:
 

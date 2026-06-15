@@ -15,8 +15,10 @@ Required environment variables (see ``src/orchestrator/config.py``):
 - ``FOUNDRY_PROJECT_ENDPOINT`` — e.g.
   ``https://<account>.services.ai.azure.com/api/projects/<project>``
 - ``MODEL_DEPLOYMENT_NAME`` — a chat model deployment on the project (e.g. ``gpt-4o``)
-- ``FABRIC_IQ_CONNECTION_ID`` — a Fabric IQ connection id. A placeholder is
-  accepted at registration time; only *Fabric* questions require a real one.
+- ``FABRIC_IQ_CONNECTION_ID`` is intentionally not required for this smoke test.
+  The script clears preview platform-tool connection IDs and uses the demo-safe
+  local ``fabric_query`` / ``get_account_activity`` function tools so the
+  registration and Playground proof works before live Fabric or WorkIQ wiring.
 
 Usage::
 
@@ -28,10 +30,13 @@ Exit code is 0 on success, 1 on failure, 2 on missing configuration.
 from __future__ import annotations
 
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+
+from src.orchestrator.config import OrchestratorConfig  # noqa: E402
 
 # A question that the model can answer with the local compute_quota_attainment
 # tool, so the round-trip does not depend on a live Fabric connection.
@@ -48,11 +53,11 @@ def main() -> int:
     from azure.ai.projects import AIProjectClient
     from azure.identity import DefaultAzureCredential
 
-    from src.orchestrator.config import ConfigurationError, OrchestratorConfig
+    from src.orchestrator.config import ConfigurationError
     from src.orchestrator.foundry_agent import _AGENT_NAME, _get_or_create_agent, run_query
 
     try:
-        config = OrchestratorConfig.from_env()
+        config = _local_tool_smoke_config(OrchestratorConfig.from_env())
     except ConfigurationError as exc:
         print(f"[config] {exc}")
         return 2
@@ -85,6 +90,17 @@ def main() -> int:
 
     print("[OK] live registration + Playground response verified")
     return 0
+
+
+def _local_tool_smoke_config(config: OrchestratorConfig) -> OrchestratorConfig:
+    """Keep the live project/model but force local tools for this deterministic smoke test."""
+
+    return replace(
+        config,
+        fabric_iq_connection_id=None,
+        market_data_connection_id=None,
+        workiq_connection_id=None,
+    )
 
 
 if __name__ == "__main__":

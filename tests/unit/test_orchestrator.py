@@ -353,6 +353,27 @@ def test_config_loads_from_env() -> None:
     assert config.workiq_connection_id is None
 
 
+def test_foundry_verification_forces_local_smoke_tools() -> None:
+    """Live verification should not register preview platform tools for the local smoke query."""
+    orchestrator_config = _load_attr("src.orchestrator.config", "OrchestratorConfig")
+    local_smoke_config = _load_attr("scripts.verify_foundry_agent", "_local_tool_smoke_config")
+    config = orchestrator_config(
+        foundry_project_endpoint="https://test.ai.azure.com/",
+        model_deployment_name="gpt-4o",
+        fabric_iq_connection_id="/subscriptions/test/connections/fabric",
+        market_data_connection_id="/subscriptions/test/connections/market",
+        workiq_connection_id="/subscriptions/test/connections/workiq",
+    )
+
+    smoke_config = local_smoke_config(config)
+
+    assert smoke_config.foundry_project_endpoint == config.foundry_project_endpoint
+    assert smoke_config.model_deployment_name == config.model_deployment_name
+    assert smoke_config.fabric_iq_connection_id is None
+    assert smoke_config.market_data_connection_id is None
+    assert smoke_config.workiq_connection_id is None
+
+
 # ---------------------------------------------------------------------------
 # Tool building
 # ---------------------------------------------------------------------------
