@@ -130,6 +130,25 @@ path:
 Everything under `output/` is git-ignored. The same end-to-end path runs in CI via
 `tests/unit/test_quota_estimator.py::test_end_to_end_demo_artifacts_smoke`.
 
+### Known-good sample output
+
+Running the pipeline against the built-in demo data (`demo_sales_rows()`, `demo_research_data('Tailspin Toys')`,
+`demo_workiq_activity('Tailspin Toys')`) with the `base` scenario produces a deterministic forecast. Use these
+numbers as a known-good reference when rehearsing a demo — if your run differs, the inputs or scenario changed.
+
+| Group | Trailing revenue | Trend | Final growth | Recommended quota |
+|---|---|---|---|---|
+| Northwest / Novelty Items | $450,000 | 30.0% | 25.0% (clamped) | $562,500 |
+| Northwest / Toys | $215,000 | 30.0% | 25.0% (clamped) | $268,750 |
+| Southwest / Clothing | $320,000 | 6.5% | 14.0% | $364,883 |
+| **Total** | **$985,000** | — | **21.4%** | **$1,196,133** |
+
+The market research signal contributes a `+3.0%` adjustment and the synthetic WorkIQ engagement signal
+(`engagement_score: High`, 4 recent activities) contributes `+3.8%`. The per-group growth rate is clamped to a
+safe ceiling, which is why both Northwest groups land at `25.0%` despite a `30.0%` raw trend. Switching the
+scenario to `conservative` (`-3%`) or `aggressive` (`+3%`) shifts every group's growth before the clamp, yielding
+a strictly increasing total (`conservative < base < aggressive`).
+
 ## Architecture decisions
 
 | Decision | Why it matters |
