@@ -3,6 +3,9 @@ sidebar_position: 2
 title: Setup Guide
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 # Setup Guide
 
 :::info Where you are · 🗓️ Day 1
@@ -27,37 +30,75 @@ connection, and the first quota report.
 
 ### 1. Clone and install
 
-<details>
-<summary><strong>Option A: uv (recommended)</strong></summary>
-
-[uv](https://docs.astral.sh/uv/) manages Python versions and virtual environments automatically.
+First clone the repository:
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh   # macOS/Linux
-# or: powershell -c "irm https://astral.sh/uv/install.ps1 | iex"   # Windows
-
 git clone https://github.com/ericchansen/agent-demo-dev.git
 cd agent-demo-dev
+```
+
+Then set up Python. Pick your operating system, then choose [uv](https://docs.astral.sh/uv/)
+(recommended — it manages Python versions and the virtual environment for you) or classic
+`pip` + `venv`.
+
+<Tabs groupId="os">
+<TabItem value="windows" label="Windows (PowerShell)" default>
+
+**Option A — uv (recommended):**
+
+```powershell
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 uv sync --extra dev
 ```
 
-> 📖 [uv documentation](https://docs.astral.sh/uv/)
+**Option B — pip + venv:**
 
-</details>
-
-<details>
-<summary><strong>Option B: pip + venv</strong></summary>
-
-```bash
-git clone https://github.com/ericchansen/agent-demo-dev.git
-cd agent-demo-dev
+```powershell
 python -m venv .venv
-source .venv/bin/activate        # macOS/Linux
-# .venv\Scripts\Activate.ps1     # Windows PowerShell
+.venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
 ```
 
-</details>
+</TabItem>
+<TabItem value="macos" label="macOS">
+
+**Option A — uv (recommended):**
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv sync --extra dev
+```
+
+**Option B — pip + venv:**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+</TabItem>
+<TabItem value="linux" label="Linux">
+
+**Option A — uv (recommended):**
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv sync --extra dev
+```
+
+**Option B — pip + venv:**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+</TabItem>
+</Tabs>
+
+> 📖 [uv documentation](https://docs.astral.sh/uv/)
 
 ### 2. Install GitHub Copilot CLI
 
