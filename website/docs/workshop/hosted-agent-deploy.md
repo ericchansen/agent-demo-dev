@@ -117,8 +117,38 @@ docker run --rm -p 8080:8080 `
 
 ## 4. Deploy to Azure AI Foundry
 
-Push the image to a registry the Foundry account can pull, then deploy the manifest. Substitute your registry
-and resource names:
+Hosted agents are a **Public Preview** Foundry capability. There are two supported deployment paths — the `azd`
+extension flow (recommended for the workshop) and a manual container push. Pick one.
+
+### 4a. Recommended: the `azd ai agent` preview flow
+
+The Foundry azd extension wraps init → local test → deploy → invoke → monitor. Install it once (needs `azd` ≥
+1.25.3):
+
+```powershell
+azd ext install microsoft.foundry
+```
+
+| Command | What it does |
+|---|---|
+| `azd ai agent init` | Scaffolds the agent project (`azure.yaml` with a `startupCommand`, an `agent.manifest.yaml`) from a manifest. Add `--deploy-mode code` to use the **source-code ZIP** path (no Dockerfile — the platform builds your Python 3.13/3.14 or .NET 10 source). |
+| `azd ai agent run` | Creates a venv, installs deps, runs the agent locally, and opens the **Agent Inspector** browser UI. Pass `--no-inspector` for headless. |
+| `azd deploy` | Builds + pushes the container to ACR and registers a new **agent version** in Foundry Agent Service. (There is **no** `azd ai agent deploy` subcommand — use `azd deploy`.) |
+| `azd ai agent invoke "<prompt>"` | Sends a prompt to the **deployed** agent and prints the response. |
+| `azd ai agent monitor --follow` | Streams live container logs from the deployed agent. |
+
+:::note Source-code vs container
+`--deploy-mode code` (source ZIP) and the container image path are both preview. This repo ships a real
+[Dockerfile](https://github.com/ericchansen/agent-demo-dev/blob/main/src/orchestrator/hosted_agent/Dockerfile), so
+the container path below works today and gives you full control over the runtime. See
+[Deploy a hosted agent from source code](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/deploy-hosted-agent-code)
+for the ZIP alternative.
+:::
+
+### 4b. Manual: push the container yourself
+
+Push the image to a registry the Foundry account can pull, then register the agent version. Substitute your
+registry and resource names:
 
 ```powershell
 # Push to Azure Container Registry
@@ -127,16 +157,36 @@ docker tag wwi-hosted-agent:dev <registry>.azurecr.io/wwi-hosted-agent:dev
 docker push <registry>.azurecr.io/wwi-hosted-agent:dev
 ```
 
-Deploy `agent.yaml` to the account-based Foundry project (the same
-`https://<account>.services.ai.azure.com/api/projects/<project>` endpoint the SDK uses). Hosted Agents are a
-preview Foundry feature; follow the current portal/CLI flow in
-[Hosted agents in Azure AI Foundry](https://learn.microsoft.com/en-us/azure/foundry/agents/overview) and
-point the container image at the tag you pushed. When deployed, the hosted agent receives a **dedicated Entra
-agent identity**, which is what makes the Microsoft 365 / Teams publish path work.
+Register the image as an agent version on the account-based Foundry project (the same
+`https://<account>.services.ai.azure.com/api/projects/<project>` endpoint the SDK uses) via the portal, Python/.NET
+SDK, or REST. Follow the current flow in
+[Deploy a hosted agent](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/deploy-hosted-agent) and
+point the image at the tag you pushed. When the version reaches **active**, the hosted agent receives a **dedicated
+Entra agent identity** and a `{project_endpoint}/agents/<name>/endpoint` URL — that identity is what makes the
+Microsoft 365 / Teams publish path work.
+
+### 4c. Wire connections (Fabric / Databricks / Azure OpenAI)
+
+The container reads live backends through Foundry **connections** — named references to external services you
+create on the project. Core types (Azure OpenAI, Azure AI Search, Storage, Application Insights) are GA;
+**Microsoft Fabric and Azure Databricks connections are preview and are created via code/Bicep only** (not the
+portal UI), then referenced by **connection name**. Use these as placeholders when you template the deployment:
+
+```powershell
+# Names you assign at creation time; reference them from agent config / env, not by resource ID.
+$env:FOUNDRY_AOAI_CONNECTION   = "<azure-openai-connection-name>"
+$env:FOUNDRY_FABRIC_CONNECTION = "<fabric-connection-name>"      # preview, code/Bicep only
+$env:FOUNDRY_DATABRICKS_CONNECTION = "<databricks-connection-name>"  # preview, code/Bicep only
+```
+
+See [Add a new connection to your project](https://learn.microsoft.com/en-us/azure/foundry/how-to/connections-add)
+for the current type list and auth options.
 
 ## 5. Test the deployed endpoint
 
-Once Foundry reports the agent **Ready**, run the same probes against the managed endpoint:
+Once Foundry reports the agent **active / Ready**, test it three ways:
+
+**Probes (curl):**
 
 ```powershell
 curl https://<your-hosted-endpoint>/healthz
@@ -146,9 +196,47 @@ curl -X POST https://<your-hosted-endpoint>/responses `
   -d '{"input":"Generate a quota report for Tailspin Toys"}'
 ```
 
-A healthy deployment returns `alive` / `ready` on the probes and a completed Responses payload whose
-`output_text` contains the quota summary. The published path then surfaces the same agent in M365 Copilot Chat
-and Teams via Foundry's Responses → Activity bridge.
+**Agent Inspector (local):** `azd ai agent run` opens the **Foundry Toolkit Agent Inspector** in your browser (or
+press **F5** in VS Code with the Microsoft Foundry Toolkit extension). It's a local dev surface for interactive
+chat and breakpoints against the running container — not an in-portal feature.
+
+**Agents playground + tracing (portal):** In the Foundry portal, open the **Agents playground** to chat with the
+deployed agent, then read the **Agent tracing** tab to inspect end-to-end spans — every model call and tool
+execution, with latency and token usage (backed by Application Insights). The playground is GA for prompt agents
+and **preview** for hosted agents.
+
+A healthy deployment returns `alive` / `ready` on the probes and a completed Responses payload whose `output_text`
+contains the quota summary. The published path then surfaces the same agent in M365 Copilot Chat and Teams via
+Foundry's Responses → Activity bridge.
+
+> 📖 [Agents playground](https://learn.microsoft.com/en-us/azure/foundry/concepts/concept-playgrounds) ·
+> [Agent tracing](https://learn.microsoft.com/en-us/azure/foundry/observability/concepts/trace-agent-concept) ·
+> [Hosted agent quickstart](https://learn.microsoft.com/en-us/azure/foundry/agents/quickstarts/quickstart-hosted-agent)
+
+## 6. Promote new versions safely
+
+Hosted agents use **discrete versions** (`v1`, `v2`, …). When you deploy an update, requests go to one active
+version at a time.
+
+:::warning No traffic split for hosted agents
+Foundry Agent Service hosted agents **do not** support canary, blue-green, or weighted traffic splitting — there is
+no `--traffic` flag or equivalent. The safe-promotion pattern is: deploy the new version, smoke-test it with
+`azd ai agent invoke` / the probes / the Agents playground, then cut M365/Teams publishing over to it. Keep the
+previous version registered so you can roll back by re-pointing at it.
+:::
+
+If you genuinely need weighted **traffic splitting / blue-green**, that capability lives in a *different* resource —
+**Azure Machine Learning managed online endpoints** (GA), not Foundry Agent Service:
+
+```powershell
+# Azure ML managed online endpoints ONLY — not Foundry hosted agents.
+az ml online-endpoint update --name <endpoint> --traffic "blue=90 green=10"
+az ml online-endpoint update --name <endpoint> --mirror-traffic "green=10"   # shadow up to 50%
+```
+
+See [Safe rollout for online endpoints](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-safely-rollout-online-endpoints?view=azureml-api-2).
+For the hosted-agent versioning model, see
+[Hosted agents in Azure AI Foundry](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/hosted-agents).
 
 ## Troubleshooting
 
