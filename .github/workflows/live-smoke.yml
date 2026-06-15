@@ -8,6 +8,21 @@ on:
         required: false
         type: boolean
         default: false
+      require_foundry:
+        description: "Require only the Foundry backend (fail if its secrets are missing)."
+        required: false
+        type: boolean
+        default: false
+      require_fabric:
+        description: "Require only the Fabric backend (fail if its secrets are missing)."
+        required: false
+        type: boolean
+        default: false
+      require_databricks:
+        description: "Require only the Databricks Genie backend (fail if its secrets are missing)."
+        required: false
+        type: boolean
+        default: false
   schedule:
     - cron: "30 10 * * 1"
 
@@ -204,6 +219,9 @@ jobs:
           # Gated checks expose a `configured` output: 'true' means the live path ran,
           # anything else means required secrets were absent and the check was skipped.
           REQUIRE_LIVE_BACKENDS: ${{ github.event.inputs.require_live_backends == 'true' }}
+          REQUIRE_FOUNDRY: ${{ github.event.inputs.require_foundry == 'true' }}
+          REQUIRE_FABRIC: ${{ github.event.inputs.require_fabric == 'true' }}
+          REQUIRE_DATABRICKS: ${{ github.event.inputs.require_databricks == 'true' }}
           FOUNDRY_RESULT: ${{ needs.foundry-registration.result }}
           FOUNDRY_CONFIGURED: ${{ needs.foundry-registration.outputs.configured }}
           FABRIC_RESULT: ${{ needs.fabric-live-eval.result }}

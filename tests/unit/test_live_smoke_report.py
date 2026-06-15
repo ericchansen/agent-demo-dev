@@ -52,6 +52,54 @@ def test_build_report_required_mode_fails_skipped_live_backends() -> None:
     assert report["checks"][2]["status"] == "ran"
 
 
+def test_build_report_selective_backend_only_requires_chosen_platform() -> None:
+    # Fabric-only workshop: a missing Databricks/Foundry secret must NOT fail the run.
+    report = build_report(
+        {
+            "REQUIRE_FABRIC": "true",
+            "FOUNDRY_RESULT": "success",
+            "FOUNDRY_CONFIGURED": "false",
+            "FABRIC_RESULT": "success",
+            "FABRIC_CONFIGURED": "true",
+            "DATABRICKS_RESULT": "success",
+            "DATABRICKS_CONFIGURED": "false",
+            "PUBLISHED_RESULT": "success",
+            "READINESS_RESULT": "success",
+        }
+    )
+
+    assert report["mode"] == "required"
+    assert report["required_backends"] == {"foundry": False, "fabric": True, "databricks": False}
+    assert report["totals"]["failed"] == 0
+    assert report["totals"]["skipped"] == 2
+    checks = {check["name"]: check for check in report["checks"]}
+    assert checks["Fabric golden-QA live eval"]["required"] is True
+    assert checks["Databricks Genie query"]["required"] is False
+    assert checks["Foundry agent registration"]["required"] is False
+
+
+def test_build_report_selective_backend_fails_when_required_platform_missing() -> None:
+    report = build_report(
+        {
+            "REQUIRE_DATABRICKS": "true",
+            "FOUNDRY_RESULT": "success",
+            "FOUNDRY_CONFIGURED": "false",
+            "FABRIC_RESULT": "success",
+            "FABRIC_CONFIGURED": "false",
+            "DATABRICKS_RESULT": "success",
+            "DATABRICKS_CONFIGURED": "false",
+            "PUBLISHED_RESULT": "success",
+            "READINESS_RESULT": "success",
+        }
+    )
+
+    assert report["mode"] == "required"
+    assert report["totals"]["failed"] == 1
+    checks = {check["name"]: check for check in report["checks"]}
+    assert checks["Databricks Genie query"]["status"] == "skipped"
+    assert checks["Databricks Genie query"]["required"] is True
+
+
 def test_render_summary_includes_mode_and_totals() -> None:
     report = build_report(
         {

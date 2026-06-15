@@ -36,10 +36,24 @@ class Check:
         }
 
 
-def build_report(env: Mapping[str, str]) -> dict[str, object]:
-    """Build a structured readiness report from GitHub Actions job outputs."""
+def _flag(env: Mapping[str, str], name: str) -> bool:
+    return env.get(name, "").lower() == "true"
 
-    require_live = env.get("REQUIRE_LIVE_BACKENDS", "").lower() == "true"
+
+def build_report(env: Mapping[str, str]) -> dict[str, object]:
+    """Build a structured readiness report from GitHub Actions job outputs.
+
+    ``REQUIRE_LIVE_BACKENDS`` requires all three live backends. The per-backend
+    flags ``REQUIRE_FOUNDRY`` / ``REQUIRE_FABRIC`` / ``REQUIRE_DATABRICKS`` let a
+    facilitator require only the data platform their workshop actually uses, so a
+    missing Databricks secret never fails a Fabric-only run (and vice versa).
+    """
+
+    require_live = _flag(env, "REQUIRE_LIVE_BACKENDS")
+    require_foundry = require_live or _flag(env, "REQUIRE_FOUNDRY")
+    require_fabric = require_live or _flag(env, "REQUIRE_FABRIC")
+    require_databricks = require_live or _flag(env, "REQUIRE_DATABRICKS")
+    any_required = require_foundry or require_fabric or require_databricks
     checks: list[Check] = []
 
     checks.append(
@@ -49,7 +63,7 @@ def build_report(env: Mapping[str, str]) -> dict[str, object]:
             env.get("FOUNDRY_CONFIGURED", ""),
             "Set AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, FOUNDRY_PROJECT_ENDPOINT, "
             "MODEL_DEPLOYMENT_NAME to run.",
-            require_live=require_live,
+            required=require_foundry,
         )
     )
     checks.append(
@@ -58,7 +72,7 @@ def build_report(env: Mapping[str, str]) -> dict[str, object]:
             env.get("FABRIC_RESULT", ""),
             env.get("FABRIC_CONFIGURED", ""),
             "Set Azure auth plus FABRIC_MCP_URL (or FABRIC_WORKSPACE_ID + FABRIC_DATA_AGENT_ID) to run.",
-            require_live=require_live,
+            required=require_fabric,
         )
     )
     checks.append(
@@ -68,7 +82,7 @@ def build_report(env: Mapping[str, str]) -> dict[str, object]:
             env.get("DATABRICKS_CONFIGURED", ""),
             "Set DATABRICKS_GENIE_MCP_URL for managed MCP, or DATABRICKS_WORKSPACE_URL and "
             "DATABRICKS_GENIE_SPACE_ID for SDK-direct.",
-            require_live=require_live,
+            required=require_databricks,
         )
     )
     checks.append(_always_check("Published workshop site", env.get("PUBLISHED_RESULT", "")))
@@ -78,8 +92,13 @@ def build_report(env: Mapping[str, str]) -> dict[str, object]:
     skipped = sum(1 for check in checks if check.status == "skipped")
     return {
         "generated_at": datetime.now(UTC).isoformat(),
-        "mode": "required" if require_live else "demo",
-        "live_backend_skips_fail_workflow": require_live,
+        "mode": "required" if any_required else "demo",
+        "live_backend_skips_fail_workflow": any_required,
+        "required_backends": {
+            "foundry": require_foundry,
+            "fabric": require_fabric,
+            "databricks": require_databricks,
+        },
         "totals": {"failed": failed, "skipped": skipped, "checks": len(checks)},
         "checks": [check.to_dict() for check in checks],
     }
@@ -120,7 +139,7 @@ def render_summary(report: Mapping[str, object]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _gated_check(name: str, result: str, configured: str, hint: str, *, require_live: bool) -> Check:
+def _gated_check(name: str, result: str, configured: str, hint: str, *, required: bool) -> Check:
     if result == "failure":
         status = "failed"
         detail = "Live check ran and failed."
@@ -134,12 +153,12 @@ def _gated_check(name: str, result: str, configured: str, hint: str, *, require_
         status = "skipped"
         detail = hint
         print(f"::warning title={name} skipped::{hint}")
-        if require_live:
+        if required:
             print(f"::error title={name} required::Live backend is required but not configured.")
     return Check(
         name=name,
         category="live-backend",
-        required=require_live,
+        required=required,
         status=status,
         job_result=result,
         configured=configured == "true",
