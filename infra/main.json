@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "5637283283073342397"
+      "templateHash": "7322471787786278785"
     }
   },
   "parameters": {
@@ -120,6 +120,13 @@
       "defaultValue": "",
       "metadata": {
         "description": "Optional resource ID of an external (management-group) policy assignment whose \"modify\" effect forces Foundry hubs to publicNetworkAccess=Disabled. When set, a Waiver exemption is created so the dev hub stays reachable. Leave empty in production."
+      }
+    },
+    "enablePolicyAssignments": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Whether to create resource-group Azure Policy assignments. Requires Owner or Resource Policy Contributor; dev CI uses false because the OIDC principal is Contributor-scoped."
       }
     },
     "tags": {
@@ -1166,6 +1173,9 @@
         },
         "mode": "Incremental",
         "parameters": {
+          "enablePolicyAssignments": {
+            "value": "[parameters('enablePolicyAssignments')]"
+          },
           "foundryHubPnaExemptionAssignmentId": {
             "value": "[parameters('foundryHubPnaExemptionAssignmentId')]"
           }
@@ -1177,10 +1187,17 @@
             "_generator": {
               "name": "bicep",
               "version": "0.41.2.15936",
-              "templateHash": "13027485974784649606"
+              "templateHash": "4912145671903390924"
             }
           },
           "parameters": {
+            "enablePolicyAssignments": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Whether to create resource-group policy assignments. Requires Owner or Resource Policy Contributor; set false for Contributor-only CI deploys."
+              }
+            },
             "foundryHubPnaExemptionAssignmentId": {
               "type": "string",
               "defaultValue": "",
@@ -1191,6 +1208,7 @@
           },
           "resources": [
             {
+              "condition": "[parameters('enablePolicyAssignments')]",
               "type": "Microsoft.Authorization/policyAssignments",
               "apiVersion": "2023-04-01",
               "name": "fsa-storage-no-sharedkey",
@@ -1207,6 +1225,7 @@
               }
             },
             {
+              "condition": "[parameters('enablePolicyAssignments')]",
               "type": "Microsoft.Authorization/policyAssignments",
               "apiVersion": "2023-04-01",
               "name": "fsa-aisvc-no-localauth",
@@ -1223,6 +1242,7 @@
               }
             },
             {
+              "condition": "[parameters('enablePolicyAssignments')]",
               "type": "Microsoft.Authorization/policyAssignments",
               "apiVersion": "2023-04-01",
               "name": "fsa-foundry-no-pubnet",
@@ -1239,6 +1259,7 @@
               }
             },
             {
+              "condition": "[parameters('enablePolicyAssignments')]",
               "type": "Microsoft.Authorization/policyAssignments",
               "apiVersion": "2023-04-01",
               "name": "fsa-aisvc-restrict-net",

@@ -15,14 +15,14 @@
 //   4. AI Services — restrict network access      (037eea7a)
 // ---------------------------------------------------------------------------
 
-// No parameters required for the audit assignments below — they are
-// RG-scoped by targetScope on main.bicep.
+@description('Whether to create resource-group policy assignments. Requires Owner or Resource Policy Contributor; set false for Contributor-only CI deploys.')
+param enablePolicyAssignments bool = true
 
 @description('Resource ID of an external (e.g. management-group) policy assignment whose "modify" effect forces AI Foundry hubs to publicNetworkAccess=Disabled. When provided, a resource-group-scoped Waiver exemption is created so the dev hub can keep public network access Enabled for portal reachability. Leave empty in production.')
 param foundryHubPnaExemptionAssignmentId string = ''
 
 // ── 1. Storage accounts should prevent shared-key access ────────────────────
-resource policyStorageNoSharedKey 'Microsoft.Authorization/policyAssignments@2023-04-01' = {
+resource policyStorageNoSharedKey 'Microsoft.Authorization/policyAssignments@2023-04-01' = if (enablePolicyAssignments) {
   name: 'fsa-storage-no-sharedkey'
   properties: {
     displayName: '[FSA] Storage — prevent shared-key access'
@@ -38,7 +38,7 @@ resource policyStorageNoSharedKey 'Microsoft.Authorization/policyAssignments@202
 }
 
 // ── 2. AI Services resources should have key access disabled ─────────────────
-resource policyAiSvcNoLocalAuth 'Microsoft.Authorization/policyAssignments@2023-04-01' = {
+resource policyAiSvcNoLocalAuth 'Microsoft.Authorization/policyAssignments@2023-04-01' = if (enablePolicyAssignments) {
   name: 'fsa-aisvc-no-localauth'
   properties: {
     displayName: '[FSA] AI Services — disable local key access'
@@ -54,7 +54,7 @@ resource policyAiSvcNoLocalAuth 'Microsoft.Authorization/policyAssignments@2023-
 }
 
 // ── 3. Azure Machine Learning workspaces should disable public network access ─
-resource policyFoundryNoPubNet 'Microsoft.Authorization/policyAssignments@2023-04-01' = {
+resource policyFoundryNoPubNet 'Microsoft.Authorization/policyAssignments@2023-04-01' = if (enablePolicyAssignments) {
   name: 'fsa-foundry-no-pubnet'
   properties: {
     displayName: '[FSA] AI Foundry Hub — disable public network access'
@@ -70,7 +70,7 @@ resource policyFoundryNoPubNet 'Microsoft.Authorization/policyAssignments@2023-0
 }
 
 // ── 4. AI Services resources should restrict network access ─────────────────
-resource policyAiSvcRestrictNetwork 'Microsoft.Authorization/policyAssignments@2023-04-01' = {
+resource policyAiSvcRestrictNetwork 'Microsoft.Authorization/policyAssignments@2023-04-01' = if (enablePolicyAssignments) {
   name: 'fsa-aisvc-restrict-net'
   properties: {
     displayName: '[FSA] AI Services — restrict network access'

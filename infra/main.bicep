@@ -53,6 +53,9 @@ param foundryHubStorageRoleAssignmentName string = ''
 @description('Optional resource ID of an external (management-group) policy assignment whose "modify" effect forces Foundry hubs to publicNetworkAccess=Disabled. When set, a Waiver exemption is created so the dev hub stays reachable. Leave empty in production.')
 param foundryHubPnaExemptionAssignmentId string = ''
 
+@description('Whether to create resource-group Azure Policy assignments. Requires Owner or Resource Policy Contributor; dev CI uses false because the OIDC principal is Contributor-scoped.')
+param enablePolicyAssignments bool = true
+
 @description('Resource tags applied to every resource.')
 param tags object = {}
 
@@ -159,6 +162,7 @@ module foundryProject './modules/foundry-project.bicep' = {
 module policies './modules/policy.bicep' = {
   name: 'policies'
   params: {
+    enablePolicyAssignments: enablePolicyAssignments
     foundryHubPnaExemptionAssignmentId: foundryHubPnaExemptionAssignmentId
   }
 }
