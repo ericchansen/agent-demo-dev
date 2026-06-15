@@ -12,6 +12,8 @@ permissions:
 jobs:
   foundry-registration:
     runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.config.outputs.configured }}
     env:
       AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
@@ -54,6 +56,8 @@ jobs:
 
   fabric-live-eval:
     runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.config.outputs.configured }}
     env:
       AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
@@ -101,6 +105,8 @@ jobs:
 
   databricks-genie:
     runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.config.outputs.configured }}
     env:
       DATABRICKS_WORKSPACE_URL: ${{ secrets.DATABRICKS_WORKSPACE_URL }}
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_WORKSPACE_URL }}
@@ -165,3 +171,106 @@ jobs:
         run: |
           python tests/eval/run_eval.py --mock --pass-rate 100
           python scripts/demo_check.py
+
+  summary:
+    runs-on: ubuntu-latest
+    needs:
+      - foundry-registration
+      - fabric-live-eval
+      - databricks-genie
+      - published-site
+      - demo-readiness
+    if: always()
+    steps:
+      - name: Aggregate live smoke results
+        env:
+          # Gated checks expose a `configured` output: 'true' means the live path ran,
+          # anything else means required secrets were absent and the check was skipped.
+          FOUNDRY_RESULT: ${{ needs.foundry-registration.result }}
+          FOUNDRY_CONFIGURED: ${{ needs.foundry-registration.outputs.configured }}
+          FABRIC_RESULT: ${{ needs.fabric-live-eval.result }}
+          FABRIC_CONFIGURED: ${{ needs.fabric-live-eval.outputs.configured }}
+          DATABRICKS_RESULT: ${{ needs.databricks-genie.result }}
+          DATABRICKS_CONFIGURED: ${{ needs.databricks-genie.outputs.configured }}
+          PUBLISHED_RESULT: ${{ needs.published-site.result }}
+          READINESS_RESULT: ${{ needs.demo-readiness.result }}
+        run: |
+          set -euo pipefail
+
+          declare -i failures=0
+          declare -i skipped=0
+
+          summary_file="${GITHUB_STEP_SUMMARY:-/dev/stdout}"
+          {
+            echo "# Live Smoke summary"
+            echo ""
+            echo "| Check | Status | Detail |"
+            echo "| --- | --- | --- |"
+          } >> "$summary_file"
+
+          # gated_check NAME JOB_RESULT CONFIGURED_FLAG SKIP_HINT
+          gated_check() {
+            local name="$1" result="$2" configured="$3" hint="$4"
+            local status detail
+            if [ "$result" = "failure" ]; then
+              status="❌ FAILED"
+              detail="Live check ran and failed."
+              failures+=1
+            elif [ "$result" = "cancelled" ]; then
+              status="⚠️ SKIPPED"
+              detail="Job cancelled before completion."
+              skipped+=1
+            elif [ "$configured" = "true" ]; then
+              status="✅ RAN"
+              detail="Required secrets present; live path executed."
+            else
+              status="⚠️ SKIPPED"
+              detail="$hint"
+              skipped+=1
+              echo "::warning title=$name skipped::$hint"
+            fi
+            echo "| $name | $status | $detail |" >> "$summary_file"
+          }
+
+          # always_check NAME JOB_RESULT
+          always_check() {
+            local name="$1" result="$2"
+            local status detail
+            if [ "$result" = "success" ]; then
+              status="✅ RAN"
+              detail="Executed on every run (no secrets required)."
+            elif [ "$result" = "failure" ]; then
+              status="❌ FAILED"
+              detail="Unconditional check failed."
+              failures+=1
+            else
+              status="⚠️ SKIPPED"
+              detail="Job did not complete (result: $result)."
+              skipped+=1
+            fi
+            echo "| $name | $status | $detail |" >> "$summary_file"
+          }
+
+          gated_check "Foundry agent registration" "$FOUNDRY_RESULT" "$FOUNDRY_CONFIGURED" \
+            "Set AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, FOUNDRY_PROJECT_ENDPOINT, MODEL_DEPLOYMENT_NAME to run."
+          gated_check "Fabric golden-QA live eval" "$FABRIC_RESULT" "$FABRIC_CONFIGURED" \
+            "Set Azure auth plus FABRIC_MCP_URL (or FABRIC_WORKSPACE_ID + FABRIC_DATA_AGENT_ID) to run."
+          gated_check "Databricks Genie query" "$DATABRICKS_RESULT" "$DATABRICKS_CONFIGURED" \
+            "Set DATABRICKS_WORKSPACE_URL and DATABRICKS_GENIE_SPACE_ID (plus auth) to run."
+          always_check "Published workshop site" "$PUBLISHED_RESULT"
+          always_check "Offline eval and demo readiness" "$READINESS_RESULT"
+
+          {
+            echo ""
+            echo "**Totals:** ${failures} failed, ${skipped} skipped."
+            if [ "$skipped" -gt 0 ]; then
+              echo ""
+              echo "> Skipped checks are **not** failures, but they mean no live coverage ran for that backend."
+              echo "> A green Live Smoke run with skips does **not** prove the live integrations work."
+            fi
+          } >> "$summary_file"
+
+          if [ "$failures" -gt 0 ]; then
+            echo "::error title=Live Smoke::${failures} live check(s) failed."
+            exit 1
+          fi
