@@ -29,8 +29,16 @@ The workshop must show agents running INSIDE Azure AI Foundry, not just as local
   * Testing in the Foundry playground
   * Monitoring/tracing agent runs in the portal
   * Publishing to M365 Copilot as an Agent Application
-- **Multi-agent pipelines**: Document how to chain agents (planner -> data -> analysis -> report)
-  using Foundry's agent-to-agent patterns. Compare single-agent (current) vs multi-agent approaches.
+- **Multi-agent pipelines**: Build a WORKING proof-of-concept, not just documentation:
+  * Create `src/orchestrator/multi_agent/` with a pipeline that chains specialized agents:
+    - Data Agent: queries Fabric/Databricks for raw sales data
+    - Analysis Agent: processes data, computes trends, identifies anomalies
+    - Report Agent: generates XLSX/HTML/PDF artifacts from analysis output
+    - Planner Agent: orchestrates the others, decides what data to pull and what reports to generate
+  * Each agent should be a separate Foundry agent registration (visible independently in portal)
+  * The pipeline should be invocable as a single command or skill
+  * Add tests that verify the pipeline end-to-end with mocked agent responses
+  * Compare single-agent (current, simpler) vs multi-agent (more capable, more observable) in docs
 - **The hosted agent** in `src/orchestrator/hosted_agent/` should be deployable to the project
   as a managed compute endpoint, not just a local Docker container.
 - **Never rewrite published git history** — no force-push on shared branches
