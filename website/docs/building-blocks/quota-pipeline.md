@@ -293,5 +293,5 @@ so the portal, Foundry runtime, and hosted container all stay reachable.
 > ```
 >
 > It should return `Enabled` for the dev hub. Re-apply with
-> `az deployment group create -g rg-fabric-agent-dev -f infra/main.bicep -p infra/parameters/dev.bicepparam` if it
-> has drifted back to `Disabled` (for example, after a governance policy re-applied the production default).
+> `az deployment group create -g $env:AZURE_RESOURCE_GROUP -f infra/main.bicep -p infra/parameters/dev.bicepparam`
+> if it has drifted back to `Disabled` (for example, after a governance policy re-applied the production default).

@@ -210,12 +210,13 @@ https://app.fabric.microsoft.com/groups/YOUR-WORKSPACE-ID/...
 Deploy the dev infrastructure after reviewing the what-if output:
 
 ```powershell
-az deployment group what-if -g rg-fabric-agent-dev -f infra/main.bicep -p infra/parameters/dev.bicepparam
-az deployment group create -g rg-fabric-agent-dev -f infra/main.bicep -p infra/parameters/dev.bicepparam
+$env:AZURE_RESOURCE_GROUP="<your-resource-group>"
+az deployment group what-if -g $env:AZURE_RESOURCE_GROUP -f infra/main.bicep -p infra/parameters/dev.bicepparam
+az deployment group create -g $env:AZURE_RESOURCE_GROUP -f infra/main.bicep -p infra/parameters/dev.bicepparam
 ```
 
 The dev parameter file sets `publicNetworkAccess = 'Enabled'` so the Foundry portal and hosted runtime are
-reachable during the workshop. The Bicep deploy also provisions the hub-based project (`fsa-project-dev`)
+reachable during the workshop. The Bicep deploy also provisions the hub-based project named by your parameters
 for the classic surface via `infra/modules/foundry-project.bicep`.
 
 ### Account-based Foundry project for the agent SDK
@@ -226,18 +227,23 @@ hub workspace. Provision it and deploy a model once:
 
 ```powershell
 # Enable project management on the AI Services account (one-time).
-$acct = az cognitiveservices account show -g rg-fabric-agent-dev -n fabricagentaidev2026 --query id -o tsv
+$env:AZURE_RESOURCE_GROUP="<your-resource-group>"
+$env:AI_SERVICES_ACCOUNT_NAME="<your-ai-services-account>"
+$env:FOUNDRY_PROJECT_NAME="<your-foundry-project>"
+$env:MODEL_DEPLOYMENT_NAME="gpt-4o"
+
+$acct = az cognitiveservices account show -g $env:AZURE_RESOURCE_GROUP -n $env:AI_SERVICES_ACCOUNT_NAME --query id -o tsv
 az resource update --ids $acct --set properties.allowProjectManagement=true --latest-include-preview
 
 # Create the account-based Foundry project and deploy a chat model.
-az cognitiveservices account project create -g rg-fabric-agent-dev --name fabricagentaidev2026 --project-name fsa-foundry-project-dev --location eastus2
-az cognitiveservices account deployment create -g rg-fabric-agent-dev -n fabricagentaidev2026 --deployment-name gpt-4o --model-name gpt-4o --model-version 2024-11-20 --model-format OpenAI --sku-name GlobalStandard --sku-capacity 10
+az cognitiveservices account project create -g $env:AZURE_RESOURCE_GROUP --name $env:AI_SERVICES_ACCOUNT_NAME --project-name $env:FOUNDRY_PROJECT_NAME --location eastus2
+az cognitiveservices account deployment create -g $env:AZURE_RESOURCE_GROUP -n $env:AI_SERVICES_ACCOUNT_NAME --deployment-name $env:MODEL_DEPLOYMENT_NAME --model-name gpt-4o --model-version 2024-11-20 --model-format OpenAI --sku-name GlobalStandard --sku-capacity 10
 ```
 
 Then configure a `.env` at the repo root:
 
 ```dotenv
-FOUNDRY_PROJECT_ENDPOINT=https://fabricagentaidev2026.services.ai.azure.com/api/projects/fsa-foundry-project-dev
+FOUNDRY_PROJECT_ENDPOINT=https://<ai-services-account>.services.ai.azure.com/api/projects/<project-name>
 MODEL_DEPLOYMENT_NAME=gpt-4o
 # Optional: omit to use the demo-safe fabric_query fallback on day one.
 # FABRIC_IQ_CONNECTION_ID=<fabric data agent connection id>
@@ -286,13 +292,13 @@ Fabric capacity billing runs continuously. **Pause when not demoing:**
 ```bash
 # Pause (stops billing)
 az fabric capacity suspend \
-  --resource-group rg-fabric-agent \
-  --capacity-name fabricagentdemo
+  --resource-group <your-resource-group> \
+  --capacity-name <your-fabric-capacity-name>
 
 # Resume (~1-2 min startup)
 az fabric capacity resume \
-  --resource-group rg-fabric-agent \
-  --capacity-name fabricagentdemo
+  --resource-group <your-resource-group> \
+  --capacity-name <your-fabric-capacity-name>
 ```
 
 See [Cost Model](./costs) for full pricing details.

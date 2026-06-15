@@ -22,16 +22,16 @@ Most failures print a category in the error text — `azure/login`, `Configurati
 The SDK path in `src/orchestrator/foundry_agent.py` and `scripts/verify_foundry_agent.py` needs an
 **account-based** Foundry project endpoint, not the hub workspace.
 
-- **Wrong:** an `azureml://…` hub workspace id, or the hub name `fabric-agent-hub-dev`.
+- **Wrong:** an `azureml://…` hub workspace id, or a hub workspace name.
 - **Right:** `https://<account>.services.ai.azure.com/api/projects/<project>`.
 
 ```dotenv
-FOUNDRY_PROJECT_ENDPOINT=https://fabricagentaidev2026.services.ai.azure.com/api/projects/fsa-foundry-project-dev
+FOUNDRY_PROJECT_ENDPOINT=https://<ai-services-account>.services.ai.azure.com/api/projects/<project-name>
 MODEL_DEPLOYMENT_NAME=gpt-4o
 ```
 
 See [Foundry Surface → Project and portal experience](../architecture/foundry-surface#project-and-portal-experience)
-for why the hub-based `fsa-project-dev` and the account-based `fsa-foundry-project-dev` are different
+for why hub-based projects and account-based Foundry Agent Service projects are different
 resources.
 
 ### The agent is not visible in the Foundry portal
@@ -53,7 +53,7 @@ The model deployment named in `MODEL_DEPLOYMENT_NAME` does not exist on the proj
 match the name exactly:
 
 ```powershell
-az cognitiveservices account deployment list -g rg-fabric-agent-dev -n fabricagentaidev2026 -o table
+az cognitiveservices account deployment list -g $env:AZURE_RESOURCE_GROUP -n $env:AI_SERVICES_ACCOUNT_NAME -o table
 ```
 
 ## OIDC and Live Smoke

@@ -27,12 +27,12 @@ the repo. Create the app, federated credential, role assignment, and `AZURE_*` s
 ./scripts/setup_oidc.ps1 -DryRun
 
 # Apply
-./scripts/setup_oidc.ps1 -SubscriptionId 9450bd3b-96c5-48b2-bfdf-3374304efbd7
+./scripts/setup_oidc.ps1 -SubscriptionId $env:AZURE_SUBSCRIPTION_ID
 ```
 
 ```bash
 scripts/setup_oidc.sh --dry-run
-scripts/setup_oidc.sh --subscription-id 9450bd3b-96c5-48b2-bfdf-3374304efbd7
+scripts/setup_oidc.sh --subscription-id "$AZURE_SUBSCRIPTION_ID"
 ```
 
 The script:
@@ -49,7 +49,7 @@ The script:
 | Action | Required permission |
 |---|---|
 | Create the app + federated credential | Entra **Application Administrator** (or ownership of an existing app passed via `-AppId`) |
-| Assign Contributor on the resource group | **Owner** or **User Access Administrator** on `rg-fabric-agent-dev` |
+| Assign Contributor on the resource group | **Owner** or **User Access Administrator** on the workshop resource group (`AZURE_RESOURCE_GROUP`) |
 | Set GitHub secrets | **Admin** on the repository (`gh auth status` must show this) |
 
 ## 2. Add the backend secrets you will demo

@@ -53,22 +53,26 @@ The agent SDK in this repo (`azure-ai-projects>=2.2.0`, `PromptAgentDefinition`,
 talks to an **account-based** project. `FOUNDRY_PROJECT_ENDPOINT` must therefore be the
 `…services.ai.azure.com/api/projects/…` URL, not the hub workspace.
 
-The dev hub (`fabric-agent-hub-dev`) and its hub-based project (`fsa-project-dev`) are still provisioned
-by Bicep (`infra/modules/foundry-project.bicep`) for the classic surface, but agent registration runs
-against an account-based project.
+The workshop Bicep provisions a hub and hub-based project (`infra/modules/foundry-project.bicep`) for the classic
+surface, but agent registration runs against an account-based project.
 
 ### Provision the account-based project and a model
 
 ```powershell
 # 1. Enable project management on the AI Services account (one-time).
-$acct = az cognitiveservices account show -g rg-fabric-agent-dev -n fabricagentaidev2026 --query id -o tsv
+$env:AZURE_RESOURCE_GROUP="<your-resource-group>"
+$env:AI_SERVICES_ACCOUNT_NAME="<your-ai-services-account>"
+$env:FOUNDRY_PROJECT_NAME="<your-foundry-project>"
+$env:MODEL_DEPLOYMENT_NAME="gpt-4o"
+
+$acct = az cognitiveservices account show -g $env:AZURE_RESOURCE_GROUP -n $env:AI_SERVICES_ACCOUNT_NAME --query id -o tsv
 az resource update --ids $acct --set properties.allowProjectManagement=true --latest-include-preview
 
 # 2. Create the account-based Foundry project.
-az cognitiveservices account project create -g rg-fabric-agent-dev --name fabricagentaidev2026 --project-name fsa-foundry-project-dev --location eastus2
+az cognitiveservices account project create -g $env:AZURE_RESOURCE_GROUP --name $env:AI_SERVICES_ACCOUNT_NAME --project-name $env:FOUNDRY_PROJECT_NAME --location eastus2
 
 # 3. Deploy a chat model (matches MODEL_DEPLOYMENT_NAME).
-az cognitiveservices account deployment create -g rg-fabric-agent-dev -n fabricagentaidev2026 --deployment-name gpt-4o --model-name gpt-4o --model-version 2024-11-20 --model-format OpenAI --sku-name GlobalStandard --sku-capacity 10
+az cognitiveservices account deployment create -g $env:AZURE_RESOURCE_GROUP -n $env:AI_SERVICES_ACCOUNT_NAME --deployment-name $env:MODEL_DEPLOYMENT_NAME --model-name gpt-4o --model-version 2024-11-20 --model-format OpenAI --sku-name GlobalStandard --sku-capacity 10
 ```
 
 ### Configure the environment
@@ -76,7 +80,7 @@ az cognitiveservices account deployment create -g rg-fabric-agent-dev -n fabrica
 Set these (e.g. in a `.env` file at the repo root):
 
 ```dotenv
-FOUNDRY_PROJECT_ENDPOINT=https://fabricagentaidev2026.services.ai.azure.com/api/projects/fsa-foundry-project-dev
+FOUNDRY_PROJECT_ENDPOINT=https://<ai-services-account>.services.ai.azure.com/api/projects/<project-name>
 MODEL_DEPLOYMENT_NAME=gpt-4o
 # Optional — when omitted the agent uses a demo-safe fabric_query fallback so you
 # can run live on day one before wiring real data.
@@ -101,14 +105,13 @@ call the Playground makes). The check intentionally clears preview platform-tool
 single smoke query so it uses the deterministic local `fabric_query` / `get_account_activity` function tools.
 A successful run prints `[OK] live registration + Playground response verified`.
 
-**Current dev proof:** on 2026-06-15, the dev project endpoint
-`https://fabricagentaidev2026.services.ai.azure.com/api/projects/fsa-foundry-project-dev` registered
-`WWISalesAgent` version 5, listed it in the project agent catalog, and returned a Playground-style quota
-attainment response through the Responses API.
+**Facilitator proof:** before delivery, run `scripts/verify_foundry_agent.py` against your configured
+`FOUNDRY_PROJECT_ENDPOINT`, capture the agent version from the output, confirm it appears in the project agent
+catalog, and keep the portal trace ID in your private run notes.
 
 Once it has run successfully at least once, open the Foundry portal (`https://ai.azure.com`):
 
-1. Open the **fsa-foundry-project-dev** project.
+1. Open the project named in `FOUNDRY_PROJECT_ENDPOINT`.
 2. Open **Agents**. You should now see the `WWISalesAgent` registration. (If the list is empty, the
    registration step above has not completed — re-run it and check the CLI output for errors.)
 3. Open the agent in **Playground** and run `Generate a quota report for Tailspin Toys`.
@@ -179,7 +182,7 @@ the package and Foundry credentials are available:
 
 ```powershell
 uv sync --extra agent-framework
-$env:FOUNDRY_PROJECT_ENDPOINT = "https://<account>.services.ai.azure.com/api/projects/<project>"
+$env:FOUNDRY_PROJECT_ENDPOINT = "https://<ai-services-account>.services.ai.azure.com/api/projects/<project-name>"
 $env:FOUNDRY_MODEL = "gpt-4o"  # MODEL_DEPLOYMENT_NAME is also accepted
 uv run python -m src.orchestrator.multi_agent "Generate a quota report for Tailspin Toys" --customer "Tailspin Toys" --data-source fabric --runtime agent-framework
 ```

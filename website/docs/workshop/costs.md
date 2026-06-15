@@ -29,13 +29,13 @@ Fabric capacity is the largest cost. Pause it when not in use:
 ```bash
 # Pause (stops billing immediately)
 az fabric capacity suspend \
-  --resource-group rg-fabric-agent \
-  --capacity-name fabricagentdemo
+  --resource-group <your-resource-group> \
+  --capacity-name <your-fabric-capacity-name>
 
 # Resume (~1-2 min for cold start)
 az fabric capacity resume \
-  --resource-group rg-fabric-agent \
-  --capacity-name fabricagentdemo
+  --resource-group <your-resource-group> \
+  --capacity-name <your-fabric-capacity-name>
 ```
 
 > ⚠️ Resume 10-15 minutes before a demo — the first query after resume can be slow (cold start).
@@ -66,7 +66,7 @@ forecasted-spend notifications. It is opt-in so the repo does not store facilita
 
 ```powershell
 az deployment group create `
-  --resource-group rg-fabric-agent-dev `
+  --resource-group $env:AZURE_RESOURCE_GROUP `
   --template-file infra/main.bicep `
   --parameters infra/parameters/dev.bicepparam `
   --parameters budgetAlertEmails='["facilitator@example.com"]'

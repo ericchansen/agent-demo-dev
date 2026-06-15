@@ -97,6 +97,23 @@ Run these before participants arrive and record each as **passed** or **blocked 
 | Publish prerequisites | `az provider show --namespace Microsoft.BotService --query registrationState -o tsv` | `Registered`; then verify published-agent RBAC and @mention visibility. |
 | Live smoke workflow | `gh workflow run live-smoke.yml` | GitHub Actions shows passing jobs or clear blocked notices for unconfigured live services. |
 
+### Facilitator dev environment values
+
+Keep tenant-specific values in your private shell profile, GitHub repository secrets, or a local `.env` file that is
+not committed. Public workshop pages use placeholders so participants do not copy a demo tenant by accident.
+
+```powershell
+$env:AZURE_SUBSCRIPTION_ID="<your-subscription-id>"
+$env:AZURE_RESOURCE_GROUP="<your-resource-group>"
+$env:AI_SERVICES_ACCOUNT_NAME="<your-ai-services-account>"
+$env:FOUNDRY_PROJECT_NAME="<your-foundry-project>"
+$env:FOUNDRY_PROJECT_ENDPOINT="https://<ai-services-account>.services.ai.azure.com/api/projects/<project-name>"
+$env:MODEL_DEPLOYMENT_NAME="gpt-4o"
+```
+
+Use the same values when setting GitHub Actions secrets for Live Smoke (`AZURE_SUBSCRIPTION_ID`,
+`FOUNDRY_PROJECT_ENDPOINT`, and `MODEL_DEPLOYMENT_NAME`) and when running the Foundry portal verification scripts.
+
 ### Configure Live Smoke secrets
 
 The workflow has two modes:
