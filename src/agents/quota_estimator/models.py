@@ -15,16 +15,24 @@ class SalesRowInput(TypedDict, total=False):
     territory_name: str
     Territory: str
     SalesTerritory: str
+    sales_territory: str
+    salesTerritory: str
     category: str
     product_category: str
     ProductCategory: str
+    productCategory: str
     order_date: str
     OrderDate: str
+    orderDate: str
     revenue: float
     total_revenue: float
+    net_sales_amount: float
+    gross_sales_amount: float
+    salesAmount: float
     TotalDue: float
     quantity: float
     Quantity: float
+    units_sold: float
 
 
 class ResearchArticleInput(TypedDict, total=False):

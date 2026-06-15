@@ -22,7 +22,7 @@ async def list_tools() -> list[Tool]:
         Tool(
             name="generate_quota_estimation_report",
             description=(
-                "Generate quota estimate artifacts from Fabric WWI historical sales rows, "
+                "Generate quota estimate artifacts from Fabric or Databricks historical sales rows, "
                 "market research context, and WorkIQ activity signals. Returns XLSX, HTML, "
                 "and PDF file paths by default."
             ),
@@ -34,9 +34,16 @@ async def list_tools() -> list[Tool]:
                         "type": "array",
                         "description": (
                             "Rows from SalesOrderHeader joined to SalesTerritory. Each row needs territory, "
-                            "order_date, revenue, and optionally category and quantity."
+                            "order_date, revenue, and optionally category and quantity. Databricks Genie / "
+                            "Unity Catalog aliases such as sales_territory, orderDate, net_sales_amount, "
+                            "and units_sold are also accepted."
                         ),
                         "items": {"type": "object", "additionalProperties": True},
+                    },
+                    "data_source": {
+                        "type": "string",
+                        "enum": ["fabric", "databricks"],
+                        "description": "Optional platform override for citation and methodology text.",
                     },
                     "research_data": {
                         "type": "object",
@@ -98,11 +105,16 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     if scenario is not None and not isinstance(scenario, str):
         raise ValueError("scenario must be a string when provided.")
 
+    data_source = arguments.get("data_source")
+    if data_source is not None and not isinstance(data_source, str):
+        raise ValueError("data_source must be a string when provided.")
+
     result = generate_quota_estimation_report(
         customer_name=customer_name,
         sales_rows=sales_rows_raw,
         research_data=research_data,
         workiq_activity=workiq_activity,
+        data_source=data_source,
         scenario=scenario if scenario is not None else "base",
         output_dir=str(arguments.get("output_dir", "output/quota-estimates")),
         formats=[str(item) for item in formats_raw] if formats_raw is not None else None,

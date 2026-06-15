@@ -9,6 +9,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import cast
 
+from src.agents.quota_estimator.data_sources import SalesDataSource, resolve_sales_data_source
 from src.agents.quota_estimator.models import (
     GeneratedArtifact,
     HistoricalSalesRow,
@@ -21,11 +22,55 @@ from src.agents.quota_estimator.renderers import render_quota_html, render_quota
 
 _DEFAULT_FORMATS = ("xlsx", "html", "pdf")
 _SUPPORTED_FORMATS = frozenset(_DEFAULT_FORMATS)
-_DATE_FIELDS = ("order_date", "OrderDate", "orderDate", "sales_order_date", "SalesOrderDate")
-_TERRITORY_FIELDS = ("territory", "territory_name", "Territory", "SalesTerritory", "TerritoryName")
-_CATEGORY_FIELDS = ("category", "product_category", "ProductCategory", "stock_item_category", "StockItemCategory")
-_REVENUE_FIELDS = ("revenue", "total_revenue", "sales_amount", "TotalDue", "extended_price", "ExtendedPrice")
-_QUANTITY_FIELDS = ("quantity", "Quantity", "quantity_sold", "QuantitySold")
+_DATE_FIELDS = (
+    "order_date",
+    "OrderDate",
+    "orderDate",
+    "sales_order_date",
+    "SalesOrderDate",
+    "order_timestamp",
+    "orderTimestamp",
+)
+_TERRITORY_FIELDS = (
+    "territory",
+    "territory_name",
+    "Territory",
+    "SalesTerritory",
+    "TerritoryName",
+    "sales_territory",
+    "salesTerritory",
+    "territory_name_uc",
+)
+_CATEGORY_FIELDS = (
+    "category",
+    "product_category",
+    "ProductCategory",
+    "stock_item_category",
+    "StockItemCategory",
+    "productCategory",
+    "item_category",
+)
+_REVENUE_FIELDS = (
+    "revenue",
+    "total_revenue",
+    "sales_amount",
+    "TotalDue",
+    "extended_price",
+    "ExtendedPrice",
+    "net_sales_amount",
+    "gross_sales_amount",
+    "salesAmount",
+    "extendedAmount",
+)
+_QUANTITY_FIELDS = (
+    "quantity",
+    "Quantity",
+    "quantity_sold",
+    "QuantitySold",
+    "units_sold",
+    "sold_quantity",
+    "quantitySold",
+)
 
 # Deterministic scenario adjustments applied on top of the trend, market, and engagement signals.
 _SCENARIO_ADJUSTMENTS: dict[str, float] = {
@@ -54,25 +99,22 @@ def build_quota_estimate(
     sales_rows: Sequence[Mapping[str, object]],
     research_data: Mapping[str, object] | None = None,
     workiq_activity: Mapping[str, object] | None = None,
+    data_source: str | None = None,
     scenario: str | None = _DEFAULT_SCENARIO,
     generated_at: datetime | None = None,
 ) -> QuotaEstimate:
-    """Build a deterministic quota estimate from Fabric, research, and WorkIQ inputs."""
+    """Build a deterministic quota estimate from normalized sales, research, and WorkIQ inputs."""
     normalized_scenario = _normalize_scenario(scenario)
+    source = resolve_sales_data_source(data_source, sales_rows)
     normalized_rows = _normalize_sales_rows(sales_rows)
     research_context = _normalize_research_context(research_data or {})
     activity = _normalize_workiq_activity(workiq_activity or {})
     recommendations = _build_recommendations(normalized_rows, research_context, activity, normalized_scenario)
     timestamp = generated_at or datetime.now()
 
-    methodology = (
-        "Grouped WWI trailing sales rows by SalesTerritory and product category, calculated a bounded "
-        "historical trend for each group, then adjusted growth using market research and WorkIQ engagement "
-        f"signals and the '{normalized_scenario}' scenario. Recommended quota equals trailing revenue "
-        "multiplied by the final growth rate."
-    )
+    methodology = _build_methodology(source, normalized_scenario)
     citations = [
-        "Fabric Data Agent query over Wide World Importers SalesOrderHeader joined to SalesTerritory.",
+        source.citation,
         *research_context.citations,
         f"WorkIQ activity context: {activity.source}.",
     ]
@@ -90,12 +132,24 @@ def build_quota_estimate(
     )
 
 
+def _build_methodology(source: SalesDataSource, scenario: str) -> str:
+    return (
+        f"Normalized historical sales rows from {source.query_surface} into the shared quota row contract "
+        "(territory, category, order date, revenue, and quantity), grouped rows by territory and product category, "
+        "calculated a bounded "
+        "historical trend for each group, then adjusted growth using market research and WorkIQ engagement "
+        f"signals and the '{scenario}' scenario. Recommended quota equals trailing revenue "
+        "multiplied by the final growth rate."
+    )
+
+
 def generate_quota_estimation_report(
     *,
     customer_name: str,
     sales_rows: Sequence[Mapping[str, object]],
     research_data: Mapping[str, object] | None = None,
     workiq_activity: Mapping[str, object] | None = None,
+    data_source: str | None = None,
     scenario: str | None = _DEFAULT_SCENARIO,
     output_dir: str | Path = Path("output") / "quota-estimates",
     formats: Sequence[str] | None = None,
@@ -107,6 +161,7 @@ def generate_quota_estimation_report(
         sales_rows=sales_rows,
         research_data=research_data,
         workiq_activity=workiq_activity,
+        data_source=data_source,
         scenario=scenario,
         generated_at=generated_at,
     )
@@ -189,7 +244,7 @@ def quota_estimate_to_dict(estimate: QuotaEstimate) -> dict[str, object]:
 
 def _normalize_sales_rows(rows: Sequence[Mapping[str, object]]) -> list[HistoricalSalesRow]:
     if not rows:
-        raise ValueError("sales_rows must include at least one Fabric sales row.")
+        raise ValueError("sales_rows must include at least one sales row.")
 
     normalized: list[HistoricalSalesRow] = []
     for index, row in enumerate(rows):

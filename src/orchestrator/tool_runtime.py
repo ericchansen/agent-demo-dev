@@ -98,11 +98,11 @@ def forecast_quota_func(arguments: dict[str, Any]) -> dict[str, Any]:
 
 
 def generate_quota_estimation_report_func(arguments: dict[str, Any]) -> dict[str, Any]:
-    """Generate quota estimation XLSX, HTML, and PDF artifacts from Fabric sales rows."""
+    """Generate quota estimation XLSX, HTML, and PDF artifacts from normalized sales rows."""
     customer_name = str(arguments.get("customer_name", "Unknown"))
     sales_rows = arguments.get("sales_rows")
     if not isinstance(sales_rows, list) or not all(isinstance(item, dict) for item in sales_rows):
-        raise ValueError("sales_rows must be a list of objects from Fabric IQ.")
+        raise ValueError("sales_rows must be a list of objects from Fabric IQ or Databricks Genie.")
 
     research_data = arguments.get("research_data")
     if research_data is not None and not isinstance(research_data, dict):
@@ -120,11 +120,16 @@ def generate_quota_estimation_report_func(arguments: dict[str, Any]) -> dict[str
     if scenario is not None and not isinstance(scenario, str):
         raise ValueError("scenario must be a string when provided.")
 
+    data_source = arguments.get("data_source")
+    if data_source is not None and not isinstance(data_source, str):
+        raise ValueError("data_source must be a string when provided.")
+
     return generate_quota_estimation_report(
         customer_name=customer_name,
         sales_rows=sales_rows,
         research_data=research_data,
         workiq_activity=workiq_activity,
+        data_source=data_source,
         scenario=scenario if scenario is not None else "base",
         output_dir=str(arguments.get("output_dir", "output/quota-estimates")),
         formats=[str(item) for item in formats] if formats is not None else None,

@@ -96,6 +96,61 @@ def test_build_quota_estimate_groups_sales_and_includes_context() -> None:
     assert any("Retail novelty goods expand" in citation for citation in estimate.citations)
 
 
+def test_build_quota_estimate_accepts_databricks_genie_rows() -> None:
+    estimate = build_quota_estimate(
+        customer_name="Tailspin Toys",
+        sales_rows=[
+            {
+                "sales_territory": "Northwest",
+                "productCategory": "Novelty Items",
+                "orderDate": "2025-07-01",
+                "net_sales_amount": "100,000",
+                "units_sold": 200,
+                "source_platform": "databricks",
+            },
+            {
+                "sales_territory": "Northwest",
+                "productCategory": "Novelty Items",
+                "orderDate": "2026-02-01",
+                "net_sales_amount": "130,000",
+                "units_sold": 240,
+                "source_platform": "databricks",
+            },
+        ],
+    )
+
+    assert estimate.trailing_revenue_total == 230000
+    assert "Databricks Genie" in estimate.methodology
+    assert any("Unity Catalog" in citation for citation in estimate.citations)
+
+
+def test_build_quota_estimate_data_source_override_controls_citation() -> None:
+    estimate = build_quota_estimate(
+        customer_name="Tailspin Toys",
+        sales_rows=_sales_rows(),
+        data_source="databricks",
+    )
+
+    assert "Databricks Genie" in estimate.methodology
+    assert estimate.citations[0] == "Databricks Genie query over Unity Catalog sales tables."
+
+
+def test_unknown_data_source_is_rejected() -> None:
+    with pytest.raises(ValueError, match="Unsupported sales data source"):
+        build_quota_estimate(
+            customer_name="Tailspin Toys",
+            sales_rows=_sales_rows(),
+            data_source="spreadsheet",
+        )
+
+
+def test_empty_sales_rows_error_is_platform_neutral() -> None:
+    with pytest.raises(ValueError, match="at least one sales row") as exc_info:
+        build_quota_estimate(customer_name="Tailspin Toys", sales_rows=[])
+
+    assert "Fabric" not in str(exc_info.value)
+
+
 def test_workiq_engagement_adjusts_recommended_quota() -> None:
     high = build_quota_estimate(
         customer_name="Tailspin Toys",
@@ -197,6 +252,35 @@ def test_generate_quota_estimation_report_rejects_unsupported_format(tmp_path: P
             output_dir=tmp_path,
             formats=["xlsx", "docx"],
         )
+
+
+def test_generate_quota_estimation_report_records_databricks_methodology(tmp_path: Path) -> None:
+    result = generate_quota_estimation_report(
+        customer_name="Tailspin Toys",
+        sales_rows=[
+            {
+                "salesTerritory": "Northwest",
+                "productCategory": "Toys",
+                "orderDate": "2025-07-01",
+                "salesAmount": 100000,
+                "quantitySold": 200,
+            },
+            {
+                "salesTerritory": "Northwest",
+                "productCategory": "Toys",
+                "orderDate": "2026-02-01",
+                "salesAmount": 120000,
+                "quantitySold": 250,
+            },
+        ],
+        data_source="databricks",
+        output_dir=tmp_path,
+        formats=["html"],
+        generated_at=_FIXED_GENERATED_AT,
+    )
+
+    assert "Databricks Genie" in str(result["methodology"])
+    assert any("Unity Catalog" in citation for citation in result["citations"])
 
 
 def test_build_quota_estimate_requires_sales_rows() -> None:

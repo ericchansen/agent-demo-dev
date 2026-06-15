@@ -44,7 +44,7 @@ FORECAST_QUOTA_SCHEMA: dict[str, Any] = {
 
 _QUOTA_SALES_ROW_SCHEMA: dict[str, Any] = {
     "type": "object",
-    "description": "Fabric sales row from SalesOrderHeader joined to SalesTerritory.",
+    "description": "Sales row from Fabric Data Agent or Databricks Genie / Unity Catalog.",
     "additionalProperties": True,
 }
 
@@ -58,9 +58,16 @@ GENERATE_QUOTA_ESTIMATION_REPORT_SCHEMA: dict[str, Any] = {
         "sales_rows": {
             "type": "array",
             "description": (
-                "Historical WWI sales rows with territory, order_date, revenue, and optional category/quantity."
+                "Historical sales rows with territory, order_date, revenue, and optional category/quantity. "
+                "Databricks aliases such as sales_territory, orderDate, net_sales_amount, and units_sold "
+                "are also accepted."
             ),
             "items": _QUOTA_SALES_ROW_SCHEMA,
+        },
+        "data_source": {
+            "type": "string",
+            "enum": ["fabric", "databricks"],
+            "description": "Optional platform override used for report methodology and source citations.",
         },
         "research_data": {
             "type": "object",

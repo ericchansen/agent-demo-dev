@@ -60,8 +60,9 @@ Your capabilities:
 2. ACTIVITY DATA: When WorkIQ is available, retrieve M365 activity signals
    (emails, meetings, engagement) for customer context.
 3. QUOTA ESTIMATION: For quota report requests, query Fabric IQ first for WWI historical sales rows
-   from SalesOrderHeader joined to SalesTerritory, including territory, product category when available,
-   order date, revenue, and quantity. Use WorkIQPreviewTool when configured; otherwise call
+   from SalesOrderHeader joined to SalesTerritory, or query a Databricks Genie Space backed by Unity Catalog
+   when the workshop is configured for Databricks. Normalize either platform into territory, product category
+   when available, order date, revenue, and quantity. Use WorkIQPreviewTool when configured; otherwise call
    get_account_activity for demo-safe synthetic activity.
 4. REPORTS: Generate formatted DOCX account reports or quota estimation artifacts.
 
@@ -79,8 +80,8 @@ Guidelines:
 - Proactively surface insights the user might not have asked for
 - When comparing time periods, show both absolute values and percentage change
 - For deep analyses, gather data from multiple sources before synthesizing
-- To create XLSX, HTML, and PDF quota files, call generate_quota_estimation_report with the Fabric rows,
-  market research context, and WorkIQ activity payload."""
+- To create XLSX, HTML, and PDF quota files, call generate_quota_estimation_report with normalized sales rows,
+  a data_source value of fabric or databricks, market research context, and WorkIQ activity payload."""
 
 _MARKET_DATA_INSTRUCTIONS = """
 
@@ -160,11 +161,11 @@ def forecast_quota_func(arguments: dict[str, Any]) -> dict[str, Any]:
 
 
 def generate_quota_estimation_report_func(arguments: dict[str, Any]) -> dict[str, Any]:
-    """Generate quota estimation XLSX, HTML, and PDF artifacts from Fabric sales rows."""
+    """Generate quota estimation XLSX, HTML, and PDF artifacts from normalized sales rows."""
     customer_name = str(arguments.get("customer_name", "Unknown"))
     sales_rows = arguments.get("sales_rows")
     if not isinstance(sales_rows, list) or not all(isinstance(item, dict) for item in sales_rows):
-        raise ValueError("sales_rows must be a list of objects from Fabric IQ.")
+        raise ValueError("sales_rows must be a list of objects from Fabric IQ or Databricks Genie.")
 
     research_data = arguments.get("research_data")
     if research_data is not None and not isinstance(research_data, dict):
@@ -182,11 +183,16 @@ def generate_quota_estimation_report_func(arguments: dict[str, Any]) -> dict[str
     if scenario is not None and not isinstance(scenario, str):
         raise ValueError("scenario must be a string when provided.")
 
+    data_source = arguments.get("data_source")
+    if data_source is not None and not isinstance(data_source, str):
+        raise ValueError("data_source must be a string when provided.")
+
     return generate_quota_estimation_report(
         customer_name=customer_name,
         sales_rows=sales_rows,
         research_data=research_data,
         workiq_activity=workiq_activity,
+        data_source=data_source,
         scenario=scenario if scenario is not None else "base",
         output_dir=str(arguments.get("output_dir", "output/quota-estimates")),
         formats=[str(item) for item in formats] if formats is not None else None,
