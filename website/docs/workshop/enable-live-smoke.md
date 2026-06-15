@@ -72,6 +72,26 @@ gh secret set FABRIC_MCP_URL             # or FABRIC_WORKSPACE_ID + FABRIC_DATA_
 gh secret set FABRIC_MCP_TOOL_NAME
 ```
 
+**Auth mode (independent of the endpoint secrets above):**
+
+| Mode | Secrets | When the job uses it |
+|---|---|---|
+| Service principal (recommended for CI) | `FABRIC_CLIENT_ID` + `FABRIC_CLIENT_SECRET` + `FABRIC_TENANT_ID` | All three are set — the client authenticates with `ClientSecretCredential`. |
+| OIDC federated identity | _none of the three_ | None are set — the client falls back to `DefaultAzureCredential` using the `azure/login` OIDC identity from step 1. |
+
+```powershell
+# Headless service-principal auth — register an Entra app, grant it access to the
+# Fabric Data Agent, then set all three secrets together:
+gh secret set FABRIC_CLIENT_ID
+gh secret set FABRIC_CLIENT_SECRET
+gh secret set FABRIC_TENANT_ID
+```
+
+> ⚠️ Set **all three** Fabric SPN secrets or **none**. A partial triple is treated as a misconfiguration: the
+> Fabric job (and `python tests/eval/run_eval.py`) blocks with an explicit "Fabric SPN auth is partial" message
+> instead of silently downgrading to the OIDC identity. The Fabric job's config step prints which auth mode it
+> selected, and `scripts/demo_check.py` shows the same auth mode in its **Live backend readiness** matrix.
+
 ### Databricks Genie
 
 ```powershell
@@ -134,7 +154,7 @@ row from `skipped` to live-proven (`ran`).
 | Backend | Default CI status | What "ran" proves | Secrets required to prove it live | How a facilitator proves it |
 |---|---|---|---|---|
 | **Foundry** (agent registration) | `skipped` until secrets set; **provable headlessly** | The account-based project registers `WWISalesAgent` and answers a Playground Responses query. | `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `FOUNDRY_PROJECT_ENDPOINT`, `MODEL_DEPLOYMENT_NAME` | `uv run python scripts/verify_foundry_agent.py` → `[OK] live registration + Playground response verified`, then `-f require_foundry=true`. |
-| **Fabric** (golden-QA eval) | `skipped` until secrets set | The Fabric Data Agent MCP answers the golden-QA questions over live lakehouse data. | `FABRIC_MCP_URL` (or `FABRIC_WORKSPACE_ID` + `FABRIC_DATA_AGENT_ID`), `FABRIC_MCP_TOOL_NAME`, plus `AZURE_*` | Provision a Fabric Data Agent, set the secrets, run `-f require_fabric=true`. |
+| **Fabric** (golden-QA eval) | `skipped` until secrets set | The Fabric Data Agent MCP answers the golden-QA questions over live lakehouse data. | `FABRIC_MCP_URL` (or `FABRIC_WORKSPACE_ID` + `FABRIC_DATA_AGENT_ID`), `FABRIC_MCP_TOOL_NAME`, plus an auth mode — either `FABRIC_CLIENT_ID` + `FABRIC_CLIENT_SECRET` + `FABRIC_TENANT_ID` (service principal) or the `AZURE_*` OIDC identity (DefaultAzureCredential). | Provision a Fabric Data Agent, set the endpoint + auth secrets, run `-f require_fabric=true`. |
 | **Databricks** (Genie query) | `skipped` until secrets set | A Genie space answers a query over Unity Catalog tables. | `DATABRICKS_GENIE_MCP_URL` + `DATABRICKS_HOST` + OAuth M2M (`DATABRICKS_CLIENT_ID`, `DATABRICKS_CLIENT_SECRET`) for managed MCP; or `DATABRICKS_WORKSPACE_URL` + `DATABRICKS_GENIE_SPACE_ID` + either OAuth M2M or `DATABRICKS_TOKEN` for SDK-direct. | Create a Genie space, grant `CAN RUN`, set the secrets, run `-f require_databricks=true`. |
 | **Published site** | `ran` on every push | The published workshop site is reachable. | none | Automatic — no secrets. |
 | **Offline readiness** | `ran` on every push | `demo_check.py`, offline eval, and artifact generation succeed without any cloud. | none | Automatic — runs on every push. |

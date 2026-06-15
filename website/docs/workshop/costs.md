@@ -52,6 +52,34 @@ az fabric capacity resume \
 - **Monitor with Cost Management** — set budget alerts in Azure portal or pass `budgetAlertEmails` to the Bicep template
 - **Run what-if before deploys** — the deploy workflow includes a non-blocking `az deployment group what-if`, and facilitators should review it before customer workshops
 
+## Databricks Genie path costs
+
+If you choose the **Databricks Genie** data platform instead of (or alongside) Fabric, the cost model is
+**serverless pay-as-you-go billed in DBUs**, not a flat capacity SKU. Two lines stack:
+
+| Line | Billing | Notes |
+|---|---|---|
+| **Genie LLM usage** | Per-DBU after a per-user free allowance | Each identified user gets **150 free Genie DBUs/month** (~80–100 questions, ≈$10.50/mo value at $0.07/DBU, US East). Overage bills at the standard Genie DBU rate. |
+| **SQL warehouse compute** | Per-DBU at the warehouse rate | The warehouse that executes Genie-generated SQL is billed separately. Right-size it and **stop it when idle**. |
+
+> ⚠️ **Genie billing starts July 6, 2026.** Before that date Genie usage was not billed. The free
+> 150-DBU/user/month allowance applies to **Genie, Genie Spaces, and Genie Code**, is per identified user
+> (not per service principal), and resets monthly. Service-principal (OAuth M2M) automation used by Live Smoke
+> does **not** receive the free allowance, so headless smoke runs bill from the first DBU — keep the golden set
+> small and stop the warehouse afterward. Verify current rates and regional pricing on the
+> [Genie pricing page](https://www.databricks.com/product/pricing/genie) before quoting numbers to a customer.
+
+To control Genie spend:
+
+- **Set Genie budgets** — admins can cap and alert on Genie spend per user, group, workspace, or the whole
+  account. See [Manage budgets and cost controls for Genie](https://learn.microsoft.com/en-us/azure/databricks/genie/budgets).
+- **Stop the SQL warehouse** between lab windows — warehouse DBUs, not the free LLM allowance, are usually the
+  larger line for a workshop room driving many live questions.
+- The optional **Databricks Supervisor Agent/API** path adds serverless, Model Serving, and AI Gateway usage on
+  top of Genie — gate it behind facilitator approval.
+
+> 📖 [Databricks DBU pricing](https://learn.microsoft.com/en-us/azure/databricks/resources/pricing) · [Genie pricing](https://www.databricks.com/product/pricing/genie) · [Genie budgets & cost controls](https://learn.microsoft.com/en-us/azure/databricks/genie/budgets)
+
 ## Demo-day cost guardrails
 
 | Moment | Action |
