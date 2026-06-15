@@ -644,12 +644,13 @@ def test_get_or_create_agent_reuses_matching_fingerprint() -> None:
         definition=SimpleNamespace(instructions=module._build_agent_instructions(config, fingerprint)),
     )
     project_client = MagicMock()
-    project_client.agents.list.return_value = [existing]
+    project_client.agents.list_versions.return_value = [existing]
 
     agent = module._get_or_create_agent(project_client, config)
 
     assert agent is existing
     assert hasattr(agent, "_local_function_handlers")
+    project_client.agents.list_versions.assert_called_once_with(agent_name="WWISalesAgent")
     project_client.agents.create_version.assert_not_called()
 
 
@@ -665,7 +666,7 @@ def test_get_or_create_agent_creates_when_definition_changes() -> None:
     )
     created = SimpleNamespace(name="WWISalesAgent")
     project_client = MagicMock()
-    project_client.agents.list.return_value = [
+    project_client.agents.list_versions.return_value = [
         SimpleNamespace(name="WWISalesAgent", definition=SimpleNamespace(instructions="old definition"))
     ]
     project_client.agents.create_version.return_value = created
@@ -677,6 +678,65 @@ def test_get_or_create_agent_creates_when_definition_changes() -> None:
     assert create_kwargs["agent_name"] == "WWISalesAgent"
     instructions = create_kwargs["definition"].instructions
     assert module._DEFINITION_FINGERPRINT_PREFIX in instructions
+
+
+def test_find_matching_agent_ignores_summaries_without_instructions() -> None:
+    """Regression: list() summaries lack definition.instructions, so versions must be fetched.
+
+    The live ``agents.list()`` returns ``AgentDetails`` summaries WITHOUT a ``definition`` body.
+    The previous implementation matched against those summaries, never found the fingerprint
+    marker, and recreated a version on every run. The fix enumerates ``list_versions()`` (which
+    returns full ``AgentVersionDetails``) and matches there.
+    """
+    module = _load_module("src.orchestrator.foundry_agent")
+    orchestrator_config = _load_attr("src.orchestrator.config", "OrchestratorConfig")
+
+    config = orchestrator_config(
+        foundry_project_endpoint="https://test.ai.azure.com/",
+        model_deployment_name="gpt-4o",
+        fabric_iq_connection_id=None,
+    )
+    tools, _ = module._build_tools(config)
+    fingerprint = module._definition_fingerprint(config, tools)
+
+    # Summary returned by list() — no definition/instructions, exactly like the live SDK.
+    summary_only = SimpleNamespace(name="WWISalesAgent")
+    matching_version = SimpleNamespace(
+        name="WWISalesAgent",
+        definition=SimpleNamespace(instructions=module._build_agent_instructions(config, fingerprint)),
+    )
+
+    project_client = MagicMock()
+    project_client.agents.list.return_value = [summary_only]
+    project_client.agents.list_versions.return_value = [matching_version]
+
+    # Sanity check: the summary alone would never have matched (the old bug).
+    assert module._DEFINITION_FINGERPRINT_PREFIX not in module._agent_instructions(summary_only)
+
+    agent = module._get_or_create_agent(project_client, config)
+
+    assert agent is matching_version
+    project_client.agents.list_versions.assert_called_once_with(agent_name="WWISalesAgent")
+    project_client.agents.create_version.assert_not_called()
+
+
+def test_find_matching_agent_returns_none_when_no_versions_exist() -> None:
+    """A missing agent (list_versions raises) falls back to creating a fresh version."""
+    module = _load_module("src.orchestrator.foundry_agent")
+    orchestrator_config = _load_attr("src.orchestrator.config", "OrchestratorConfig")
+
+    config = orchestrator_config(
+        foundry_project_endpoint="https://test.ai.azure.com/",
+        model_deployment_name="gpt-4o",
+        fabric_iq_connection_id=None,
+    )
+    tools, _ = module._build_tools(config)
+    fingerprint = module._definition_fingerprint(config, tools)
+
+    project_client = MagicMock()
+    project_client.agents.list_versions.side_effect = RuntimeError("agent not found")
+
+    assert module._find_matching_agent(project_client, fingerprint) is None
 
 
 # ---------------------------------------------------------------------------

@@ -497,16 +497,24 @@ def _agent_instructions(agent: PromptAgent) -> str:
 
 
 def _find_matching_agent(project_client: AIProjectClient, fingerprint: str) -> PromptAgent | None:
+    """Return an existing agent version whose definition carries the fingerprint marker.
+
+    ``agents.list()`` returns ``AgentDetails`` summaries that do NOT include the full
+    ``definition.instructions`` body, so matching against those summaries always failed and a
+    brand-new version was created on every run. We instead enumerate the agent's versions with
+    ``list_versions()``, which returns ``AgentVersionDetails`` objects that expose the full
+    ``definition``, and look for the embedded fingerprint marker there.
+    """
     marker = f"{_DEFINITION_FINGERPRINT_PREFIX}{fingerprint}"
     try:
-        agents = project_client.agents.list()
-    except Exception:  # pragma: no cover - live SDK/list failures should fall back to creating a version.
-        logger.exception("Unable to list existing Foundry agents; creating a fresh version.")
+        versions = project_client.agents.list_versions(agent_name=_AGENT_NAME)
+    except Exception:  # pragma: no cover - missing agent / live SDK failures fall back to creating a version.
+        logger.info("No existing '%s' agent versions to reuse; a new version will be created.", _AGENT_NAME)
         return None
 
-    for agent in agents:
-        if getattr(agent, "name", None) == _AGENT_NAME and marker in _agent_instructions(agent):
-            return agent
+    for version in versions:
+        if marker in _agent_instructions(version):
+            return version
     return None
 
 
