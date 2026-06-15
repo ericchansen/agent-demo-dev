@@ -89,9 +89,15 @@ Configure these environment variables for a live smoke test:
 
 ```dotenv
 DATABRICKS_WORKSPACE_URL=https://adb-<workspace-id>.<region>.azuredatabricks.net
+DATABRICKS_HOST=https://adb-<workspace-id>.<region>.azuredatabricks.net
 DATABRICKS_GENIE_SPACE_ID=<genie-space-id>
 # Optional, but recommended for governance and repeatability:
 DATABRICKS_GENIE_WAREHOUSE_ID=<sql-warehouse-id>
+# Auth for unattended CI (preferred):
+DATABRICKS_CLIENT_ID=<service-principal-client-id>
+DATABRICKS_CLIENT_SECRET=<service-principal-secret>
+# Auth alternative for local single-user testing:
+DATABRICKS_TOKEN=<personal-access-token>
 ```
 
 Then ask the hosted or Foundry agent for a Databricks-backed sales question:
@@ -131,6 +137,9 @@ uv sync --extra dev --extra databricks-mcp
 ```dotenv
 # When set, the agent uses the managed MCP Genie server instead of the SDK adapter.
 DATABRICKS_GENIE_MCP_URL=https://adb-<workspace-id>.<region>.azuredatabricks.net/api/2.0/mcp/genie/<genie-space-id>
+DATABRICKS_HOST=https://adb-<workspace-id>.<region>.azuredatabricks.net
+DATABRICKS_CLIENT_ID=<service-principal-client-id>
+DATABRICKS_CLIENT_SECRET=<service-principal-secret>
 ```
 
 The adapter discovers the Genie query tool via `list_tools()`, calls it with the natural-language question, and
@@ -154,6 +163,11 @@ pick the mode that matches where the agent runs:
 For unattended workshop CI, prefer **M2M** with a service principal that has `SELECT` on the Genie Space tables.
 For published Foundry/M365 agents where each user should only see their own governed data, use **OBO** so Unity
 Catalog enforces per-user access on every query.
+
+The Live Smoke workflow maps both PAT and OAuth M2M secrets into the Databricks job. Set `DATABRICKS_HOST`
+alongside `DATABRICKS_GENIE_MCP_URL` for managed MCP, or set `DATABRICKS_WORKSPACE_URL` +
+`DATABRICKS_GENIE_SPACE_ID` for SDK-direct. In either transport, provide `DATABRICKS_CLIENT_ID` and
+`DATABRICKS_CLIENT_SECRET` for OAuth M2M or `DATABRICKS_TOKEN` for a PAT-backed smoke.
 
 ## Live smoke test (environment-gated)
 

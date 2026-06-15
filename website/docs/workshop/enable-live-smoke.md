@@ -76,11 +76,19 @@ gh secret set FABRIC_MCP_TOOL_NAME
 
 ```powershell
 gh secret set DATABRICKS_GENIE_MCP_URL   # managed MCP transport
+gh secret set DATABRICKS_HOST            # https://adb-<workspace-id>.<region>.azuredatabricks.net
+gh secret set DATABRICKS_CLIENT_ID       # OAuth M2M service principal
+gh secret set DATABRICKS_CLIENT_SECRET   # OAuth M2M service principal secret
 # or SDK-direct:
 gh secret set DATABRICKS_WORKSPACE_URL
 gh secret set DATABRICKS_GENIE_SPACE_ID
-gh secret set DATABRICKS_TOKEN
+gh secret set DATABRICKS_TOKEN           # PAT alternative to OAuth M2M
 ```
+
+For unattended CI, prefer OAuth machine-to-machine (`DATABRICKS_CLIENT_ID` +
+`DATABRICKS_CLIENT_SECRET`) over a user PAT. The Live Smoke job maps those secrets
+into the Databricks SDK unified auth chain for both the managed MCP and SDK-direct
+transports.
 
 ## 3. Run required mode for only your platform
 
@@ -127,7 +135,7 @@ row from `skipped` to live-proven (`ran`).
 |---|---|---|---|---|
 | **Foundry** (agent registration) | `skipped` until secrets set; **provable headlessly** | The account-based project registers `WWISalesAgent` and answers a Playground Responses query. | `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `FOUNDRY_PROJECT_ENDPOINT`, `MODEL_DEPLOYMENT_NAME` | `uv run python scripts/verify_foundry_agent.py` → `[OK] live registration + Playground response verified`, then `-f require_foundry=true`. |
 | **Fabric** (golden-QA eval) | `skipped` until secrets set | The Fabric Data Agent MCP answers the golden-QA questions over live lakehouse data. | `FABRIC_MCP_URL` (or `FABRIC_WORKSPACE_ID` + `FABRIC_DATA_AGENT_ID`), `FABRIC_MCP_TOOL_NAME`, plus `AZURE_*` | Provision a Fabric Data Agent, set the secrets, run `-f require_fabric=true`. |
-| **Databricks** (Genie query) | `skipped` until secrets set | A Genie space answers a query over Unity Catalog tables. | `DATABRICKS_GENIE_MCP_URL` (managed MCP) **or** `DATABRICKS_WORKSPACE_URL` + `DATABRICKS_GENIE_SPACE_ID` + `DATABRICKS_TOKEN` | Create a Genie space, grant `CAN RUN`, set the secrets, run `-f require_databricks=true`. |
+| **Databricks** (Genie query) | `skipped` until secrets set | A Genie space answers a query over Unity Catalog tables. | `DATABRICKS_GENIE_MCP_URL` + `DATABRICKS_HOST` + OAuth M2M (`DATABRICKS_CLIENT_ID`, `DATABRICKS_CLIENT_SECRET`) for managed MCP; or `DATABRICKS_WORKSPACE_URL` + `DATABRICKS_GENIE_SPACE_ID` + either OAuth M2M or `DATABRICKS_TOKEN` for SDK-direct. | Create a Genie space, grant `CAN RUN`, set the secrets, run `-f require_databricks=true`. |
 | **Published site** | `ran` on every push | The published workshop site is reachable. | none | Automatic — no secrets. |
 | **Offline readiness** | `ran` on every push | `demo_check.py`, offline eval, and artifact generation succeed without any cloud. | none | Automatic — runs on every push. |
 

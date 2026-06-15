@@ -145,8 +145,19 @@ DATABRICKS_GENIE_MCP_URL=https://<workspace>/api/2.0/mcp/genie/<space-id>
 # SDK-direct
 DATABRICKS_WORKSPACE_URL=https://<workspace>.azuredatabricks.net
 DATABRICKS_GENIE_SPACE_ID=<genie space id>
-DATABRICKS_TOKEN=<pat or leave unset to use other auth>
+
+# Auth for either transport
+DATABRICKS_TOKEN=<pat>
+# or OAuth M2M for CI/service principals:
+DATABRICKS_HOST=https://<workspace>.azuredatabricks.net
+DATABRICKS_CLIENT_ID=<service-principal-client-id>
+DATABRICKS_CLIENT_SECRET=<service-principal-secret>
 ```
+
+GitHub Actions Live Smoke maps both PAT and OAuth M2M secrets. If
+`require_databricks=true` still reports `skipped`, confirm the repo has either
+`DATABRICKS_TOKEN` or both OAuth M2M secrets in addition to the selected
+transport secrets.
 
 ### `PERMISSION_DENIED` from Unity Catalog or the Genie space
 

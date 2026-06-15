@@ -130,8 +130,10 @@ jobs:
       configured: ${{ steps.config.outputs.configured }}
     env:
       DATABRICKS_WORKSPACE_URL: ${{ secrets.DATABRICKS_WORKSPACE_URL }}
-      DATABRICKS_HOST: ${{ secrets.DATABRICKS_WORKSPACE_URL }}
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST || secrets.DATABRICKS_WORKSPACE_URL }}
       DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+      DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
       DATABRICKS_GENIE_SPACE_ID: ${{ secrets.DATABRICKS_GENIE_SPACE_ID }}
       DATABRICKS_GENIE_WAREHOUSE_ID: ${{ secrets.DATABRICKS_GENIE_WAREHOUSE_ID }}
       DATABRICKS_GENIE_MCP_URL: ${{ secrets.DATABRICKS_GENIE_MCP_URL }}
@@ -142,17 +144,28 @@ jobs:
         run: |
           # Two supported transports: managed MCP (DATABRICKS_GENIE_MCP_URL) or
           # SDK-direct (DATABRICKS_WORKSPACE_URL + DATABRICKS_GENIE_SPACE_ID).
+          auth_configured=false
+          if [ -n "$DATABRICKS_TOKEN" ] || { [ -n "$DATABRICKS_CLIENT_ID" ] && [ -n "$DATABRICKS_CLIENT_SECRET" ]; }; then
+            auth_configured=true
+          fi
+
+          auth_requirement="DATABRICKS_TOKEN or DATABRICKS_CLIENT_ID + DATABRICKS_CLIENT_SECRET"
           if [ -n "$DATABRICKS_GENIE_MCP_URL" ]; then
+            if [ "$auth_configured" != "true" ]; then
+              echo "::notice title=Databricks Genie smoke blocked::Set $auth_requirement for the managed MCP transport."
+              echo "configured=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
             echo "::notice title=Databricks transport::Using managed MCP Genie server ($DATABRICKS_GENIE_MCP_URL)."
             echo "configured=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           missing=()
-          for name in DATABRICKS_WORKSPACE_URL DATABRICKS_GENIE_SPACE_ID; do
+          for name in DATABRICKS_HOST DATABRICKS_GENIE_SPACE_ID; do
             if [ -z "${!name}" ]; then missing+=("$name"); fi
           done
-          if [ -z "$DATABRICKS_TOKEN" ]; then
-            echo "::notice title=Databricks auth::DATABRICKS_TOKEN is unset; the SDK will try other configured auth methods."
+          if [ "$auth_configured" != "true" ]; then
+            missing+=("$auth_requirement")
           fi
           if [ "${#missing[@]}" -gt 0 ]; then
             echo "::notice title=Databricks Genie smoke blocked::Set DATABRICKS_GENIE_MCP_URL (managed MCP) or ${missing[*]} (SDK-direct)."
