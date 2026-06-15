@@ -106,8 +106,7 @@ def render_summary(report: Mapping[str, object]) -> str:
         assert isinstance(check, Mapping)
         status = str(check["status"])
         lines.append(
-            f"| {check['name']} | {status_icon[status]} | "
-            f"{'yes' if check['required'] else 'no'} | {check['detail']} |"
+            f"| {check['name']} | {status_icon[status]} | {'yes' if check['required'] else 'no'} | {check['detail']} |"
         )
     lines.extend(["", f"**Totals:** {totals['failed']} failed, {totals['skipped']} skipped."])
     if totals["skipped"]:

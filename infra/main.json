@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "10378273648466057276"
+      "templateHash": "6547318439125111198"
     }
   },
   "parameters": {
@@ -121,6 +121,35 @@
       "defaultValue": {},
       "metadata": {
         "description": "Resource tags applied to every resource."
+      }
+    },
+    "budgetName": {
+      "type": "string",
+      "defaultValue": "fsa-demo-monthly-budget",
+      "metadata": {
+        "description": "Optional budget name. The budget is deployed only when budgetAlertEmails has at least one address."
+      }
+    },
+    "budgetAmount": {
+      "type": "int",
+      "defaultValue": 350,
+      "minValue": 1,
+      "metadata": {
+        "description": "Monthly budget amount in USD for the workshop resource group."
+      }
+    },
+    "budgetStartDate": {
+      "type": "string",
+      "defaultValue": "[utcNow('yyyy-MM-01T00:00:00Z')]",
+      "metadata": {
+        "description": "Budget alert start date. Azure requires the first day of a month in ISO 8601 format."
+      }
+    },
+    "budgetAlertEmails": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Email addresses for budget alerts. Leave empty to skip budget creation in shared/dev automation."
       }
     }
   },
@@ -1106,6 +1135,125 @@
               }
             }
           ]
+        }
+      }
+    },
+    {
+      "condition": "[greater(length(parameters('budgetAlertEmails')), 0)]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "monthlyBudget",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[parameters('budgetName')]"
+          },
+          "amount": {
+            "value": "[parameters('budgetAmount')]"
+          },
+          "startDate": {
+            "value": "[parameters('budgetStartDate')]"
+          },
+          "contactEmails": {
+            "value": "[parameters('budgetAlertEmails')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.41.2.15936",
+              "templateHash": "8242300717370113653"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Azure Cost Management budget."
+              }
+            },
+            "amount": {
+              "type": "int",
+              "minValue": 1,
+              "metadata": {
+                "description": "Monthly budget amount in USD for the workshop resource group."
+              }
+            },
+            "startDate": {
+              "type": "string",
+              "metadata": {
+                "description": "Budget start date. Azure requires the first day of a month in ISO 8601 format."
+              }
+            },
+            "contactEmails": {
+              "type": "array",
+              "metadata": {
+                "description": "Email recipients for budget alerts. Required by Azure Consumption budgets at resource-group scope."
+              }
+            },
+            "timeGrain": {
+              "type": "string",
+              "defaultValue": "Monthly",
+              "allowedValues": [
+                "Monthly",
+                "Quarterly",
+                "Annually"
+              ],
+              "metadata": {
+                "description": "Budget time grain."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Consumption/budgets",
+              "apiVersion": "2024-08-01",
+              "name": "[parameters('name')]",
+              "properties": {
+                "category": "Cost",
+                "amount": "[parameters('amount')]",
+                "timeGrain": "[parameters('timeGrain')]",
+                "timePeriod": {
+                  "startDate": "[parameters('startDate')]"
+                },
+                "notifications": {
+                  "Actual_GreaterThan_80_Percent": {
+                    "enabled": true,
+                    "operator": "GreaterThan",
+                    "threshold": 80,
+                    "thresholdType": "Actual",
+                    "contactEmails": "[parameters('contactEmails')]",
+                    "contactGroups": [],
+                    "contactRoles": [],
+                    "locale": "en-us"
+                  },
+                  "Forecasted_GreaterThan_100_Percent": {
+                    "enabled": true,
+                    "operator": "GreaterThan",
+                    "threshold": 100,
+                    "thresholdType": "Forecasted",
+                    "contactEmails": "[parameters('contactEmails')]",
+                    "contactGroups": [],
+                    "contactRoles": [],
+                    "locale": "en-us"
+                  }
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "budgetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Consumption/budgets', parameters('name'))]"
+            }
+          }
         }
       }
     },

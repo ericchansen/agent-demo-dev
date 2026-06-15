@@ -53,8 +53,7 @@ def build_visual_proof(
             "path": _relative(WORKSHOP_ASSETS[2]),
             "type": "schematic",
             "reason": (
-                "Authenticated Foundry Playground screenshots must be captured manually "
-                "in the facilitator tenant."
+                "Authenticated Foundry Playground screenshots must be captured manually in the facilitator tenant."
             ),
             "manual_checklist": [
                 "Open https://ai.azure.com and select fsa-foundry-project-dev.",
