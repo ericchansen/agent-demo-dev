@@ -30,6 +30,11 @@ dev = [
 databricks-mcp = [
     "databricks-mcp >= 0.2",
 ]
+# Optional: enables the Microsoft Agent Framework multi-agent runtime path.
+# The deterministic local pipeline remains the default and needs no Azure credentials.
+agent-framework = [
+    "agent-framework-foundry >= 1.0",
+]
 
 [tool.ruff]
 line-length = 120

@@ -173,7 +173,23 @@ threads/runs API and its agents cannot be referenced from prompt agents. The new
 | **Foundry Workflows** (`WorkflowAgentDefinition`) | Declarative sequential / group-chat / human-in-the-loop graph, authored as Power Fx **YAML** in the portal or VS Code Foundry Toolkit, invoked by name. | Portal/VS Code authoring; YAML is portal-proprietary. | Portal feature |
 | **Microsoft Agent Framework** | Pure-Python orchestration (`SequentialBuilder`, `HandoffBuilder`) over `FoundryChatClient`, runs against the same Responses API. | `pip install agent-framework agent-framework-foundry`; no portal A2A setup. | Recommended code path |
 
-`src/orchestrator/multi_agent/foundry_promotion.py` is the **import-validated bridge**: it builds genuine
+`src/orchestrator/multi_agent/agent_framework_runtime.py` is the runnable optional bridge for Microsoft Agent
+Framework. The deterministic local pipeline remains the default, but you can opt into the live framework path when
+the package and Foundry credentials are available:
+
+```powershell
+uv sync --extra agent-framework
+$env:FOUNDRY_PROJECT_ENDPOINT = "https://<account>.services.ai.azure.com/api/projects/<project>"
+$env:FOUNDRY_MODEL = "gpt-4o"  # MODEL_DEPLOYMENT_NAME is also accepted
+uv run python -m src.orchestrator.multi_agent "Generate a quota report for Tailspin Toys" --customer "Tailspin Toys" --data-source fabric --runtime agent-framework
+```
+
+The adapter builds a `SequentialBuilder` workflow with planner → data → research → work-context → analysis → report
+participants, and a matching `HandoffBuilder` topology for routing-oriented labs. Offline unit tests mock the framework
+classes so the handoff shape and sequential output collection stay validated without Azure credentials.
+
+`src/orchestrator/multi_agent/foundry_promotion.py` is the **import-validated bridge** for portal A2A/workflow promotion:
+it builds genuine
 `PromptAgentDefinition` (with one `A2APreviewTool` per sub-agent connection) and `WorkflowAgentDefinition` objects
 from the installed SDK, and is unit-tested offline in `tests/unit/test_foundry_promotion.py`. It does not make
 live calls — registering A2A connections / workflows requires the portal setup noted above — so wire it into a
