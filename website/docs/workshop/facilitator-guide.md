@@ -72,9 +72,18 @@ Use the workshop visuals as stage gates instead of decoration:
 
 | Checkpoint | Asset | What it proves |
 |---|---|---|
-| CLI report flow | `website/static/img/workshop/cli-report-flow.svg` | Participants can run a prompt and produce report artifacts. |
-| Generated artifacts | `website/static/img/workshop/quota-artifacts.svg` | XLSX, HTML, and PDF outputs are concrete demo deliverables. |
-| Foundry playground | `website/static/img/workshop/foundry-playground.svg` | The Foundry project, agent, Playground, and trace story are ready for Day 2. |
+| CLI report flow | `website/static/img/workshop/cli-report-flow.svg` plus `output/workshop-visual-proof.json` | Participants can run a prompt and produce report artifacts. |
+| Generated artifacts | `website/static/img/workshop/quota-artifacts.svg` plus generated XLSX/HTML/PDF files | XLSX, HTML, and PDF outputs are concrete demo deliverables. |
+| Foundry playground | `website/static/img/workshop/foundry-playground.svg` plus the manual portal checklist in `output/workshop-visual-proof.json` | The Foundry project, agent, Playground, and trace story are ready for Day 2 without fabricating authenticated screenshots. |
+
+Generate the proof manifest before delivery:
+
+```powershell
+uv run python scripts/check_workshop_visuals.py
+```
+
+The manifest records the validated SVG assets, generated artifact paths and byte sizes, and the manual checklist for
+capturing tenant-specific Foundry Playground screenshots.
 
 ## Live readiness checkpoints
 

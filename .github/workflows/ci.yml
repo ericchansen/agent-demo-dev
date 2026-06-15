@@ -39,6 +39,9 @@ jobs:
       - name: Demo readiness
         run: python scripts/demo_check.py
 
+      - name: Workshop visual proof
+        run: python scripts/check_workshop_visuals.py
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"

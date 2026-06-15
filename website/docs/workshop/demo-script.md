@@ -13,7 +13,9 @@ This demo shows the same workflow in two surfaces.
 
 ![Copilot CLI report flow](/img/workshop/cli-report-flow.svg)
 
-*Schematic diagram of the flow — not a screenshot.*
+*Local proof visual. Validate it before delivery with `uv run python scripts/check_workshop_visuals.py`; the script
+regenerates the Tailspin Toys quota artifacts and writes `output/workshop-visual-proof.json` with artifact paths and
+file sizes.*
 
 ## Act 1 — CLI (Developer Audience)
 
@@ -60,7 +62,8 @@ Now give me an aggressive and a conservative version of that quota
 
 ![Generated quota artifacts](/img/workshop/quota-artifacts.svg)
 
-*Schematic diagram of the generated artifacts — not a screenshot.*
+*Artifact proof visual. The same visual-check script confirms real XLSX, HTML, and PDF files exist on disk. Treat the
+manifest as the demo evidence and the SVG as the teaching aid.*
 
 > "That's the prototype. Same MCP servers, zero custom code. Now let's see the business user experience."
 
@@ -134,3 +137,4 @@ Between Act 1 and Act 2, explain the translation:
 - [ ] Published agent identity has RBAC to Fabric/Databricks/storage/Graph resources
 - [ ] M365 Copilot can see the agent (@mention works)
 - [ ] Pre-generated XLSX/HTML/PDF artifacts available as fallback
+- [ ] `uv run python scripts/check_workshop_visuals.py` wrote `output/workshop-visual-proof.json`
