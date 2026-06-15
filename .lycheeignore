@@ -1,0 +1,10 @@
+# Local and placeholder hosts that are not externally reachable.
+^https?://localhost
+^https?://127\.0\.0\.1
+^https?://0\.0\.0\.0
+example\.com
+example\.ai\.azure\.com
+# Authenticated portals that always redirect to a login wall for anonymous bots.
+^https://portal\.azure\.com
+^https://app\.fabric\.microsoft\.com
+^https://ai\.azure\.com

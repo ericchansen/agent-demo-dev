@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": { "value": "${AZURE_LOCATION=eastus2}" },
+    "fabricCapacitySku": { "value": "${FABRIC_CAPACITY_SKU=F2}" },
+    "fabricCapacityName": { "value": "${FABRIC_CAPACITY_NAME}" },
+    "keyVaultName": { "value": "${KEY_VAULT_NAME}" },
+    "entraAppName": { "value": "${ENTRA_APP_NAME=FSA-WorkIQ-Agent}" },
+    "fabricAdminUpn": { "value": "${FABRIC_ADMIN_UPN=}" },
+    "storageAccountName": { "value": "${STORAGE_ACCOUNT_NAME}" },
+    "cogServicesName": { "value": "${COG_SERVICES_NAME}" },
+    "foundryHubCogServicesName": { "value": "${FOUNDRY_HUB_COG_SERVICES_NAME}" },
+    "foundryHubName": { "value": "${FOUNDRY_HUB_NAME=fabric-agent-hub}" },
+    "foundryProjectName": { "value": "${FOUNDRY_PROJECT_NAME=fsa-project}" },
+    "publicNetworkAccess": { "value": "${PUBLIC_NETWORK_ACCESS=Disabled}" },
+    "tags": { "value": {} }
+  }
+}

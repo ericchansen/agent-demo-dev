@@ -1,0 +1,34 @@
+{
+  "name": "agent-demo-dev",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/azure-cli:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/azure/azure-dev/azd:0": {}
+  },
+  "postCreateCommand": "python -m pip install --upgrade pip && pip install -e \".[dev]\" && (cd website && npm ci)",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "ms-azuretools.vscode-bicep",
+        "github.copilot",
+        "github.copilot-chat",
+        "github.vscode-github-actions"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true
+        }
+      }
+    }
+  },
+  "forwardPorts": [3000, 8000],
+  "remoteUser": "vscode"
+}
