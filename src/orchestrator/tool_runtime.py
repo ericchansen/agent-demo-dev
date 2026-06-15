@@ -19,6 +19,7 @@ from src.agents.quota_estimator.pipeline import (
 from src.orchestrator.tool_schemas import (
     ACCOUNT_ACTIVITY_SCHEMA,
     COMPUTE_ATTAINMENT_SCHEMA,
+    FABRIC_QUERY_SCHEMA,
     FORECAST_QUOTA_SCHEMA,
     GENERATE_QUOTA_ESTIMATION_REPORT_SCHEMA,
     GENERATE_REPORT_SCHEMA,
@@ -28,11 +29,13 @@ from src.orchestrator.tool_schemas import (
 __all__ = [
     "ACCOUNT_ACTIVITY_SCHEMA",
     "COMPUTE_ATTAINMENT_SCHEMA",
+    "FABRIC_QUERY_SCHEMA",
     "FORECAST_QUOTA_SCHEMA",
     "GENERATE_QUOTA_ESTIMATION_REPORT_SCHEMA",
     "GENERATE_REPORT_SCHEMA",
     "WEB_RESEARCH_SCHEMA",
     "compute_attainment_func",
+    "demo_fabric_query_func",
     "forecast_quota_func",
     "generate_quota_estimation_report_func",
     "generate_report_func",
@@ -43,6 +46,30 @@ __all__ = [
 _DEFAULT_REPORT_TEMPLATE = "account_plan.md"
 
 ToolHandler = Callable[[dict[str, Any]], dict[str, Any]]
+
+
+def demo_fabric_query_func(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Return demo-safe WWI sales rows for environments without a live Fabric connection.
+
+    The Foundry ``FabricIQPreviewTool`` and the hosted ``fabric_query`` MCP path both
+    require a provisioned Fabric Data Agent. This fallback lets the agent answer sales-data
+    questions (and feed the quota estimator) on day one of the workshop, before attendees
+    have wired Fabric IQ or Databricks Genie. Rows match the schema the quota tools expect:
+    territory, category, order_date, revenue, quantity.
+    """
+    question = str(arguments.get("question", "")).strip()
+    rows = demo_sales_rows()
+    return {
+        "status": "ok",
+        "source": "demo (no live Fabric connection configured)",
+        "question": question,
+        "rows": rows,
+        "row_count": len(rows),
+        "note": (
+            "Synthetic Wide World Importers sales rows. Configure FABRIC_IQ_CONNECTION_ID "
+            "(Fabric Data Agent) or a Databricks Genie connection to query real data."
+        ),
+    }
 
 
 def mock_workiq_func(arguments: dict[str, Any]) -> dict[str, Any]:

@@ -3,7 +3,7 @@
 This module defines the WWI prompt-agent used by the demo. The agent runs in Azure AI
 Foundry, queries structured sales data through Fabric IQ, optionally enriches account context
 with WorkIQ, and can invoke local Python tools for quota estimation and report generation.
-Local tools use strict JSON schemas so the model can call them reliably without exposing Python
+Local tools use JSON schemas so the model can call them reliably without exposing Python
 stack traces back to the conversation.
 """
 
@@ -37,9 +37,11 @@ from src.agents.quota_estimator.pipeline import (
     generate_quota_estimation_report,
 )
 from src.orchestrator.config import OrchestratorConfig
+from src.orchestrator.tool_runtime import demo_fabric_query_func
 from src.orchestrator.tool_schemas import (
     ACCOUNT_ACTIVITY_SCHEMA,
     COMPUTE_ATTAINMENT_SCHEMA,
+    FABRIC_QUERY_SCHEMA,
     FORECAST_QUOTA_SCHEMA,
     GENERATE_QUOTA_ESTIMATION_REPORT_SCHEMA,
     GENERATE_REPORT_SCHEMA,
@@ -93,12 +95,21 @@ _MARKET_DATA_INSTRUCTIONS = """
    - Cite SEC filing type and date in responses
    - Round large currency values to millions (e.g., $45,123M)"""
 
+_DEMO_DATA_INSTRUCTIONS = """
+
+DATA SOURCE NOTE: No live Fabric IQ or Databricks connection is configured for this project.
+Use the fabric_query tool to retrieve demo-safe Wide World Importers sales rows, then pass those
+rows to the quota tools. Clearly tell the user the figures are synthetic demo data and that wiring
+FABRIC_IQ_CONNECTION_ID (Fabric Data Agent) or a Databricks Genie connection unlocks real data."""
+
 
 def _build_agent_instructions(config: OrchestratorConfig) -> str:
     """Generate agent instructions based on which connections are configured."""
     instructions = _AGENT_INSTRUCTIONS
     if config.market_data_connection_id:
         instructions += _MARKET_DATA_INSTRUCTIONS
+    if not config.fabric_iq_connection_id:
+        instructions += _DEMO_DATA_INSTRUCTIONS
     return instructions
 
 
@@ -326,20 +337,19 @@ def _slugify_filename(value: str) -> str:
 
 
 def _build_function_tool(name: str, description: str, parameters: dict[str, Any]) -> FunctionTool:
-    """Create a strict function-tool definition for local Python handlers."""
-    return FunctionTool(name=name, description=description, parameters=parameters, strict=True)
+    """Create a function-tool definition for local Python handlers.
+
+    ``strict`` is False because several local tools expose optional parameters
+    (e.g. ``scenario``, ``data_source``). The Responses API strict mode requires
+    every property to appear in ``required``, which would forbid those optional
+    fields; non-strict mode keeps the tool contracts faithful to the handlers.
+    """
+    return FunctionTool(name=name, description=description, parameters=parameters, strict=False)
 
 
 def _build_tools(config: OrchestratorConfig) -> tuple[list[ToolDefinition], dict[str, ToolHandler]]:
     """Build the tool list and local function handlers for the prompt agent."""
-    tools: list[ToolDefinition] = [
-        FabricIQPreviewTool(
-            project_connection_id=config.fabric_iq_connection_id,
-            require_approval="never",
-            name="wwi_sales_data",
-            description="Query Wide World Importers sales data warehouse via Fabric Data Agent",
-        )
-    ]
+    tools: list[ToolDefinition] = []
     handlers: dict[str, ToolHandler] = {
         "forecast_quota": forecast_quota_func,
         "generate_quota_estimation_report": generate_quota_estimation_report_func,
@@ -347,6 +357,31 @@ def _build_tools(config: OrchestratorConfig) -> tuple[list[ToolDefinition], dict
         "web_research": web_research_func,
         "compute_quota_attainment": compute_attainment_func,
     }
+
+    # Sales data: prefer the Fabric IQ platform tool, fall back to a demo-safe
+    # function tool so the agent registers and answers in any Foundry project
+    # (and on day one of the workshop) before a Fabric connection exists.
+    if config.fabric_iq_connection_id:
+        tools.append(
+            FabricIQPreviewTool(
+                project_connection_id=config.fabric_iq_connection_id,
+                require_approval="never",
+                name="wwi_sales_data",
+                description="Query Wide World Importers sales data warehouse via Fabric Data Agent",
+            )
+        )
+    else:
+        tools.append(
+            _build_function_tool(
+                name="fabric_query",
+                description=(
+                    "Query Wide World Importers sales data. Returns demo-safe sales rows when no "
+                    "live Fabric IQ or Databricks connection is configured."
+                ),
+                parameters=FABRIC_QUERY_SCHEMA,
+            )
+        )
+        handlers["fabric_query"] = demo_fabric_query_func
 
     # Add market data tool if configured.
     if config.market_data_connection_id:

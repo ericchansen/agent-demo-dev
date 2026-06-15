@@ -364,6 +364,61 @@ def test_build_tools_without_workiq() -> None:
     assert "get_account_activity" in tool_names or "get_account_activity" in handlers
 
 
+def test_build_tools_with_fabric_connection_uses_platform_tool() -> None:
+    """A configured Fabric IQ connection registers the platform tool, not the fallback."""
+    module = _load_module("src.orchestrator.foundry_agent")
+    orchestrator_config = _load_attr("src.orchestrator.config", "OrchestratorConfig")
+
+    config = orchestrator_config(
+        foundry_project_endpoint="https://test.ai.azure.com/",
+        model_deployment_name="gpt-4o",
+        fabric_iq_connection_id="/subscriptions/x/connections/fabric",
+    )
+
+    tools, handlers = module._build_tools(config)
+    tool_names = {getattr(tool, "name", None) for tool in tools if getattr(tool, "name", None)}
+
+    assert "wwi_sales_data" in tool_names
+    assert "fabric_query" not in tool_names
+    assert "fabric_query" not in handlers
+
+
+def test_build_tools_without_fabric_connection_uses_demo_fallback() -> None:
+    """With no Fabric connection the agent still gets a working fabric_query function tool."""
+    module = _load_module("src.orchestrator.foundry_agent")
+    orchestrator_config = _load_attr("src.orchestrator.config", "OrchestratorConfig")
+
+    config = orchestrator_config(
+        foundry_project_endpoint="https://test.ai.azure.com/",
+        model_deployment_name="gpt-4o",
+        fabric_iq_connection_id=None,
+    )
+
+    tools, handlers = module._build_tools(config)
+    tool_names = {getattr(tool, "name", None) for tool in tools if getattr(tool, "name", None)}
+
+    assert "wwi_sales_data" not in tool_names
+    assert "fabric_query" in tool_names
+    assert "fabric_query" in handlers
+
+    result = handlers["fabric_query"]({"question": "Show me sales by territory"})
+    assert result["status"] == "ok"
+    assert result["row_count"] == len(result["rows"])
+    assert result["rows"], "demo fallback must return sales rows"
+
+
+def test_demo_fabric_query_func_returns_demo_rows() -> None:
+    """The demo fabric_query handler returns labelled synthetic sales rows."""
+    demo_fabric_query_func = _load_attr("src.orchestrator.tool_runtime", "demo_fabric_query_func")
+
+    result = demo_fabric_query_func({"question": "total revenue"})
+
+    assert "demo" in result["source"].lower()
+    assert isinstance(result["rows"], list) and result["rows"]
+    first = result["rows"][0]
+    assert {"territory", "order_date", "revenue"}.issubset(first.keys())
+
+
 def test_generate_quota_estimation_report_func_creates_artifacts(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

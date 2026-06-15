@@ -25,6 +25,18 @@ ACCOUNT_ACTIVITY_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+FABRIC_QUERY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "question": {
+            "type": "string",
+            "description": "Natural language question about WWI sales data.",
+        }
+    },
+    "required": ["question"],
+    "additionalProperties": False,
+}
+
 FORECAST_QUOTA_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
@@ -244,6 +256,7 @@ TOOL_NAMES: frozenset[str] = frozenset(
 __all__ = [
     "ACCOUNT_ACTIVITY_SCHEMA",
     "COMPUTE_ATTAINMENT_SCHEMA",
+    "FABRIC_QUERY_SCHEMA",
     "FORECAST_QUOTA_SCHEMA",
     "GENERATE_QUOTA_ESTIMATION_REPORT_SCHEMA",
     "GENERATE_REPORT_SCHEMA",

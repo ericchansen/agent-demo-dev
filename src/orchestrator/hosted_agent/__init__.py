@@ -13,6 +13,7 @@ from src.orchestrator.fabric_mcp_client import FabricMcpClient, FabricMcpConfigu
 from src.orchestrator.tool_runtime import (
     ACCOUNT_ACTIVITY_SCHEMA,
     COMPUTE_ATTAINMENT_SCHEMA,
+    FABRIC_QUERY_SCHEMA,
     FORECAST_QUOTA_SCHEMA,
     GENERATE_QUOTA_ESTIMATION_REPORT_SCHEMA,
     GENERATE_REPORT_SCHEMA,
@@ -72,17 +73,7 @@ TOOLS = [
     _function_tool(
         "fabric_query",
         "Query the WWI sales data warehouse via Fabric Data Agent MCP.",
-        {
-            "type": "object",
-            "properties": {
-                "question": {
-                    "type": "string",
-                    "description": "Natural language question about WWI sales data.",
-                }
-            },
-            "required": ["question"],
-            "additionalProperties": False,
-        },
+        FABRIC_QUERY_SCHEMA,
     ),
     _function_tool(
         "forecast_quota",
