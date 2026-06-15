@@ -141,7 +141,7 @@ The orchestrator registers both tools automatically and generates dynamic instru
 
 ### Adding More Companies
 
-Edit `demo/market-data/companies.csv` with additional CIK numbers from [SEC EDGAR Company Search](https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany). Then re-run the loader:
+Edit `demo/market-data/companies.csv` with additional CIK numbers from SEC EDGAR Company Search. Then re-run the loader:
 
 ```bash
 python demo/load-market-data.py --quarter 2024q4
