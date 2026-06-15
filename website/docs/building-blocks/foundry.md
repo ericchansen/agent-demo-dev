@@ -37,14 +37,14 @@ Platform tools handle authentication and data access automatically. Function too
 
 > 📖 [Function calling](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/function-calling) · [Code interpreter](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/code-interpreter)
 
-### Agent Applications
-An Agent Application is a published agent with:
+### Published agents for Microsoft 365
+A registered Foundry agent can be published to Microsoft 365 Copilot and Teams with:
 - **Entra identity** — its own app registration for auth
 - **Stable endpoint** — accessible from M365 Copilot, Teams, or direct API
 - **RBAC** — control who can discover and use the agent
 - **Monitoring** — usage metrics, error tracking, cost attribution
 
-> 📖 [Publishing agents](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot) · [Agent tracing](https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-agent-setup)
+> 📖 [Publish agents to Microsoft 365 Copilot and Teams](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot) · [Agent tracing](https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-agent-setup)
 
 ## How it fits in this accelerator
 
@@ -112,7 +112,7 @@ The agent's system prompt encodes the orchestration logic — when to call which
 | Added an MCP server | Register a platform/function tool |
 | Wrote a skill | Encode workflow in agent system prompt |
 | Tested with `copilot` | Test in Foundry playground |
-| Shared via `.github/mcp.json` | Publish as Agent Application |
+| Shared via `.github/mcp.json` | Publish the registered Foundry agent to Microsoft 365 |
 
 The mental model: CLI is your workbench, Foundry is your factory.
 

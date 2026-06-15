@@ -11,15 +11,15 @@ and ship it as a registered Azure AI Foundry agent, test it in the Playground, t
 to M365 Copilot and Teams. See the [Workshop Overview](../intro) for the full path.
 :::
 
-The Foundry surface publishes the agent as an Azure AI Foundry Agent Application, accessible through M365 Copilot Chat and Teams. This is the production deployment path for business users.
+The Foundry surface registers the agent in Azure AI Foundry, then publishes that agent to M365 Copilot Chat and Teams. This is the production deployment path for business users.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
     User["Business User"] --> M365["M365 Copilot Chat\nor Teams"]
-    M365 --> App["Agent Application\n(Entra identity)"]
-    App --> Foundry["Foundry Agent Service\n(Responses API)"]
+    M365 --> Published["Published Foundry agent\n(Entra identity + RBAC)"]
+    Published --> Foundry["Foundry Agent Service\n(Responses API)"]
     Foundry --> FIQ["FabricIQPreviewTool"]
     Foundry --> DBX["Databricks Genie\nfunction adapter"]
     Foundry --> WIQT["WorkIQPreviewTool"]
@@ -34,7 +34,7 @@ flowchart LR
 ## How it works
 
 1. User @mentions the agent in M365 Copilot Chat or Teams
-2. The Agent Application routes the request to the Foundry Agent Service
+2. The published Foundry agent routes the request to the Foundry Agent Service
 3. The Responses API matches intent to registered tools
 4. Platform tools (FabricIQ, WorkIQ) handle data access with built-in auth
 5. Custom function tools (report generator) execute business logic

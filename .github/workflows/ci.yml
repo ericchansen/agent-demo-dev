@@ -41,7 +41,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: website/package-lock.json
 
@@ -62,3 +62,27 @@ jobs:
         uses: azure/cli@v2
         with:
           inlineScript: az bicep build --file infra/main.bicep
+
+  hosted-agent-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build hosted agent image
+        run: docker build -f src/orchestrator/hosted_agent/Dockerfile -t wwi-hosted-agent:ci .
+
+      - name: Probe hosted agent health endpoints
+        run: |
+          set -euo pipefail
+          container_id="$(docker run -d -p 8080:8080 wwi-hosted-agent:ci)"
+          trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
+
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:8080/healthz >/tmp/healthz.json; then
+              break
+            fi
+            sleep 1
+          done
+
+          curl --fail --silent --show-error http://127.0.0.1:8080/healthz | tee /tmp/healthz.json
+          curl --fail --silent --show-error http://127.0.0.1:8080/readyz | tee /tmp/readyz.json

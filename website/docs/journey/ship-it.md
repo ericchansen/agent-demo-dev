@@ -117,9 +117,9 @@ compute health checks. The container responds to `/invoke` even without Azure cr
 falls back to a local deterministic adapter — set the Azure environment variables to route through a
 real model instead.
 
-### 2. Publish as an Agent Application
+### 2. Publish to Microsoft 365
 
-Once the agent works in the Foundry playground, publish it as an Agent Application:
+Once the agent works in the Foundry playground, use the current Foundry **Publish** flow to make the registered agent available in Microsoft 365 Copilot and Teams:
 
 - **Entra identity** — the agent gets its own app registration
 - **RBAC** — control who can use it
@@ -131,12 +131,12 @@ Use this checklist for the facilitator handoff:
 |---|---|---|
 | Register Bot Service provider | `az provider register --namespace Microsoft.BotService` then `az provider show --namespace Microsoft.BotService --query registrationState -o tsv` | State is `Registered`. |
 | Verify agent in Foundry | Run `uv run python scripts/verify_foundry_agent.py`, then open **Agents > WWISalesAgent > Playground**. | CLI prints `[OK] live registration + Playground response verified`; Playground returns an answer. |
-| Publish | In Foundry, choose **Publish** and select Microsoft 365 Copilot / Teams. | An Agent Application is created with an Entra identity. |
+| Publish | In Foundry, choose **Publish** and select Microsoft 365 Copilot / Teams. | The registered agent is published with an Entra identity and assignment surface. |
 | Assign users/groups | Add the workshop pilot group or test users to the application assignment/RBAC surface. | The same user who will demo can see the agent. |
 | Reassign data RBAC | Grant the agent identity the minimum Fabric workspace/Data Agent, Databricks, storage, and Graph permissions required for its tools. | The agent, not just the facilitator, can query data and write artifacts. |
 | Test business surface | In Teams or M365 Copilot Chat, @mention the agent with the Tailspin Toys prompt. | The published agent responds; if not, use Foundry Playground as the fallback surface. |
 
-> 📖 **Learn more:** [Publishing agent applications](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot) · [Entra app registration](https://learn.microsoft.com/entra/identity-platform/quickstart-register-app)
+> 📖 **Learn more:** [Publish agents to Microsoft 365 Copilot and Teams](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot) · [Entra app registration](https://learn.microsoft.com/entra/identity-platform/quickstart-register-app)
 
 ### 3. Use it in M365
 

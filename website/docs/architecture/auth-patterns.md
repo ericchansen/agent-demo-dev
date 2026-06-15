@@ -17,7 +17,7 @@ flowchart TD
     end
 
     subgraph Foundry["Foundry Surface"]
-        F_User["Business User"] -->|Entra SSO| F_App["Agent Application"]
+        F_User["Business User"] -->|Entra SSO| F_App["Published Foundry agent"]
         F_App -->|Managed Identity| F_Fabric["Fabric Data Agent"]
         F_App -->|OBO token| F_WIQ["WorkIQ"]
         F_App -->|OBO token| F_Graph["Graph API\n(OneDrive)"]

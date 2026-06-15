@@ -46,6 +46,7 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: '🛠️ Workshop Guide',
       items: [
+        'workshop/agenda',
         'workshop/facilitator-guide',
         'workshop/setup',
         'workshop/demo-script',

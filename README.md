@@ -9,7 +9,7 @@ An AI sales agent accelerator for **Wide World Importers** that shows how to pai
 ## The Two-Surface Approach
 
 - **Surface 1: GitHub Copilot CLI** — prototype quickly with MCP servers for Fabric or Databricks data, M365 activity context, and inline report generation.
-- **Surface 2: M365 Copilot + Teams** — graduate the same business flow into an Azure AI Foundry agent published through an Agent Application.
+- **Surface 2: M365 Copilot + Teams** — graduate the same business flow into a registered Azure AI Foundry agent and publish it to Microsoft 365 Copilot and Teams.
 - **WorkIQ note:** production uses WorkIQ for M365 activity context; the demo tenant uses a mock WorkIQ tool with sample activity data until tenant provisioning is available.
 
 ## Architecture diagram

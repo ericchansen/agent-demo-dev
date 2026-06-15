@@ -3,7 +3,7 @@
 This repo narrows the demo story to two surfaces that share the same **Wide World Importers** sales workflow:
 
 - **Prototype surface:** GitHub Copilot CLI with MCP servers
-- **Production surface:** Azure AI Foundry agent published to **M365 Copilot + Teams** through an Agent Application
+- **Production surface:** Azure AI Foundry agent published to **M365 Copilot + Teams** through the current Foundry publish flow
 
 The important idea is not two separate products. It is **one business flow** that starts in the terminal, proves out the tools quickly, and then graduates into a managed M365 experience.
 
@@ -15,7 +15,7 @@ The important idea is not two separate products. It is **one business flow** tha
 | M365 activity context | `workiq` MCP server (**mocked in demo**) | `WorkIQPreviewTool` | Production target is WorkIQ with OBO auth; demo tenant uses sample activity payloads |
 | Report generation | `quota-forecast` skill returns inline markdown / summary | Custom function tool generates DOCX locally (deploy with OneDrive upload for sharing links) | Same reporting logic, different delivery format |
 | Tool bridging during migration | Existing MCP servers | `MCPTool` | Useful when you want to reuse an MCP endpoint before converting it to a native platform tool or custom function |
-| Agent packaging | CLI skill + local MCP config | `PromptAgentDefinition` + Agent Application publish | Same instructions can move from prototype prompt to managed agent definition |
+| Agent packaging | CLI skill + local MCP config | `PromptAgentDefinition` + Foundry publish flow | Same instructions can move from prototype prompt to managed agent definition |
 
 ## Prototype → Graduate Narrative
 
@@ -42,7 +42,7 @@ Once the flow is proven:
 - Replace CLI MCP usage with **`FabricIQPreviewTool`** and **`WorkIQPreviewTool`**
 - Move report creation into **custom function tools**
 - Wrap the instructions and tools in **`PromptAgentDefinition`**
-- Publish through an **Agent Application** so business users can reach it from **M365 Copilot** and **Teams**
+- Publish the registered Foundry agent so business users can reach it from **M365 Copilot** and **Teams**
 
 ### 4. Keep WorkIQ honest in the demo
 
@@ -115,7 +115,7 @@ with (
 
 If you want an intermediate migration step, `MCPTool` can bridge an existing MCP endpoint into Foundry before you replace it with a native platform tool or custom function.
 
-The user question stays effectively the same. What changes is the **distribution model**: CLI during prototyping, Foundry + Agent Application for M365 Copilot and Teams.
+The user question stays effectively the same. What changes is the **distribution model**: CLI during prototyping, then a registered Foundry agent published to M365 Copilot and Teams.
 
 ## Demo Scope Reminder
 

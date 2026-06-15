@@ -1,9 +1,8 @@
 name: Link Check
 
 # Validates external and internal links across the workshop docs. Runs on a weekly
-# schedule and on demand. It is intentionally NOT wired into the required CI gate:
-# external Microsoft/docs links transiently rate-limit (429) or block bots (403), so
-# this job reports findings without failing the build until the schedule proves stable.
+# schedule and on demand. It is intentionally separate from the required CI gate,
+# but scheduled/manual runs fail when public links or fragments break.
 
 on:
   schedule:
@@ -38,6 +37,7 @@ jobs:
             --retry-wait-time 10
             --timeout 20
             --accept 200,206,403,429
+            --include-fragments
             --exclude-mail
             --no-progress
             "docs/**/*.md"
@@ -45,5 +45,5 @@ jobs:
             "website/docs/**/*.mdx"
             "README.md"
             "CONTRIBUTING.md"
-          fail: false
+          fail: true
           jobSummary: true
