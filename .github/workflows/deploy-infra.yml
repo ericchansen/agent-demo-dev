@@ -47,9 +47,10 @@ jobs:
         with:
           inlineScript: |
             for attempt in 1 2 3 4 5 6 7 8 9 10; do
-              if az fabric capacity resume \
-                --resource-group rg-fabric-agent-dev \
-                --capacity-name fabricagentdemodev; then
+              if az resource invoke-action \
+                --ids /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-fabric-agent-dev/providers/Microsoft.Fabric/capacities/fabricagentdemodev \
+                --action resume \
+                --api-version 2023-11-01; then
                 exit 0
               fi
               echo "Fabric capacity resume attempt ${attempt} failed; waiting before retry."
@@ -73,9 +74,10 @@ jobs:
         with:
           inlineScript: |
             for attempt in 1 2 3 4 5; do
-              if az fabric capacity suspend \
-                --resource-group rg-fabric-agent-dev \
-                --capacity-name fabricagentdemodev; then
+              if az resource invoke-action \
+                --ids /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-fabric-agent-dev/providers/Microsoft.Fabric/capacities/fabricagentdemodev \
+                --action suspend \
+                --api-version 2023-11-01; then
                 exit 0
               fi
               echo "Fabric capacity suspend attempt ${attempt} failed; waiting before retry."
