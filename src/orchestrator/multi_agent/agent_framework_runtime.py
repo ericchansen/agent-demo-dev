@@ -1,4 +1,17 @@
-"""Optional Microsoft Agent Framework runtime for the quota multi-agent path."""
+"""Optional Microsoft Agent Framework runtime for the quota multi-agent path.
+
+Two runtimes back the multi-agent pipeline, selected by the
+``WWI_MULTI_AGENT_RUNTIME`` environment variable (or the ``--runtime`` CLI flag):
+
+- ``deterministic`` (the default) is a fully **offline** pipeline that mirrors the
+  single-agent quota flow with fixed routing. It makes **no model call** and needs
+  **no Azure credentials**, producing identical artifacts on every run. This is the
+  path exercised by CI and offline demos; a green run is *not* proof that a live model
+  was invoked.
+- ``agent-framework`` is the **live** path implemented here. It requires the optional
+  ``agent-framework`` extra, a Foundry project endpoint, a model deployment, and
+  ``DefaultAzureCredential``. Only this runtime actually invokes a model.
+"""
 
 from __future__ import annotations
 

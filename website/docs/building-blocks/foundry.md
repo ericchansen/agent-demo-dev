@@ -81,6 +81,19 @@ Run it locally before registering agents in Foundry:
 uv run python -m src.orchestrator.multi_agent "Generate a quota report for Tailspin Toys" --customer "Tailspin Toys" --data-source databricks
 ```
 
+:::note Which runtime actually runs?
+The `WWI_MULTI_AGENT_RUNTIME` switch (or `--runtime`) selects how the pipeline executes:
+
+| Runtime | Default? | What it is |
+|---|---|---|
+| `deterministic` | ✅ Yes | A fully **offline** pipeline that mirrors the single-agent quota flow with fixed routing — **no model call, no Azure credentials**. It produces identical artifacts every run, which is what CI and offline demos exercise. |
+| `agent-framework` | No | The **live** Microsoft Agent Framework path (`agent-framework` extra). Requires a Foundry project endpoint, a model deployment, and `DefaultAzureCredential`; this is the only mode that actually invokes a model. |
+
+The deterministic default is intentional for reproducible demos — do not read a green
+CI run as proof that the live Agent Framework orchestration ran. Set
+`WWI_MULTI_AGENT_RUNTIME=agent-framework` with Azure configured to exercise the real path.
+:::
+
 #### Adapter modes
 
 `process_invocation()` resolves a chat adapter through `build_adapter()`, selected by the `HOSTED_AGENT_ADAPTER` environment variable:

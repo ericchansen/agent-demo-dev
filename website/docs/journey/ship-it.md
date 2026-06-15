@@ -136,7 +136,21 @@ Use this checklist for the facilitator handoff:
 | Reassign data RBAC | Grant the agent identity the minimum Fabric workspace/Data Agent, Databricks, storage, and Graph permissions required for its tools. | The agent, not just the facilitator, can query data and write artifacts. |
 | Test business surface | In Teams or M365 Copilot Chat, @mention the agent with the Tailspin Toys prompt. | The published agent responds; if not, use Foundry Playground as the fallback surface. |
 
-> 📖 **Learn more:** [Publish agents to Microsoft 365 Copilot and Teams](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot) · [Entra app registration](https://learn.microsoft.com/entra/identity-platform/quickstart-register-app)
+:::warning Publish preflight — read before you click Publish
+- **Select the active version.** Publishing targets a specific agent version. Confirm the
+  version you verified (`[register] created WWISalesAgent version N`) is set active before publishing,
+  or the business surface may serve a stale definition.
+- **Choose the right scope.** **"Just you"** is the no-admin demo path — pick it for the workshop so you
+  don't wait on a tenant admin. **Organization** scope requires admin approval and can block the demo.
+- **Reassign downstream RBAC to the *agent* identity, not yours.** The published agent gets its own Entra
+  identity; the facilitator's permissions do not carry over. Grant the agent identity the Fabric / Databricks /
+  storage / Graph access its tools need, or live calls fail even though the Playground worked.
+- **Published-surface limitations.** Published M365/Teams agents **do not support response streaming or inline
+  citations** today — answers arrive as a single block. Keep the Foundry Playground as the demo fallback when you
+  want to show traces and citations.
+:::
+
+> 📖 **Learn more:** [Publish agents to Microsoft 365 Copilot and Teams](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot) · [Agent identity](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/agent-identity) · [Entra app registration](https://learn.microsoft.com/entra/identity-platform/quickstart-register-app)
 
 ### 3. Use it in M365
 
