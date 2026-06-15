@@ -2,6 +2,7 @@
 # Core
 azure-ai-projects>=2.2.0
 azure-ai-agentserver-invocations>=1.0.0b5,<2.0.0
+azure-ai-agentserver-responses>=1.0.0b5,<2.0.0
 azure-identity>=1.15.0
 openai>=1.40.0
 

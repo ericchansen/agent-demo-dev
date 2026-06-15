@@ -40,7 +40,11 @@ def test_multi_agent_pipeline_supports_databricks_rows(tmp_path: Path) -> None:
     quota_report = result["quota_report"]
     assert isinstance(quota_report, dict)
     assert result["data_source"] == "databricks"
-    assert any("source_platform" in row for row in result["sales_rows"])
+    assert all(
+        {"territory", "category", "order_date", "revenue", "quantity", "source_platform"}.issubset(row)
+        for row in result["sales_rows"]
+    )
+    assert {row["source_platform"] for row in result["sales_rows"]} == {"databricks"}
     assert "Databricks Genie" in str(quota_report["methodology"])
 
 

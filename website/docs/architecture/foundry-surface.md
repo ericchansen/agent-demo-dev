@@ -228,18 +228,19 @@ References (verified 2026):
 
 The hosted agent ships a deployment manifest at
 [`src/orchestrator/hosted_agent/agent.yaml`](https://github.com/ericchansen/agent-demo-dev/blob/main/src/orchestrator/hosted_agent/agent.yaml).
-Azure AI Foundry Hosted Agents must declare a supported container **protocol** —
-a bare `/invoke` route is not deployable on its own. The manifest declares the
-`invocations` protocol bound to the `POST /invoke` route implemented in
-`server.route_request`, plus `/healthz` (liveness) and `/readyz` (readiness)
-probes. A unit test (`tests/unit/test_hosted_agent_manifest.py`) keeps the
-manifest and server contract in sync.
+Azure AI Foundry Hosted Agents must declare supported container **protocols**. Current
+Foundry docs recommend **Responses** for conversational agents; when published to
+Microsoft 365 Copilot or Teams, Foundry bridges Responses to the **Activity** protocol
+for channel delivery. The manifest therefore declares both `responses` and
+`invocations`: `POST /responses` is the hosted conversational surface, while
+`POST /invoke` stays available for non-conversational automation and custom callers.
+`/healthz` and `/readyz` remain the liveness/readiness probes. A unit test
+(`tests/unit/test_hosted_agent_manifest.py`) keeps the manifest and server contract in sync.
 
 | Manifest field | Value | Served by |
 |---|---|---|
-| `protocols[].type` | `invocations` | `POST /invoke` (and `/`) |
-| `protocols[].request.fields` | `input`, `message` | JSON body parsing |
-| `protocols[].response.field` | `output` | JSON response |
+| `protocols[].protocol` | `responses` | `POST /responses` (OpenAI-compatible non-streaming response) |
+| `protocols[].protocol` | `invocations` | `POST /invoke` (and `/`) |
 | `health.liveness` | `/healthz` | `GET /healthz` |
 | `health.readiness` | `/readyz` | `GET /readyz` |
 
@@ -253,6 +254,11 @@ Set these environment variables on the hosted container:
 | `MODEL_DEPLOYMENT` | Model deployment name, defaulting to `gpt-4o` |
 | `HOSTED_AGENT_OUTPUT_DIR` | Output directory for generated quota artifacts |
 | `COPILOT_HOME` | Optional credential/cache path if your Copilot SDK adapter requires it |
+
+> **Publish note.** `scripts/verify_foundry_agent.py` verifies the prompt-agent registration and Playground-style
+> Responses API query. That prompt agent is useful for Day 2 teaching, but the production M365/Teams hosted path
+> is `WWISalesHostedAgent` with the Responses protocol declared above; Hosted Agents receive their dedicated Entra
+> agent identity when deployed to Foundry managed hosting.
 
 ## When to use the Foundry surface
 

@@ -45,6 +45,36 @@ def test_post_invocation_success() -> None:
     assert payload == {"output": "echo:hello"}
 
 
+def test_post_responses_success_with_string_input() -> None:
+    body = json.dumps({"input": "hello", "model": "gpt-4o"}).encode("utf-8")
+    headers = {"Content-Type": "application/json"}
+    status, payload, _ = server.route_request("POST", "/responses", headers, body, invoke=_invoke_ok)
+    assert status == 200
+    assert payload["object"] == "response"
+    assert payload["output_text"] == "echo:hello"
+
+
+def test_post_responses_success_with_message_list() -> None:
+    body = json.dumps(
+        {
+            "input": [
+                {"role": "system", "content": "ignored"},
+                {"role": "user", "content": [{"type": "input_text", "text": "hello"}]},
+            ]
+        }
+    ).encode("utf-8")
+    status, payload, _ = server.route_request("POST", "/openai/responses", {}, body, invoke=_invoke_ok)
+    assert status == 200
+    assert payload["output_text"] == "echo:hello"
+
+
+def test_post_responses_rejects_streaming_until_protocol_library_is_enabled() -> None:
+    body = json.dumps({"input": "hello", "stream": True}).encode("utf-8")
+    status, payload, _ = server.route_request("POST", "/responses", {}, body, invoke=_invoke_ok)
+    assert status == 400
+    assert payload["error"] == "streaming_not_supported"
+
+
 def test_post_accepts_message_alias_and_root_path() -> None:
     body = json.dumps({"message": "hi"}).encode("utf-8")
     status, payload, _ = server.route_request("POST", "/", {}, body, invoke=_invoke_ok)

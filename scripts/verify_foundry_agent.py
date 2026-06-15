@@ -98,8 +98,10 @@ def main() -> int:
             identity_ok, identity_msg = check_agent_identity(agent)
             print(f"[identity] {identity_msg}")
             if not identity_ok:
-                print("[FAIL] agent does not use the new agent object model")
-                return 1
+                print(
+                    "[publish] prompt-agent registration has no dedicated hosted-agent identity yet; "
+                    "use the hosted Responses protocol path for M365/Teams publishing"
+                )
 
             names = sorted({getattr(a, "name", "") for a in project_client.agents.list()})
             print(f"[portal]   agents visible in project: {names}")

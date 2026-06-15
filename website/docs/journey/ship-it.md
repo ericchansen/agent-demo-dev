@@ -104,18 +104,23 @@ docker run -d --name wwi-agent -p 8080:8080 wwi-hosted-agent
 curl http://127.0.0.1:8080/healthz   # -> {"status": "alive"}
 curl http://127.0.0.1:8080/readyz    # -> {"status": "ready", "adapter": "local-runtime"}
 
-# Invoke (LocalDeterministicAdapter answers without Azure creds)
+# Invoke custom automation (LocalDeterministicAdapter answers without Azure creds)
 curl -X POST http://127.0.0.1:8080/invoke -H "Content-Type: application/json" `
   -d '{"input":"Generate a base quota estimation report for Wide World Importers"}'
 # -> {"output": "Generated a quota estimation report ... Artifacts: { xlsx, html, pdf }"}
+
+# Invoke the Hosted Agents Responses protocol used by Foundry/M365
+curl -X POST http://127.0.0.1:8080/responses -H "Content-Type: application/json" `
+  -d '{"input":"Generate a base quota estimation report for Wide World Importers","model":"gpt-4o"}'
+# -> {"object":"response","status":"completed","output_text":"Generated ..."}
 
 docker rm -f wwi-agent
 ```
 
 `/healthz` is the liveness probe and `/readyz` is the readiness probe; wire both into your managed
-compute health checks. The container responds to `/invoke` even without Azure credentials because it
-falls back to a local deterministic adapter — set the Azure environment variables to route through a
-real model instead.
+compute health checks. The container responds to both `/responses` (conversational Hosted Agent protocol)
+and `/invoke` (custom automation protocol) even without Azure credentials because it falls back to a local
+deterministic adapter — set the Azure environment variables to route through a real model instead.
 
 ### 2. Publish to Microsoft 365
 
@@ -130,8 +135,9 @@ Use this checklist for the facilitator handoff:
 | Step | Command or portal action | Proof |
 |---|---|---|
 | Register Bot Service provider | `az provider register --namespace Microsoft.BotService` then `az provider show --namespace Microsoft.BotService --query registrationState -o tsv` | State is `Registered`. |
-| Verify agent in Foundry | Run `uv run python scripts/verify_foundry_agent.py`, then open **Agents > WWISalesAgent > Playground**. | CLI prints `[OK] live registration + Playground response verified`; Playground returns an answer. |
-| Publish | In Foundry, choose **Publish** and select Microsoft 365 Copilot / Teams. | The registered agent is published with an Entra identity and assignment surface. |
+| Verify prompt agent in Foundry | Run `uv run python scripts/verify_foundry_agent.py`, then open **Agents > WWISalesAgent > Playground**. | CLI prints `[OK] live registration + Playground response verified`; Playground returns an answer. |
+| Deploy hosted agent | Build/push the hosted container and deploy `src/orchestrator/hosted_agent/agent.yaml` so `WWISalesHostedAgent` exposes `responses` and `invocations`. | Foundry shows a hosted agent endpoint and a dedicated agent identity. |
+| Publish | In Foundry, choose **Publish** and select Microsoft 365 Copilot / Teams. | The hosted Responses endpoint is published with an Entra identity and assignment surface. |
 | Assign users/groups | Add the workshop pilot group or test users to the application assignment/RBAC surface. | The same user who will demo can see the agent. |
 | Reassign data RBAC | Grant the agent identity the minimum Fabric workspace/Data Agent, Databricks, storage, and Graph permissions required for its tools. | The agent, not just the facilitator, can query data and write artifacts. |
 | Test business surface | In Teams or M365 Copilot Chat, @mention the agent with the Tailspin Toys prompt. | The published agent responds; if not, use Foundry Playground as the fallback surface. |

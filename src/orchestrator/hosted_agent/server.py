@@ -11,6 +11,7 @@ Endpoints:
     GET  /readyz    -> readiness probe (reports adapter selection)
     POST /          -> agent invocation (alias of /invoke)
     POST /invoke    -> agent invocation
+    POST /responses -> OpenAI-compatible Responses protocol for Hosted Agents
 
 Every response carries an ``X-Request-Id`` header: the inbound value is echoed
 when supplied, otherwise a fresh UUID is generated for log correlation.
@@ -38,6 +39,7 @@ REQUEST_ID_HEADER = "X-Request-Id"
 MAX_PAYLOAD_BYTES = 1_048_576
 
 InvokeFn = Callable[[str], str]
+_RESPONSES_ROUTES = {"/responses", "/openai/responses", "/v1/responses"}
 
 
 def _header(headers: Mapping[str, str], name: str) -> str | None:
@@ -71,6 +73,62 @@ def _readiness_detail() -> str:
     return type(adapter).__name__ if adapter is not None else "local-runtime"
 
 
+def _extract_response_input(payload: dict[str, Any]) -> str:
+    """Return the latest user text from an OpenAI Responses-style payload."""
+    raw_input = payload.get("input", payload.get("message", ""))
+    if isinstance(raw_input, str):
+        return raw_input.strip()
+
+    if isinstance(raw_input, list):
+        chunks: list[str] = []
+        for item in raw_input:
+            if not isinstance(item, dict):
+                continue
+            role = item.get("role")
+            if role not in (None, "user"):
+                continue
+            content = item.get("content", "")
+            if isinstance(content, str):
+                chunks.append(content)
+                continue
+            if isinstance(content, list):
+                for part in content:
+                    if isinstance(part, dict):
+                        text = part.get("text") or part.get("content")
+                        if isinstance(text, str):
+                            chunks.append(text)
+        return "\n".join(chunk for chunk in chunks if chunk.strip()).strip()
+
+    return ""
+
+
+def _responses_payload(result: str, request_id: str, model: str | None = None) -> dict[str, Any]:
+    """Build a compact non-streaming Responses API payload."""
+    response_key = request_id.replace("-", "")[:24]
+    return {
+        "id": f"resp_{response_key}",
+        "object": "response",
+        "created_at": 0,
+        "status": "completed",
+        "model": model or "wwi-hosted-agent",
+        "output_text": result,
+        "output": [
+            {
+                "id": f"msg_{response_key}",
+                "type": "message",
+                "status": "completed",
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "output_text",
+                        "text": result,
+                    }
+                ],
+            }
+        ],
+    }
+
+
 def route_request(
     method: str,
     path: str,
@@ -93,7 +151,7 @@ def route_request(
         return 404, {"error": "not_found", "path": route}, request_id
 
     if method == "POST":
-        if route not in ("/", "/invoke"):
+        if route not in ("/", "/invoke", *_RESPONSES_ROUTES):
             return 404, {"error": "not_found", "path": route}, request_id
 
         if len(body) > MAX_PAYLOAD_BYTES:
@@ -119,7 +177,12 @@ def route_request(
         if not isinstance(payload, dict):
             return 400, {"error": "invalid_payload", "expected": "json object"}, request_id
 
-        user_message = str(payload.get("input", payload.get("message", ""))).strip()
+        if route in _RESPONSES_ROUTES:
+            if payload.get("stream") is True:
+                return 400, {"error": "streaming_not_supported", "expected": "stream=false"}, request_id
+            user_message = _extract_response_input(payload)
+        else:
+            user_message = str(payload.get("input", payload.get("message", ""))).strip()
         if not user_message:
             return (
                 400,
@@ -132,6 +195,8 @@ def route_request(
         except Exception:
             logger.exception("Invocation failed (request_id=%s)", request_id)
             return 500, {"error": "internal_server_error"}, request_id
+        if route in _RESPONSES_ROUTES:
+            return 200, _responses_payload(result, request_id, str(payload.get("model") or "")), request_id
         return 200, {"output": result}, request_id
 
     return 405, {"error": "method_not_allowed", "method": method}, request_id

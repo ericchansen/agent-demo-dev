@@ -27,43 +27,58 @@ def _load_manifest() -> dict:
 def test_manifest_exists_and_parses() -> None:
     manifest = _load_manifest()
     assert manifest["name"]
-    assert manifest["runtime"]["port"] == server.PORT
+    assert manifest["kind"] == "hosted"
+    assert manifest["resources"]["cpu"]
 
 
 def test_declared_protocol_path_is_served() -> None:
     manifest = _load_manifest()
     protocols = manifest["protocols"]
     assert protocols, "at least one protocol must be declared"
-    invocation = next(p for p in protocols if p["type"] == "invocations")
-    declared_path = invocation["path"]
+    declared = {p["protocol"] for p in protocols}
+    assert {"responses", "invocations"}.issubset(declared)
 
-    # The declared invocation route must actually accept a POST on the server.
-    status, _, _ = server.route_request(
-        "POST",
-        declared_path,
-        {"Content-Type": "application/json"},
-        b'{"input": "ping"}',
-    )
-    assert status != 404, f"declared protocol path {declared_path} is not served"
+    # The declared protocol routes must actually accept POSTs on the server.
+    for route in ("/responses", "/invoke"):
+        status, _, _ = server.route_request(
+            "POST",
+            route,
+            {"Content-Type": "application/json"},
+            b'{"input": "ping"}',
+        )
+        assert status != 404, f"declared protocol route {route} is not served"
 
 
 def test_request_response_fields_match_server() -> None:
     manifest = _load_manifest()
-    invocation = next(p for p in manifest["protocols"] if p["type"] == "invocations")
+    assert any(p["protocol"] == "invocations" for p in manifest["protocols"])
 
-    request_fields = set(invocation["request"]["fields"])
-    assert {"input", "message"}.issubset(request_fields)
-
-    response_field = invocation["response"]["field"]
     status, payload, _ = server.route_request(
         "POST",
-        invocation["path"],
+        "/invoke",
         {"Content-Type": "application/json"},
         b'{"input": "ping"}',
         invoke=lambda message: f"echo:{message}",
     )
     assert status == 200
-    assert response_field in payload
+    assert payload["output"] == "echo:ping"
+
+
+def test_responses_protocol_returns_openai_compatible_payload() -> None:
+    status, payload, _ = server.route_request(
+        "POST",
+        "/responses",
+        {"Content-Type": "application/json"},
+        b'{"input": [{"role": "user", "content": "ping"}], "model": "gpt-4o"}',
+        invoke=lambda message: f"echo:{message}",
+    )
+
+    assert status == 200
+    assert payload["object"] == "response"
+    assert payload["status"] == "completed"
+    assert payload["model"] == "gpt-4o"
+    assert payload["output_text"] == "echo:ping"
+    assert payload["output"][0]["content"][0]["text"] == "echo:ping"
 
 
 def test_health_routes_match_manifest() -> None:

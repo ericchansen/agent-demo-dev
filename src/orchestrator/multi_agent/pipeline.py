@@ -174,20 +174,8 @@ def run_multi_agent_pipeline(
 
 def _demo_data_agent(customer_name: str, data_source: str) -> list[Mapping[str, object]]:
     rows = demo_sales_rows()
-    if data_source.strip().lower() == "databricks":
-        return [
-            {
-                "sales_territory": row["territory"],
-                "productCategory": row["category"],
-                "orderDate": row["order_date"],
-                "net_sales_amount": row["revenue"],
-                "units_sold": row["quantity"],
-                "source_platform": "databricks",
-                "customer_name": customer_name,
-            }
-            for row in rows
-        ]
-    return [dict(row, customer_name=customer_name, source_platform="fabric") for row in rows]
+    source_platform = "databricks" if data_source.strip().lower() == "databricks" else "fabric"
+    return [dict(row, customer_name=customer_name, source_platform=source_platform) for row in rows]
 
 
 def _demo_research_agent(customer_name: str, user_message: str) -> Mapping[str, object]:
