@@ -116,8 +116,8 @@ function HomepageHeader() {
         <div className={styles.buttons}>
           <Link
             className="button button--primary button--lg"
-            to="/docs/journey/from-chat-to-agent">
-            Start the Journey
+            to="/docs/intro">
+            Start the Workshop
           </Link>
           <Link
             className="button button--secondary button--lg"

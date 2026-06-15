@@ -65,6 +65,10 @@ const config: Config = {
           title: 'Workshop',
           items: [
             {
+              label: 'Workshop Overview',
+              to: '/docs/intro',
+            },
+            {
               label: 'Start the Journey',
               to: '/docs/journey/from-chat-to-agent',
             },
