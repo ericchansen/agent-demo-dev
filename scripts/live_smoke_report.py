@@ -80,8 +80,9 @@ def build_report(env: Mapping[str, str]) -> dict[str, object]:
             "Databricks Genie query",
             env.get("DATABRICKS_RESULT", ""),
             env.get("DATABRICKS_CONFIGURED", ""),
-            "Set DATABRICKS_GENIE_MCP_URL for managed MCP, or DATABRICKS_WORKSPACE_URL and "
-            "DATABRICKS_GENIE_SPACE_ID for SDK-direct.",
+            "Set DATABRICKS_GENIE_MCP_URL + DATABRICKS_HOST for managed MCP, or DATABRICKS_WORKSPACE_URL "
+            "+ DATABRICKS_GENIE_SPACE_ID for SDK-direct; then add DATABRICKS_TOKEN or "
+            "DATABRICKS_CLIENT_ID + DATABRICKS_CLIENT_SECRET for auth.",
             required=require_databricks,
         )
     )

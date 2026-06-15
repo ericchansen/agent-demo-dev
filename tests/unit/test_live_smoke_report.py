@@ -98,6 +98,7 @@ def test_build_report_selective_backend_fails_when_required_platform_missing() -
     checks = {check["name"]: check for check in report["checks"]}
     assert checks["Databricks Genie query"]["status"] == "skipped"
     assert checks["Databricks Genie query"]["required"] is True
+    assert "DATABRICKS_CLIENT_ID" in checks["Databricks Genie query"]["detail"]
 
 
 def test_render_summary_includes_mode_and_totals() -> None:
