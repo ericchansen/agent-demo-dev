@@ -12,8 +12,9 @@ from __future__ import annotations
 import json
 import logging
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from datetime import datetime
+from hashlib import sha256
 from pathlib import Path
 from typing import Any, cast
 
@@ -55,6 +56,7 @@ logger = logging.getLogger(__name__)
 _AGENT_NAME = "WWISalesAgent"
 _DEFAULT_REPORT_TEMPLATE = "account_plan.md"
 _MAX_FUNCTION_CALL_ROUNDS = 15
+_DEFINITION_FINGERPRINT_PREFIX = "FSA_DEFINITION_SHA256:"
 
 _AGENT_INSTRUCTIONS = """You are a sales analyst for Wide World Importers (WWI), a wholesale novelty goods company.
 
@@ -105,13 +107,15 @@ rows to the quota tools. Clearly tell the user the figures are synthetic demo da
 FABRIC_IQ_CONNECTION_ID (Fabric Data Agent) or a Databricks Genie connection unlocks real data."""
 
 
-def _build_agent_instructions(config: OrchestratorConfig) -> str:
+def _build_agent_instructions(config: OrchestratorConfig, fingerprint: str | None = None) -> str:
     """Generate agent instructions based on which connections are configured."""
     instructions = _AGENT_INSTRUCTIONS
     if config.market_data_connection_id:
         instructions += _MARKET_DATA_INSTRUCTIONS
     if not config.fabric_iq_connection_id:
         instructions += _DEMO_DATA_INSTRUCTIONS
+    if fingerprint:
+        instructions += f"\n\n<!-- {_DEFINITION_FINGERPRINT_PREFIX}{fingerprint} -->"
     return instructions
 
 
@@ -462,18 +466,66 @@ def _build_tools(config: OrchestratorConfig) -> tuple[list[ToolDefinition], dict
     return tools, handlers
 
 
+def _tool_fingerprint(tools: Iterable[ToolDefinition]) -> list[dict[str, object]]:
+    tool_data: list[dict[str, object]] = []
+    for tool in tools:
+        name = getattr(tool, "name", None)
+        tool_type = getattr(tool, "type", None) or tool.__class__.__name__
+        tool_data.append({"name": str(name), "type": str(tool_type)})
+    return sorted(tool_data, key=lambda item: (str(item["type"]), str(item["name"])))
+
+
+def _definition_fingerprint(config: OrchestratorConfig, tools: Iterable[ToolDefinition]) -> str:
+    """Return a stable hash for agent instructions, model, and registered tool names."""
+
+    payload = {
+        "model": config.model_deployment_name,
+        "instructions": _build_agent_instructions(config),
+        "tools": _tool_fingerprint(tools),
+    }
+    raw = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+
+def _agent_instructions(agent: PromptAgent) -> str:
+    definition = getattr(agent, "definition", None)
+    instructions = getattr(definition, "instructions", None)
+    if isinstance(instructions, str):
+        return instructions
+    instructions = getattr(agent, "instructions", None)
+    return instructions if isinstance(instructions, str) else ""
+
+
+def _find_matching_agent(project_client: AIProjectClient, fingerprint: str) -> PromptAgent | None:
+    marker = f"{_DEFINITION_FINGERPRINT_PREFIX}{fingerprint}"
+    try:
+        agents = project_client.agents.list()
+    except Exception:  # pragma: no cover - live SDK/list failures should fall back to creating a version.
+        logger.exception("Unable to list existing Foundry agents; creating a fresh version.")
+        return None
+
+    for agent in agents:
+        if getattr(agent, "name", None) == _AGENT_NAME and marker in _agent_instructions(agent):
+            return agent
+    return None
+
+
 def _get_or_create_agent(project_client: AIProjectClient, config: OrchestratorConfig) -> PromptAgent:
-    """Create a fresh agent version so config and tool changes are always applied."""
-    logger.info(
-        "Creating fresh version of agent %s; clean up unused historical versions in Azure AI Foundry as needed.",
-        _AGENT_NAME,
-    )
+    """Reuse a matching agent version or create one when instructions/tools changed."""
     tools, handlers = _build_tools(config)
+    fingerprint = _definition_fingerprint(config, tools)
+    existing = _find_matching_agent(project_client, fingerprint)
+    if existing is not None:
+        logger.info("Reusing existing Foundry agent %s with definition fingerprint %s.", _AGENT_NAME, fingerprint)
+        setattr(existing, "_local_function_handlers", handlers)
+        return existing
+
+    logger.info("Creating agent %s with definition fingerprint %s.", _AGENT_NAME, fingerprint)
     agent = project_client.agents.create_version(
         agent_name=_AGENT_NAME,
         definition=PromptAgentDefinition(
             model=config.model_deployment_name,
-            instructions=_build_agent_instructions(config),
+            instructions=_build_agent_instructions(config, fingerprint),
             tools=cast(list[Tool], tools),
         ),
     )

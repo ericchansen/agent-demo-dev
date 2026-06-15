@@ -606,6 +606,58 @@ def test_run_query_uses_mocked_clients() -> None:
     assert json.loads(second_call.kwargs["input"][0]["output"])["customer"] == "Tailspin Toys"
 
 
+def test_get_or_create_agent_reuses_matching_fingerprint() -> None:
+    """Matching registered agents are reused to avoid version buildup."""
+    module = _load_module("src.orchestrator.foundry_agent")
+    orchestrator_config = _load_attr("src.orchestrator.config", "OrchestratorConfig")
+
+    config = orchestrator_config(
+        foundry_project_endpoint="https://test.ai.azure.com/",
+        model_deployment_name="gpt-4o",
+        fabric_iq_connection_id=None,
+    )
+    tools, _ = module._build_tools(config)
+    fingerprint = module._definition_fingerprint(config, tools)
+    existing = SimpleNamespace(
+        name="WWISalesAgent",
+        definition=SimpleNamespace(instructions=module._build_agent_instructions(config, fingerprint)),
+    )
+    project_client = MagicMock()
+    project_client.agents.list.return_value = [existing]
+
+    agent = module._get_or_create_agent(project_client, config)
+
+    assert agent is existing
+    assert hasattr(agent, "_local_function_handlers")
+    project_client.agents.create_version.assert_not_called()
+
+
+def test_get_or_create_agent_creates_when_definition_changes() -> None:
+    """Changed instructions/tools create a new fingerprinted agent version."""
+    module = _load_module("src.orchestrator.foundry_agent")
+    orchestrator_config = _load_attr("src.orchestrator.config", "OrchestratorConfig")
+
+    config = orchestrator_config(
+        foundry_project_endpoint="https://test.ai.azure.com/",
+        model_deployment_name="gpt-4o",
+        fabric_iq_connection_id=None,
+    )
+    created = SimpleNamespace(name="WWISalesAgent")
+    project_client = MagicMock()
+    project_client.agents.list.return_value = [
+        SimpleNamespace(name="WWISalesAgent", definition=SimpleNamespace(instructions="old definition"))
+    ]
+    project_client.agents.create_version.return_value = created
+
+    agent = module._get_or_create_agent(project_client, config)
+
+    assert agent is created
+    create_kwargs = project_client.agents.create_version.call_args.kwargs
+    assert create_kwargs["agent_name"] == "WWISalesAgent"
+    instructions = create_kwargs["definition"].instructions
+    assert module._DEFINITION_FINGERPRINT_PREFIX in instructions
+
+
 # ---------------------------------------------------------------------------
 # MCP server format validation
 # ---------------------------------------------------------------------------
