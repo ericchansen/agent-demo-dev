@@ -27,7 +27,7 @@ jobs:
       FOUNDRY_PROJECT_ENDPOINT: ${{ secrets.FOUNDRY_PROJECT_ENDPOINT }}
       MODEL_DEPLOYMENT_NAME: ${{ secrets.MODEL_DEPLOYMENT_NAME }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Check Foundry configuration
         id: config
         run: |
@@ -47,7 +47,7 @@ jobs:
           client-id: ${{ env.AZURE_CLIENT_ID }}
           tenant-id: ${{ env.AZURE_TENANT_ID }}
           subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: steps.config.outputs.configured == 'true'
         with:
           python-version: "3.11"
@@ -73,7 +73,7 @@ jobs:
       FABRIC_DATA_AGENT_ID: ${{ secrets.FABRIC_DATA_AGENT_ID }}
       FABRIC_MCP_TOOL_NAME: ${{ secrets.FABRIC_MCP_TOOL_NAME }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Check Fabric configuration
         id: config
         run: |
@@ -96,7 +96,7 @@ jobs:
           client-id: ${{ env.AZURE_CLIENT_ID }}
           tenant-id: ${{ env.AZURE_TENANT_ID }}
           subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: steps.config.outputs.configured == 'true'
         with:
           python-version: "3.11"
@@ -121,7 +121,7 @@ jobs:
       DATABRICKS_GENIE_WAREHOUSE_ID: ${{ secrets.DATABRICKS_GENIE_WAREHOUSE_ID }}
       DATABRICKS_GENIE_MCP_URL: ${{ secrets.DATABRICKS_GENIE_MCP_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Check Databricks configuration
         id: config
         run: |
@@ -145,7 +145,7 @@ jobs:
           else
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: steps.config.outputs.configured == 'true'
         with:
           python-version: "3.11"
@@ -161,8 +161,8 @@ jobs:
   published-site:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: Check published workshop site
@@ -173,8 +173,8 @@ jobs:
   demo-readiness:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: Install Python dependencies
@@ -196,7 +196,7 @@ jobs:
       - demo-readiness
     if: always()
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Aggregate live smoke results
         id: aggregate
@@ -218,7 +218,7 @@ jobs:
 
       - name: Upload demo readiness report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: demo-readiness-report
           path: demo-readiness-report.json
