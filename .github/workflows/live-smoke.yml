@@ -196,6 +196,8 @@ jobs:
       - demo-readiness
     if: always()
     steps:
+      - uses: actions/checkout@v4
+
       - name: Aggregate live smoke results
         id: aggregate
         env:

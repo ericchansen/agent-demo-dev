@@ -10,6 +10,10 @@ permissions:
   id-token: write
   contents: read
 
+concurrency:
+  group: deploy-infra-dev
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -42,9 +46,17 @@ jobs:
         uses: azure/cli@v2
         with:
           inlineScript: |
-            az fabric capacity resume \
-              --resource-group rg-fabric-agent-dev \
-              --capacity-name fabricagentdemodev
+            for attempt in 1 2 3 4 5 6 7 8 9 10; do
+              if az fabric capacity resume \
+                --resource-group rg-fabric-agent-dev \
+                --capacity-name fabricagentdemodev; then
+                exit 0
+              fi
+              echo "Fabric capacity resume attempt ${attempt} failed; waiting before retry."
+              sleep 30
+            done
+            echo "::error title=Fabric capacity::Unable to resume capacity after retries."
+            exit 1
 
       - name: Deploy Bicep
         uses: azure/cli@v2
@@ -60,6 +72,13 @@ jobs:
         uses: azure/cli@v2
         with:
           inlineScript: |
-            az fabric capacity suspend \
-              --resource-group rg-fabric-agent-dev \
-              --capacity-name fabricagentdemodev
+            for attempt in 1 2 3 4 5; do
+              if az fabric capacity suspend \
+                --resource-group rg-fabric-agent-dev \
+                --capacity-name fabricagentdemodev; then
+                exit 0
+              fi
+              echo "Fabric capacity suspend attempt ${attempt} failed; waiting before retry."
+              sleep 30
+            done
+            echo "::warning title=Fabric capacity::Unable to suspend capacity after retries; check cost guardrails manually."

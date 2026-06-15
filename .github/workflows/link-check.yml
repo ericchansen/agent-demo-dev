@@ -38,7 +38,6 @@ jobs:
             --timeout 20
             --accept 200,206,403,429
             --include-fragments
-            --exclude-mail
             --no-progress
             "docs/**/*.md"
             "website/docs/**/*.md"
