@@ -29,8 +29,12 @@ The workshop must show agents running INSIDE Azure AI Foundry, not just as local
   * Testing in the Foundry playground
   * Monitoring/tracing agent runs in the portal
   * Publishing to M365 Copilot as an Agent Application
-- **Multi-agent pipelines**: Build a WORKING proof-of-concept, not just documentation:
-  * Create `src/orchestrator/multi_agent/` with a pipeline that chains specialized agents:
+- **Multi-agent pipelines**: Build a WORKING proof-of-concept. The exact architecture is
+  aspirational -- use /research to discover what Foundry's SDK actually supports today for
+  agent-to-agent communication, then build the best PoC that's actually achievable. Push
+  back on this spec if the SDK doesn't support something -- adapt the design to reality.
+  Starting point (adjust based on research):
+  * Create `src/orchestrator/multi_agent/` with specialized agents:
     - Data Agent: queries Fabric Data Agent OR Databricks Genie for sales/business data
     - Research Agent: uses /research or web search for market trends, competitive intel
     - (Work Context Agent: WorkIQ for M365 activity -- mocked for now, real when available)
@@ -39,17 +43,10 @@ The workshop must show agents running INSIDE Azure AI Foundry, not just as local
       when the user asks for a report, it delegates to the Report Agent.
     - Report Agent: takes the combined context (data + research + work activity) and
       generates XLSX/HTML/PDF artifacts
-    The flow is: User talks to Conversational Agent -> it pulls from Data + Research +
-    Work Context agents -> user asks for report -> Conversational Agent delegates to
-    Report Agent -> artifacts generated
-  * Each agent should be a separate Foundry agent registration (visible independently in portal)
-  * The pipeline should be invocable as a single command or skill
+  * Each agent should ideally be a separate Foundry agent registration (if SDK supports it)
   * Add tests that verify the pipeline end-to-end with mocked agent responses
-  * The multi-agent pipeline must produce THE SAME outputs as the single-agent flows:
-    - Same quota estimation reports (XLSX/HTML/PDF)
-    - Same sales analysis capabilities
-    - Same data queries against Fabric/Databricks
-    The point is to show THREE ways to achieve the same business outcome:
+  * The multi-agent pipeline should aim to produce the same outputs as the other surfaces
+    (quota reports, sales analysis) -- showing THREE ways to achieve the same outcome:
     1. Copilot CLI (prototype, developer-facing)
     2. Single Foundry agent with tools (simple production path)
     3. Multi-agent pipeline (advanced, more observable, more composable)
