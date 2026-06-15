@@ -5,6 +5,12 @@ title: Quota Estimation Pipeline
 
 # Quota Estimation Pipeline
 
+:::info Where you are · 🗓️ Day 1
+The quota report is your **Day 1 finish line** — running this pipeline proves the end-to-end
+flow works before you ship it through Foundry on Day 2. See the
+[Workshop Overview](../intro) for what comes next.
+:::
+
 The quota pipeline turns Fabric or Databricks sales history, market context, and WorkIQ activity signals into three concrete
 artifacts: an Excel workbook for analysis, an HTML report for quick sharing, and a PDF brief for read-only review.
 The same Python package powers both demo surfaces:

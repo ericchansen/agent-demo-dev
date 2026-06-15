@@ -5,6 +5,12 @@ title: Choose Your Data Platform
 
 # Choose Your Data Platform
 
+:::info Where you are · 🗓️ Day 1
+Choosing your data platform is a Day 1 step — it grounds the agent before you generate
+your first report. The rest of the workflow is identical whichever you pick. See the
+[Workshop Overview](../intro) for the full path.
+:::
+
 The workshop supports two data backends. Pick one for Day 1, keep the rest of the agent workflow unchanged,
 and compare how the same quota report is produced from different governed data platforms.
 

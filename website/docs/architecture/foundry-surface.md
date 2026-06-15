@@ -5,6 +5,12 @@ title: Foundry Surface
 
 # Foundry Surface Architecture
 
+:::info Where you are · 🗓️ Day 2
+The Foundry surface is where **Day 2** begins: you take the same agent workflow from Day 1
+and ship it as a registered Azure AI Foundry agent, test it in the Playground, then publish
+to M365 Copilot and Teams. See the [Workshop Overview](../intro) for the full path.
+:::
+
 The Foundry surface publishes the agent as an Azure AI Foundry Agent Application, accessible through M365 Copilot Chat and Teams. This is the production deployment path for business users.
 
 ## Architecture

@@ -5,6 +5,12 @@ title: From Chat to Agent
 
 # From Chat to Agent
 
+:::info Where you are · 🗓️ Day 1
+This is the conceptual start of the journey on Day 1 — it frames *why* an agent needs data,
+context, and tools before you connect them in the following chapters. See the
+[Workshop Overview](../intro) for the full Day 1 → Day 2 path.
+:::
+
 Most people's first experience with AI is a chatbot — you ask it something, it gives you an answer. That's useful, but it's limited. The answer comes from the model's training data and whatever you typed into the prompt. It doesn't know your customers. It doesn't know what you worked on last week. It can't generate a report and put it in your OneDrive.
 
 This workshop is about closing that gap. You'll build an AI agent that works more like a coworker than a search engine — one that connects to your actual business data, understands your recent activity, and produces real deliverables.

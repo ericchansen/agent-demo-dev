@@ -5,6 +5,12 @@ title: Ship It
 
 # Ship It
 
+:::info Where you are · 🗓️ Day 2
+Shipping is the **Day 2** payoff: the agent you grounded and tested on Day 1 now reaches
+business users in Teams and M365 Copilot Chat. See the [Workshop Overview](../intro) for the
+full Day 1 → Day 2 path.
+:::
+
 You've built an agent that queries data, understands your context, produces deliverables, and encapsulates workflows into reusable skills. It works great in the CLI. But the people who need this most — account executives, sales managers, customer success leads — don't live in a terminal. They live in Teams, Outlook, and M365 Copilot Chat.
 
 This chapter covers how the same agent capabilities move from a developer prototype to an enterprise-ready application.
