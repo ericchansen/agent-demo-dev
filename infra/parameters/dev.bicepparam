@@ -9,6 +9,7 @@ param storageAccountName = 'fsaagentstorage2026d'
 param cogServicesName = 'fabricagentaidev2026'
 param foundryHubCogServicesName = 'fsa-hub-dev-2026'
 param foundryHubName = 'fabric-agent-hub-dev'
+param foundryProjectName = 'fsa-project-dev'
 param publicNetworkAccess = 'Enabled'
 param foundryHubStorageRoleAssignmentName = 'c52d7250-ea78-4536-b15a-d45b2bad6c97'
 

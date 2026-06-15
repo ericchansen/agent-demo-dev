@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "8093309517432950487"
+      "templateHash": "10378273648466057276"
     }
   },
   "parameters": {
@@ -83,6 +83,12 @@
       "type": "string",
       "metadata": {
         "description": "Name of the AI Foundry Hub workspace (fabric-agent-hub)."
+      }
+    },
+    "foundryProjectName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the AI Foundry Project workspace (kind Project) parented to the hub. The workshop registers agents against this project."
       }
     },
     "publicNetworkAccess": {
@@ -887,6 +893,111 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
+      "name": "foundryProject",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "projectName": {
+            "value": "[parameters('foundryProjectName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "hubResourceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'aiFoundry'), '2025-04-01').outputs.hubId.value]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.41.2.15936",
+              "templateHash": "4619055348802470506"
+            }
+          },
+          "parameters": {
+            "projectName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the AI Foundry Project (MachineLearningServices workspace, kind Project)."
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region. Should match the parent hub region."
+              }
+            },
+            "hubResourceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the parent AI Foundry Hub workspace."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.MachineLearningServices/workspaces",
+              "apiVersion": "2025-06-01",
+              "name": "[parameters('projectName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "Project",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "hubResourceId": "[parameters('hubResourceId')]"
+              }
+            }
+          ],
+          "outputs": {
+            "projectId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the Foundry Project."
+              },
+              "value": "[resourceId('Microsoft.MachineLearningServices/workspaces', parameters('projectName'))]"
+            },
+            "projectPrincipalId": {
+              "type": "string",
+              "metadata": {
+                "description": "Principal ID of the project system-assigned managed identity."
+              },
+              "value": "[reference(resourceId('Microsoft.MachineLearningServices/workspaces', parameters('projectName')), '2025-06-01', 'full').identity.principalId]"
+            },
+            "projectName": {
+              "type": "string",
+              "metadata": {
+                "description": "Discovery URL used by the azure-ai-projects SDK and the Foundry portal."
+              },
+              "value": "[parameters('projectName')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'aiFoundry')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
       "name": "policies",
       "properties": {
         "expressionEvaluationOptions": {
@@ -1079,6 +1190,13 @@
         "description": "Principal ID of the Foundry Hub system-assigned managed identity."
       },
       "value": "[reference(resourceId('Microsoft.Resources/deployments', 'aiFoundry'), '2025-04-01').outputs.hubPrincipalId.value]"
+    },
+    "foundryProjectId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the Foundry Project where workshop agents are registered."
+      },
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'foundryProject'), '2025-04-01').outputs.projectId.value]"
     }
   }
 }

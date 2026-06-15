@@ -37,6 +37,9 @@ param foundryHubCogServicesName string
 @description('Name of the AI Foundry Hub workspace (fabric-agent-hub).')
 param foundryHubName string
 
+@description('Name of the AI Foundry Project workspace (kind Project) parented to the hub. The workshop registers agents against this project.')
+param foundryProjectName string
+
 @description('Public network access for demo-facing resources. Keep Disabled for production; dev can override to Enabled for portal access.')
 @allowed(['Enabled', 'Disabled'])
 param publicNetworkAccess string = 'Disabled'
@@ -117,6 +120,16 @@ module aiFoundry './modules/ai-foundry.bicep' = {
   }
 }
 
+module foundryProject './modules/foundry-project.bicep' = {
+  name: 'foundryProject'
+  params: {
+    projectName: foundryProjectName
+    location: location
+    hubResourceId: aiFoundry.outputs.hubId
+    tags: tags
+  }
+}
+
 module policies './modules/policy.bicep' = {
   name: 'policies'
   params: {
@@ -149,3 +162,6 @@ output foundryHubId string = aiFoundry.outputs.hubId
 
 @description('Principal ID of the Foundry Hub system-assigned managed identity.')
 output foundryHubPrincipalId string = aiFoundry.outputs.hubPrincipalId
+
+@description('Resource ID of the Foundry Project where workshop agents are registered.')
+output foundryProjectId string = foundryProject.outputs.projectId
