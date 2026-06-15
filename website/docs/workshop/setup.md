@@ -168,17 +168,46 @@ az deployment group create -g rg-fabric-agent-dev -f infra/main.bicep -p infra/p
 ```
 
 The dev parameter file sets `publicNetworkAccess = 'Enabled'` so the Foundry portal and hosted runtime are
-reachable during the workshop. The Foundry project is created under the existing hub with:
+reachable during the workshop. The Bicep deploy also provisions the hub-based project (`fsa-project-dev`)
+for the classic surface via `infra/modules/foundry-project.bicep`.
+
+### Account-based Foundry project for the agent SDK
+
+The agent code (`src/orchestrator/foundry_agent.py`) uses the `azure-ai-projects` SDK + Responses API,
+which targets an **account-based** Foundry project (`…services.ai.azure.com/api/projects/…`), not the
+hub workspace. Provision it and deploy a model once:
 
 ```powershell
-az ml workspace create --kind Project --hub-id "/subscriptions/9450bd3b-96c5-48b2-bfdf-3374304efbd7/resourceGroups/rg-fabric-agent-dev/providers/Microsoft.MachineLearningServices/workspaces/fabric-agent-hub-dev" --name fsa-project-dev --resource-group rg-fabric-agent-dev --location eastus2
+# Enable project management on the AI Services account (one-time).
+$acct = az cognitiveservices account show -g rg-fabric-agent-dev -n fabricagentaidev2026 --query id -o tsv
+az resource update --ids $acct --set properties.allowProjectManagement=true --latest-include-preview
+
+# Create the account-based Foundry project and deploy a chat model.
+az cognitiveservices account project create -g rg-fabric-agent-dev --name fabricagentaidev2026 --project-name fsa-foundry-project-dev --location eastus2
+az cognitiveservices account deployment create -g rg-fabric-agent-dev -n fabricagentaidev2026 --deployment-name gpt-4o --model-name gpt-4o --model-version 2024-11-20 --model-format OpenAI --sku-name GlobalStandard --sku-capacity 10
+```
+
+Then configure a `.env` at the repo root:
+
+```dotenv
+FOUNDRY_PROJECT_ENDPOINT=https://fabricagentaidev2026.services.ai.azure.com/api/projects/fsa-foundry-project-dev
+MODEL_DEPLOYMENT_NAME=gpt-4o
+# Optional: omit to use the demo-safe fabric_query fallback on day one.
+# FABRIC_IQ_CONNECTION_ID=<fabric data agent connection id>
+```
+
+Verify the live agent registers and answers (register → list → Playground query):
+
+```powershell
+uv run python scripts/verify_foundry_agent.py
+# Expect: [OK] live registration + Playground response verified
 ```
 
 See [Foundry Surface](../architecture/foundry-surface) for portal testing and [Ship It](../journey/ship-it)
 for publishing. It covers:
 
-- Foundry project creation
-- Tool registration (FabricIQ, WorkIQ)
+- Account-based Foundry project creation and model deployment
+- Tool registration (FabricIQ platform tool or the demo `fabric_query` fallback, WorkIQ)
 - Agent configuration and testing
 - Publishing to M365
 

@@ -59,9 +59,14 @@ Each CLI concept has a Foundry equivalent:
 
 In Azure AI Foundry, create a new agent and register your tools:
 
-- **FabricIQPreviewTool** — wraps the same Data Agent MCP endpoint you used in CLI
+- **FabricIQPreviewTool** — wraps the same Data Agent MCP endpoint you used in CLI (requires a Fabric IQ
+  connection). When no connection is configured, the agent registers a demo-safe `fabric_query` function
+  tool instead, so it runs end-to-end on day one — see [Foundry Surface](../architecture/foundry-surface).
 - **WorkIQPreviewTool** — wraps WorkIQ with OBO authentication
 - **Custom function** — report generation + OneDrive upload
+
+Register and verify the live agent with `uv run python scripts/verify_foundry_agent.py` (it registers
+`WWISalesAgent`, confirms it is listed in the project, and runs one Playground-style query).
 
 The agent's system prompt encodes the same logic your skills defined: when asked for a customer brief, call both data and context tools, then format the response.
 
@@ -78,6 +83,33 @@ Before publishing, run both production patterns and compare their traces:
 
 Both patterns must produce the same XLSX/HTML/PDF quota artifacts so attendees compare architecture trade-offs,
 not business-output differences.
+
+### 1c. Build and verify the hosted agent container
+
+The **Foundry Hosted Agent** is a bring-your-own-code container. Build it and smoke-test the probes and
+invocation locally before deploying to managed compute:
+
+```powershell
+# Build
+docker build -f src/orchestrator/hosted_agent/Dockerfile -t wwi-hosted-agent .
+
+# Run and probe
+docker run -d --name wwi-agent -p 8080:8080 wwi-hosted-agent
+curl http://127.0.0.1:8080/healthz   # -> {"status": "alive"}
+curl http://127.0.0.1:8080/readyz    # -> {"status": "ready", "adapter": "local-runtime"}
+
+# Invoke (LocalDeterministicAdapter answers without Azure creds)
+curl -X POST http://127.0.0.1:8080/invoke -H "Content-Type: application/json" `
+  -d '{"input":"Generate a base quota estimation report for Wide World Importers"}'
+# -> {"output": "Generated a quota estimation report ... Artifacts: { xlsx, html, pdf }"}
+
+docker rm -f wwi-agent
+```
+
+`/healthz` is the liveness probe and `/readyz` is the readiness probe; wire both into your managed
+compute health checks. The container responds to `/invoke` even without Azure credentials because it
+falls back to a local deterministic adapter — set the Azure environment variables to route through a
+real model instead.
 
 ### 2. Publish as an Agent Application
 

@@ -36,48 +36,77 @@ flowchart LR
 
 ## Project and portal experience
 
-The dev hub is `fabric-agent-hub-dev` in `eastus2`. The workshop project is `fsa-project-dev` under that hub.
+There are **two kinds of Foundry project** and they are easy to confuse:
 
-**Reproducible provisioning (preferred).** The project is declared in Bicep as a `kind: 'Project'`
-workspace (`infra/modules/foundry-project.bicep`, wired into `infra/main.bicep` via the
-`foundryProjectName` parameter). A full infra deploy therefore recreates the project, not just the hub:
+| Kind | Resource | Endpoint shape | Used by |
+|---|---|---|---|
+| **Hub-based** | `Microsoft.MachineLearningServices/workspaces` (`kind: 'Project'`) | `azureml://…` | classic hub/CLI workflows |
+| **Account-based** (Foundry Agent Service) | `Microsoft.CognitiveServices/accounts/projects` | `https://<account>.services.ai.azure.com/api/projects/<project>` | the `azure-ai-projects` SDK + Responses API used by `src/orchestrator/foundry_agent.py` |
+
+The agent SDK in this repo (`azure-ai-projects>=2.2.0`, `PromptAgentDefinition`, the Responses API)
+talks to an **account-based** project. `FOUNDRY_PROJECT_ENDPOINT` must therefore be the
+`…services.ai.azure.com/api/projects/…` URL, not the hub workspace.
+
+The dev hub (`fabric-agent-hub-dev`) and its hub-based project (`fsa-project-dev`) are still provisioned
+by Bicep (`infra/modules/foundry-project.bicep`) for the classic surface, but agent registration runs
+against an account-based project.
+
+### Provision the account-based project and a model
 
 ```powershell
-az deployment group create -g rg-fabric-agent-dev -f infra/main.bicep -p infra/parameters/dev.bicepparam
+# 1. Enable project management on the AI Services account (one-time).
+$acct = az cognitiveservices account show -g rg-fabric-agent-dev -n fabricagentaidev2026 --query id -o tsv
+az resource update --ids $acct --set properties.allowProjectManagement=true --latest-include-preview
+
+# 2. Create the account-based Foundry project.
+az cognitiveservices account project create -g rg-fabric-agent-dev --name fabricagentaidev2026 --project-name fsa-foundry-project-dev --location eastus2
+
+# 3. Deploy a chat model (matches MODEL_DEPLOYMENT_NAME).
+az cognitiveservices account deployment create -g rg-fabric-agent-dev -n fabricagentaidev2026 --deployment-name gpt-4o --model-name gpt-4o --model-version 2024-11-20 --model-format OpenAI --sku-name GlobalStandard --sku-capacity 10
 ```
 
-**Manual bootstrap (equivalent).** If you are provisioning the project by itself, the `az` command
-below produces the same resource:
+### Configure the environment
 
-```powershell
-az ml workspace create --kind Project --hub-id "/subscriptions/9450bd3b-96c5-48b2-bfdf-3374304efbd7/resourceGroups/rg-fabric-agent-dev/providers/Microsoft.MachineLearningServices/workspaces/fabric-agent-hub-dev" --name fsa-project-dev --resource-group rg-fabric-agent-dev --location eastus2
+Set these (e.g. in a `.env` file at the repo root):
+
+```dotenv
+FOUNDRY_PROJECT_ENDPOINT=https://fabricagentaidev2026.services.ai.azure.com/api/projects/fsa-foundry-project-dev
+MODEL_DEPLOYMENT_NAME=gpt-4o
+# Optional — when omitted the agent uses a demo-safe fabric_query fallback so you
+# can run live on day one before wiring real data.
+# FABRIC_IQ_CONNECTION_ID=<fabric data agent connection id>
 ```
 
 ### Register the agent before you look for it in the portal
 
 The portal only shows an agent **after** you register it from code. Agents are not created by the
 infra deploy — they are created by the SDK path in `src/orchestrator/foundry_agent.py`. Register the
-WWI single agent first:
+WWI single agent (and run a query) with either of:
 
 ```powershell
-# Requires a model deployment and a Fabric IQ connection on the project (see Setup).
-uv run python -m src.orchestrator "Generate a quota report for Tailspin Toys"
+uv run python -m src.orchestrator "Compute quota attainment: target 1,000,000, ytd 600,000, pipeline 500,000, 6 months, 180 days"
+# Or the reproducible end-to-end check (register -> list -> Playground query):
+uv run python scripts/verify_foundry_agent.py
 ```
 
-This calls `create_version` for the `WWISalesAgent` and then runs the query. Once it has run
-successfully at least once, open the Foundry portal (`https://ai.azure.com`):
+`verify_foundry_agent.py` is the canonical proof: it calls `create_version` for `WWISalesAgent`, lists
+the project agents to confirm portal visibility, and runs one Responses-API query (the same call the
+Playground makes). A successful run prints `[OK] live registration + Playground response verified`.
 
-1. Open **fabric-agent-hub-dev** and select the **fsa-project-dev** project.
+Once it has run successfully at least once, open the Foundry portal (`https://ai.azure.com`):
+
+1. Open the **fsa-foundry-project-dev** project.
 2. Open **Agents**. You should now see the `WWISalesAgent` registration. (If the list is empty, the
    registration step above has not completed — re-run it and check the CLI output for errors.)
 3. Open the agent in **Playground** and run `Generate a quota report for Tailspin Toys`.
 4. Open tracing or observability views and inspect the tool calls, latency, and generated artifact metadata.
 5. Use **Publish** when the agent is ready for Microsoft 365 Copilot and Teams.
 
-> **Prerequisites for live registration.** The project needs (a) a chat model deployment whose name
-> matches `MODEL_DEPLOYMENT_NAME`, and (b) a Fabric IQ connection whose ID matches
-> `FABRIC_IQ_CONNECTION_ID`. Without both, `create_version` / the Responses call will fail. See the
-> [Setup guide](../workshop/setup.md) for wiring these connections.
+> **Fabric IQ vs. the demo fallback.** The `FabricIQPreviewTool` is a *platform* tool that requires a
+> real Fabric Data Agent connection **and** a project/region where the preview tool is enabled on the
+> Responses API. When `FABRIC_IQ_CONNECTION_ID` is unset, the agent instead registers a `fabric_query`
+> function tool backed by demo-safe WWI rows, so registration and the Playground response work in any
+> account-based project. Swap in the real connection id to query live data.
 
 ## Multi-agent pipeline alternative
 
