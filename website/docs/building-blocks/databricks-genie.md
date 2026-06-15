@@ -187,10 +187,12 @@ API round-trip worked. If the variables are unset, record live Genie as blocked 
 command below for the deterministic offline checkpoint.
 
 :::caution Genie Agent Mode billing — know this before you demo live
-Genie runs on a **serverless, pay-as-you-go** model billed in DBUs, not a flat license. Two cost lines stack up:
+Genie runs on a **serverless, pay-as-you-go** model billed in DBUs, not a flat license. **Genie billing starts
+July 6, 2026** — before that date usage was not billed. Two cost lines stack up:
 
-- **Genie LLM usage** — each user gets a free monthly allowance of Genie DBUs; beyond that you pay the per-DBU
-  Genie rate. Every conversational turn (and every API call that triggers a query) consumes from this.
+- **Genie LLM usage** — each identified user gets **150 free Genie DBUs/month** (~80–100 questions, ~$10.50/mo
+  value at $0.07/DBU in US East), covering Genie, Genie Spaces, and Genie Code. Beyond that you pay the per-DBU
+  Genie rate. Every conversational turn (and every API call that triggers a query) consumes from this allowance.
 - **Compute** — the SQL warehouse Genie uses to execute generated queries is billed separately at the warehouse's
   DBU rate. Larger warehouses and bigger scans cost more per question.
 

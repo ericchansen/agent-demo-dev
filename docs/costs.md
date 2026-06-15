@@ -2,6 +2,8 @@
 
 Estimated monthly costs for running this accelerator. Actual costs depend on usage, region, commitment tier, and whether you pause resources when not in use.
 
+> 📖 **Choosing a data platform?** This page covers the **Microsoft Fabric** path in depth. For the **Databricks Genie** path see the Genie cost guidance below and the published workshop docs: [Cost Model](https://ericchansen.github.io/agent-demo-dev/docs/workshop/costs) and [Databricks Genie](https://ericchansen.github.io/agent-demo-dev/docs/building-blocks/databricks-genie).
+
 ---
 
 ## Azure Resource Costs
@@ -39,6 +41,28 @@ Typical token consumption per query type (GPT-4o pricing: ~$2.50/1M input, ~$10/
 | Full pipeline (data + research + report) | ~5,000 | ~2,000 | ~$0.033 |
 
 At **50 queries/day** (mixed types), expect **~$15–25/month** in Azure OpenAI costs.
+
+---
+
+## Databricks Genie path costs
+
+If you choose the **Databricks Genie** data platform instead of (or alongside) Fabric, the cost model is **serverless pay-as-you-go billed in DBUs**, not a flat capacity SKU. Two lines stack:
+
+| Cost line | How it's billed | Notes |
+|---|---|---|
+| **Genie LLM usage** | Per-DBU after a per-user free allowance | Each identified user gets **150 free Genie DBUs/month** (~80–100 questions, ~$10.50/mo value at $0.07/DBU, US East). Overage bills at the standard Genie DBU rate. |
+| **SQL warehouse compute** | Per-DBU at the warehouse rate | The warehouse that executes Genie-generated SQL is billed separately. Right-size it and **stop it when idle**. |
+
+> ⚠️ **Genie billing starts July 6, 2026.** Before that date Genie usage was not billed. The free 150-DBU/user/month allowance applies to **Genie, Genie Spaces, and Genie Code**, is per identified user (not per service principal), and resets monthly. Verify current rates and regional pricing on the [Genie pricing page](https://www.databricks.com/product/pricing/genie) before quoting numbers to a customer.
+
+### Control Genie spend
+
+- **Set Genie budgets** — admins can cap and alert on Genie spend per user, group, workspace, or the whole account. See [Manage budgets and cost controls for Genie](https://learn.microsoft.com/en-us/azure/databricks/genie/budgets).
+- **Stop the SQL warehouse** between lab windows — warehouse DBUs, not the free LLM allowance, are usually the larger line for a workshop room driving many live questions.
+- **Prefer the deterministic offline fallback** for large groups so you teach the architecture without burning DBUs.
+- The optional **Databricks Supervisor Agent/API** path adds serverless, Model Serving, and AI Gateway usage on top of Genie — gate it behind facilitator approval.
+
+> 📖 [Databricks DBU pricing](https://learn.microsoft.com/en-us/azure/databricks/resources/pricing) · [Genie pricing](https://www.databricks.com/product/pricing/genie) · [Genie budgets & cost controls](https://learn.microsoft.com/en-us/azure/databricks/genie/budgets)
 
 ---
 
