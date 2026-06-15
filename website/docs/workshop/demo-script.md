@@ -13,6 +13,8 @@ This demo shows the same workflow in two surfaces.
 
 ![Copilot CLI report flow](/img/workshop/cli-report-flow.svg)
 
+*Schematic diagram of the flow — not a screenshot.*
+
 ## Act 1 — CLI (Developer Audience)
 
 > "Let's start where every agent begins — prototyping in the CLI."
@@ -57,6 +59,8 @@ Now give me an aggressive and a conservative version of that quota
 - HTML artifacts embed the chart inline for easy sharing
 
 ![Generated quota artifacts](/img/workshop/quota-artifacts.svg)
+
+*Schematic diagram of the generated artifacts — not a screenshot.*
 
 > "That's the prototype. Same MCP servers, zero custom code. Now let's see the business user experience."
 

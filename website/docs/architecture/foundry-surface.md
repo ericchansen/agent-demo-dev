@@ -117,6 +117,8 @@ Once it has run successfully at least once, open the Foundry portal (`https://ai
 
 ![Foundry playground verification view](/img/workshop/foundry-playground.svg)
 
+*Schematic diagram — a labeled representation of the portal layout, not a screenshot. The live Foundry portal UI will differ in exact styling.*
+
 Use this visual as the Day 2 checkpoint: the left pane confirms `WWISalesAgent` exists, the Playground prompt
 proves the Responses API path works, and the trace pane confirms tool-call observability without logging payloads.
 

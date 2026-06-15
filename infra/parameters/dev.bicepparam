@@ -24,7 +24,7 @@ param foundryHubStorageRoleAssignmentName = 'c52d7250-ea78-4536-b15a-d45b2bad6c9
 //
 //   az policy exemption create --name exempt-hub-pna-dev \
 //     --resource-group rg-fabric-agent-dev --exemption-category Waiver \
-//     --policy-assignment /providers/Microsoft.Management/managementGroups/9c74def4-ef0a-418a-8dc7-1e7a1e85ce10/providers/Microsoft.Authorization/policyAssignments/mcapsgovdeploypolicies
+//     --policy-assignment /providers/Microsoft.Management/managementGroups/<your-management-group-id>/providers/Microsoft.Authorization/policyAssignments/mcapsgovdeploypolicies
 //
 // Or deploy infra/main.bicep with this param set, using credentials that hold
 // the MG-level exempt/action permission (e.g. manual workflow_dispatch).
