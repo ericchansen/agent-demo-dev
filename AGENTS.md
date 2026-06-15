@@ -5,14 +5,34 @@
 This repository is managed by an autonomous agent loop (Agent Looper). When running
 in non-interactive mode (`copilot -p`), the following overrides apply:
 
-- **Push directly** to feature branches without user review or approval
-- **Do NOT create PRs** — commit and push directly to the working branch
-- **Do NOT ask for confirmation** — make decisions autonomously
+- **Push directly** to main without user review or approval
+- **Do NOT create PRs** -- commit and push directly to main
+- **Do NOT ask for confirmation** -- make decisions autonomously
 - **Commit frequently** with conventional commit messages
 - **Run CI checks locally** before pushing (ruff, mypy, pytest, website build)
 - **Use `az CLI`** freely to inspect and update Azure resources in rg-fabric-agent-dev
 - **Use `gh CLI`** to push, check workflows, etc.
-- **Fix issues immediately** — if tests fail, fix them before moving on
+- **Fix issues immediately** -- if tests fail, fix them before moving on
+- **Never rewrite published git history** -- no force-push
+
+## Native Foundry Agent Deployment
+
+The workshop must show agents running INSIDE Azure AI Foundry, not just as local code:
+
+- **Foundry Project**: `fsa-project-dev` under hub `fabric-agent-hub-dev` in `rg-fabric-agent-dev`
+  (create with `az ml workspace create --kind Project` if it doesn't exist)
+- **Agent Registration**: Use the Azure AI Foundry SDK (`azure-ai-projects`) to register
+  agents in the project. The agent should be visible in the Foundry portal playground.
+- **What to show in docs**:
+  * Creating an agent in the Foundry portal UI (screenshots or step-by-step)
+  * The same agent created via Python SDK (`azure-ai-projects`)
+  * Testing in the Foundry playground
+  * Monitoring/tracing agent runs in the portal
+  * Publishing to M365 Copilot as an Agent Application
+- **Multi-agent pipelines**: Document how to chain agents (planner -> data -> analysis -> report)
+  using Foundry's agent-to-agent patterns. Compare single-agent (current) vs multi-agent approaches.
+- **The hosted agent** in `src/orchestrator/hosted_agent/` should be deployable to the project
+  as a managed compute endpoint, not just a local Docker container.
 - **Never rewrite published git history** — no force-push on shared branches
 
 ## Project Overview
