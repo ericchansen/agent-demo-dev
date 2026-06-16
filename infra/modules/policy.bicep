@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // policy.bicep — Azure Policy assignments at Resource Group scope
 //
-// Assigns four built-in policies in Audit mode to detect and surface
+// Assigns built-in policies in Audit mode to detect and surface
 // configuration drift without blocking existing workloads.
 //
 // Escalation path:
@@ -11,15 +11,11 @@
 // Assignments (all verified via `az policy definition show`):
 //   1. Storage — prevent shared key access       (8c6a50c6)
 //   2. AI Services — disable local key access     (71ef260a-...-abcb-62d0673d94dc)
-//   3. ML Workspaces — disable public net access  (438c38d2)
-//   4. AI Services — restrict network access      (037eea7a)
+//   3. AI Services — restrict network access      (037eea7a)
 // ---------------------------------------------------------------------------
 
 @description('Whether to create resource-group policy assignments. Requires Owner or Resource Policy Contributor; set false for Contributor-only CI deploys.')
 param enablePolicyAssignments bool = true
-
-@description('Resource ID of an external (e.g. management-group) policy assignment whose "modify" effect forces AI Foundry hubs to publicNetworkAccess=Disabled. When provided, a resource-group-scoped Waiver exemption is created so the dev hub can keep public network access Enabled for portal reachability. Leave empty in production.')
-param foundryHubPnaExemptionAssignmentId string = ''
 
 // ── 1. Storage accounts should prevent shared-key access ────────────────────
 resource policyStorageNoSharedKey 'Microsoft.Authorization/policyAssignments@2023-04-01' = if (enablePolicyAssignments) {
@@ -53,23 +49,7 @@ resource policyAiSvcNoLocalAuth 'Microsoft.Authorization/policyAssignments@2023-
   }
 }
 
-// ── 3. Azure Machine Learning workspaces should disable public network access ─
-resource policyFoundryNoPubNet 'Microsoft.Authorization/policyAssignments@2023-04-01' = if (enablePolicyAssignments) {
-  name: 'fsa-foundry-no-pubnet'
-  properties: {
-    displayName: '[FSA] AI Foundry Hub — disable public network access'
-    description: 'Audit Azure Machine Learning workspaces (Foundry hubs/projects) that allow public network access.'
-    policyDefinitionId: '/providers/Microsoft.Authorization/policyDefinitions/438c38d2-3772-465a-a9cc-7a6666a275ce'
-    parameters: {
-      effect: {
-        value: 'Audit'
-      }
-    }
-    enforcementMode: 'Default'
-  }
-}
-
-// ── 4. AI Services resources should restrict network access ─────────────────
+// ── 3. AI Services resources should restrict network access ─────────────────
 resource policyAiSvcRestrictNetwork 'Microsoft.Authorization/policyAssignments@2023-04-01' = if (enablePolicyAssignments) {
   name: 'fsa-aisvc-restrict-net'
   properties: {
@@ -82,21 +62,5 @@ resource policyAiSvcRestrictNetwork 'Microsoft.Authorization/policyAssignments@2
       }
     }
     enforcementMode: 'Default'
-  }
-}
-
-// ── 5. Exempt the dev Foundry hub from an external public-network modify policy ─
-// MCAPS (and similar) tenants assign a management-group-scoped policy whose
-// `modify` effect rewrites every AI Foundry hub back to publicNetworkAccess=Disabled.
-// That silently reverts our dev override and blocks the ai.azure.com portal.
-// A resource-group-scoped Waiver exemption lets the dev hub stay Enabled.
-// Only created when an assignment ID is supplied (dev); empty in production.
-resource foundryHubPnaExemption 'Microsoft.Authorization/policyExemptions@2022-07-01-preview' = if (!empty(foundryHubPnaExemptionAssignmentId)) {
-  name: 'exempt-hub-pna-dev'
-  properties: {
-    displayName: '[FSA] Dev Foundry hub — exempt from public-network modify policy'
-    description: 'Allows the dev AI Foundry hub to keep publicNetworkAccess=Enabled for portal reachability. Do not apply in production.'
-    policyAssignmentId: foundryHubPnaExemptionAssignmentId
-    exemptionCategory: 'Waiver'
   }
 }

@@ -1,5 +1,8 @@
 // ---------------------------------------------------------------------------
 // main.bicep — Top-level orchestration for Fabric Sales Agent Accelerator
+//
+// Uses the MODERN Foundry architecture (CognitiveServices/accounts + project)
+// exclusively. No legacy hub-based (MachineLearningServices) resources.
 // ---------------------------------------------------------------------------
 
 targetScope = 'resourceGroup'
@@ -25,36 +28,21 @@ param entraAppName string
 @description('UPN of the Fabric capacity administrator (e.g. admin@contoso.com).')
 param fabricAdminUpn string = ''
 
-@description('Name of the Azure Storage account used by AI Foundry.')
+@description('Name of the Azure Storage account for agent artifacts and reports.')
 param storageAccountName string
 
 @description('Name of the Azure Container Registry used for Foundry Hosted Agent images.')
 param containerRegistryName string
 
-@description('Name of the primary Cognitive Services / AI Services account (fabricagentai2026).')
+@description('Name of the AI Services account (Microsoft.CognitiveServices/accounts, kind=AIServices). This is the modern Foundry resource that hosts the agent SDK endpoint.')
 param cogServicesName string
-
-@description('Name of the AI Foundry Hub Cognitive Services account (fsa-hub-2026).')
-param foundryHubCogServicesName string
-
-@description('Name of the AI Foundry Hub workspace (fabric-agent-hub).')
-param foundryHubName string
-
-@description('Name of the AI Foundry Project workspace (kind Project) parented to the hub. The workshop registers agents against this project.')
-param foundryProjectName string
 
 @description('Public network access for demo-facing resources. Keep Disabled for production; dev can override to Enabled for portal access.')
 @allowed(['Enabled', 'Disabled'])
 param publicNetworkAccess string = 'Disabled'
 
-@description('Optional existing role assignment name for the Foundry hub managed identity on storage. Use only to make redeploys idempotent when the assignment already exists with a non-default name.')
-param foundryHubStorageRoleAssignmentName string = ''
-
 @description('Whether to create RBAC role assignments. Requires Owner or User Access Administrator; dev CI uses false because the OIDC principal is Contributor-scoped.')
 param enableRoleAssignments bool = true
-
-@description('Optional resource ID of an external (management-group) policy assignment whose "modify" effect forces Foundry hubs to publicNetworkAccess=Disabled. When set, a Waiver exemption is created so the dev hub stays reachable. Leave empty in production.')
-param foundryHubPnaExemptionAssignmentId string = ''
 
 @description('Whether to create resource-group Azure Policy assignments. Requires Owner or Resource Policy Contributor; dev CI uses false because the OIDC principal is Contributor-scoped.')
 param enablePolicyAssignments bool = true
@@ -128,46 +116,10 @@ module cogServices './modules/cognitive-services.bicep' = {
   }
 }
 
-module foundryHubCogServices './modules/cognitive-services.bicep' = {
-  name: 'foundryHubCogServices'
-  params: {
-    name: foundryHubCogServicesName
-    location: location
-    customSubDomainName: foundryHubCogServicesName
-    publicNetworkAccess: publicNetworkAccess
-    tags: tags
-  }
-}
-
-module aiFoundry './modules/ai-foundry.bicep' = {
-  name: 'aiFoundry'
-  params: {
-    hubName: foundryHubName
-    location: location
-    keyVaultId: keyVault.outputs.keyVaultId
-    storageAccountId: storage.outputs.storageAccountId
-    publicNetworkAccess: publicNetworkAccess
-    storageRoleAssignmentName: foundryHubStorageRoleAssignmentName
-    enableRoleAssignments: enableRoleAssignments
-    tags: tags
-  }
-}
-
-module foundryProject './modules/foundry-project.bicep' = {
-  name: 'foundryProject'
-  params: {
-    projectName: foundryProjectName
-    location: location
-    hubResourceId: aiFoundry.outputs.hubId
-    tags: tags
-  }
-}
-
 module policies './modules/policy.bicep' = {
   name: 'policies'
   params: {
     enablePolicyAssignments: enablePolicyAssignments
-    foundryHubPnaExemptionAssignmentId: foundryHubPnaExemptionAssignmentId
   }
 }
 
@@ -204,11 +156,5 @@ output storageAccountId string = storage.outputs.storageAccountId
 @description('Login server for the Container Registry used by hosted-agent deployments.')
 output containerRegistryEndpoint string = containerRegistry.outputs.loginServer
 
-@description('Resource ID of the AI Foundry Hub.')
-output foundryHubId string = aiFoundry.outputs.hubId
-
-@description('Principal ID of the Foundry Hub system-assigned managed identity.')
-output foundryHubPrincipalId string = aiFoundry.outputs.hubPrincipalId
-
-@description('Resource ID of the Foundry Project where workshop agents are registered.')
-output foundryProjectId string = foundryProject.outputs.projectId
+@description('Resource ID of the AI Services account (modern Foundry). The Foundry project is a child resource created via SDK or Azure portal.')
+output cogServicesId string = cogServices.outputs.accountId

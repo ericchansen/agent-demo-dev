@@ -37,28 +37,28 @@ EXPECTED_FOUNDRY_HANDLERS = {
 }
 EXPECTED_HOSTED_TOOLS = EXPECTED_FOUNDRY_HANDLERS | {"fabric_query"}
 DEFAULT_RESOURCE_GROUP = "rg-fabric-agent-dev"
-DEFAULT_HUB_NAME = "fabric-agent-hub-dev"
+DEFAULT_COG_SERVICES_NAME = "fabricagentaidev2026"
 
 
 def _resource_group() -> str:
     return os.environ.get("AZURE_RESOURCE_GROUP", DEFAULT_RESOURCE_GROUP)
 
 
-def _hub_resource_id() -> str:
-    """Resolve the Foundry hub resource ID from env, never a hardcoded subscription."""
-    explicit = os.environ.get("FSA_HUB_RESOURCE_ID", "").strip()
+def _cog_services_resource_id() -> str:
+    """Resolve the Foundry AI Services account resource ID from env."""
+    explicit = os.environ.get("FSA_COG_SERVICES_RESOURCE_ID", "").strip()
     if explicit:
         return explicit
     subscription = os.environ.get("AZURE_SUBSCRIPTION_ID", "").strip()
     if not subscription:
         raise RuntimeError(
-            "Set FSA_HUB_RESOURCE_ID, or AZURE_SUBSCRIPTION_ID (with optional "
-            "AZURE_RESOURCE_GROUP / FSA_HUB_NAME), before running the --azure check."
+            "Set FSA_COG_SERVICES_RESOURCE_ID, or AZURE_SUBSCRIPTION_ID (with optional "
+            "AZURE_RESOURCE_GROUP / FSA_COG_SERVICES_NAME), before running the --azure check."
         )
-    hub_name = os.environ.get("FSA_HUB_NAME", DEFAULT_HUB_NAME)
+    cog_name = os.environ.get("FSA_COG_SERVICES_NAME", DEFAULT_COG_SERVICES_NAME)
     return (
         f"/subscriptions/{subscription}/resourceGroups/{_resource_group()}/"
-        f"providers/Microsoft.MachineLearningServices/workspaces/{hub_name}"
+        f"providers/Microsoft.CognitiveServices/accounts/{cog_name}"
     )
 
 
@@ -333,9 +333,14 @@ def check_azure_public_network_access() -> str:
         raise RuntimeError("Azure CLI is not available on PATH.")
 
     resource_group = _resource_group()
-    hub_pna = _az_json(["resource", "show", "--ids", _hub_resource_id(), "--query", "properties.publicNetworkAccess"])
-    if hub_pna != "Enabled":
-        raise ValueError(f"Foundry hub publicNetworkAccess is {hub_pna!r}, expected 'Enabled'.")
+
+    # Check the AI Services (Foundry) account
+    cog_pna = _az_json([
+        "resource", "show", "--ids", _cog_services_resource_id(),
+        "--api-version", "2024-10-01", "--query", "properties.publicNetworkAccess",
+    ])
+    if cog_pna != "Enabled":
+        raise ValueError(f"AI Services account publicNetworkAccess is {cog_pna!r}, expected 'Enabled'.")
 
     cognitive_ids = _az_json(
         [
@@ -380,7 +385,7 @@ def check_azure_public_network_access() -> str:
             raise ValueError(f"{resource.get('name')} publicNetworkAccess is {resource.get('pna')!r}.")
         if resource.get("defaultAction") not in (None, "Allow"):
             raise ValueError(f"{resource.get('name')} defaultAction is {resource.get('defaultAction')!r}.")
-    return f"hub plus {len(cognitive)} cognitive and {len(storage)} storage resources are reachable"
+    return f"{len(cognitive)} cognitive and {len(storage)} storage resources are reachable"
 
 
 def check_docker_smoke() -> str:

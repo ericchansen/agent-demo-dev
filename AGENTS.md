@@ -19,14 +19,13 @@ in non-interactive mode (`copilot -p`), the following overrides apply:
 
 The workshop must show agents running INSIDE Azure AI Foundry, not just as local code:
 
-- **Foundry Projects (two kinds — don't confuse them)**:
-  * **Account-based** (used by the agent SDK): `fsa-foundry-project-dev` under AI Services account
-    `fabricagentaidev2026`. Endpoint: `https://fabricagentaidev2026.services.ai.azure.com/api/projects/fsa-foundry-project-dev`.
+- **Foundry Project (modern, account-based)**:
+  * `fsa-foundry-project-dev` under AI Services account `fabricagentaidev2026`.
+    Endpoint: `https://fabricagentaidev2026.services.ai.azure.com/api/projects/fsa-foundry-project-dev`.
     Create with `az cognitiveservices account project create` (needs `allowProjectManagement=true`).
     This is what `FOUNDRY_PROJECT_ENDPOINT` must point to.
-  * **Hub-based** (classic surface, Bicep): `fsa-project-dev` under hub `fabric-agent-hub-dev`.
 - **Agent Registration**: Use the Azure AI Foundry SDK (`azure-ai-projects`) to register
-  agents in the account-based project. Verify with `scripts/verify_foundry_agent.py` — the agent
+  agents in the project. Verify with `scripts/verify_foundry_agent.py` — the agent
   (`WWISalesAgent`) is then visible in the Foundry portal playground. When `FABRIC_IQ_CONNECTION_ID`
   is unset, a demo-safe `fabric_query` function tool stands in for the Fabric IQ platform tool.
 - **What to show in docs**:
