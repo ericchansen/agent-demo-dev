@@ -28,8 +28,8 @@ This is the most powerful surface — and the most complex. You get full control
 
 | Requirement | Details |
 |---|---|
-| **Azure subscription** | For Foundry hub, project, and model deployments |
-| **Azure AI Foundry hub + project** | Created via Azure portal or `az` CLI |
+| **Azure subscription** | For the AI Services account, Foundry project, and model deployments |
+| **Azure AI Services account + project** | Created via Azure portal or `az cognitiveservices account project create` |
 | **Model deployment** | GPT-4o or equivalent deployed in your Foundry project |
 | **Fabric capacity** | F2 or higher (for the Fabric Data Agent / FabricIQPreviewTool) |
 | **Fabric Data Agent** | Must already exist — used as the `FabricIQPreviewTool` data source |
@@ -142,7 +142,7 @@ response = openai_client.responses.create(
 | Limitation | Impact |
 |---|---|
 | **Requires Python development** | Not suitable for no-code/low-code teams |
-| **More infrastructure** | Azure subscription, Foundry hub, model deployments |
+| **More infrastructure** | Azure subscription, AI Services account, model deployments |
 | **Deployment complexity** | Must manage agent lifecycle, versioning, and monitoring |
 | **Cost** | Azure OpenAI token costs + Fabric capacity + infrastructure |
 | **Preview APIs** | Agent versioning and Fabric/WorkIQ preview tools may change before GA |
