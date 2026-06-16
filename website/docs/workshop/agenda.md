@@ -13,7 +13,7 @@ This workshop is a hands-on path from a local Copilot CLI prototype to a product
 |---|---|---|
 | 09:00-09:30 | Orientation and architecture | Explain the two-surface model: Copilot CLI for fast iteration, Foundry for governed delivery. |
 | 09:30-10:30 | Environment setup | Clone the repo, install Python and website dependencies, run `python scripts/predemo.py`, and confirm the local gates pass. |
-| 10:30-11:30 | Deploy Azure resources | Deploy the dev Bicep template, understand the Foundry hub/project split, and confirm cost-safe defaults. |
+| 10:30-11:30 | Deploy Azure resources | Deploy the dev Bicep template, understand the AI Services account and Foundry project, and confirm cost-safe defaults. |
 | 11:30-12:00 | Choose your data platform | Decide whether the lab uses Microsoft Fabric Data Agent, Databricks Genie, or the deterministic WWI sample fallback. |
 | 13:00-14:30 | Connect sales data | Configure Fabric MCP or Databricks Genie credentials, then run a natural-language Tailspin Toys query through the orchestrator. |
 | 14:30-15:30 | CLI surface | Add MCP tools and skills to the Copilot CLI workflow, inspect tool responses, and compare Fabric vs Databricks behavior. |

@@ -15,7 +15,7 @@ participant artifact.
 | Day | Block | Core concept | Participant artifact |
 |---|---|---|---|
 | Day 1 | Architecture and environment | Why agents need tools, MCP, auth, and real data. | Repo cloned, `uv sync --extra dev` complete. |
-| Day 1 | Azure deploy | Bicep resources, public network access for dev, cost controls. | Resource group validated; Foundry hub reachable. |
+| Day 1 | Azure deploy | Bicep resources, public network access for dev, cost controls. | Resource group validated; Foundry project reachable. |
 | Day 1 | Data platform | Choose Fabric Data Agent or Databricks Genie. | Golden sales query returns normalized rows. |
 | Day 1 | CLI and first report | Copilot CLI / local Python invokes the quota pipeline. | XLSX, HTML, and PDF quota report. |
 | Day 2 | Foundry agent | Project, agents, playground, tools, tracing. | Agent visible and testable in Foundry portal. |

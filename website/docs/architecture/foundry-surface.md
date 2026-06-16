@@ -234,7 +234,7 @@ References (verified 2026):
 | Agent orchestrator | `src/orchestrator/` | Foundry agent configuration and tool wiring |
 | Hosted agent runtime | `src/orchestrator/hosted_agent/` | Bring-your-own-code container with Fabric MCP, quota, research, attainment, activity, and report tools |
 | Report generator | `src/agents/report_generator/` | DOCX generation + OneDrive upload |
-| Infra (Bicep) | `infra/` | Foundry hub + project (`kind: 'Project'`), storage, Key Vault, Fabric capacity. Agents and Entra app are registered out-of-band (SDK / CLI). |
+| Infra (Bicep) | `infra/` | AI Services account (modern Foundry), storage, Key Vault, Fabric capacity. Agents and projects are registered out-of-band (SDK / CLI / portal). |
 
 ## Hosted runtime configuration
 
