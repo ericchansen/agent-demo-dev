@@ -5,7 +5,8 @@ title: From Chat to Agent
 
 # From Chat to Agent
 
-:::info Where you are · 🗓️ Day 1
+:::info[Where you are · 🗓️ Day 1]
+
 This is the conceptual start of the journey on Day 1 — it frames *why* an agent needs data,
 context, and tools before you connect them in the following chapters. See the
 [Workshop Overview](../intro) for the full Day 1 → Day 2 path.

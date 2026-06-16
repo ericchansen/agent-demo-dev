@@ -8,7 +8,8 @@ import TabItem from '@theme/TabItem';
 
 # Setup Guide
 
-:::info Where you are · 🗓️ Day 1
+:::info[Where you are · 🗓️ Day 1]
+
 Setup is the first thing you do on Day 1. Finish it and you'll have a working local
 environment, deployed Azure infrastructure, and one data platform connected. See the
 [Workshop Overview](../intro) for the full Day 1 → Day 2 path.

@@ -12,7 +12,8 @@ execute when their secrets are present, and they only **fail the run** when you 
 
 This page turns the recurring "required mode is red" blocker into a few facilitator commands.
 
-:::info Who needs this
+:::info[Who needs this]
+
 Only the facilitator preparing a live demo needs Live Smoke green. Participants following the workshop do not
 need it — the offline gate (`demo-readiness`) runs on every push with no secrets.
 :::
@@ -177,7 +178,8 @@ python scripts/recorded_live_proof.py          # human-readable summary
 python scripts/recorded_live_proof.py --json    # machine-readable result
 ```
 
-:::warning Recorded ≠ live
+:::warning[Recorded ≠ live]
+
 The recorded proof is **offline**. It never contacts Fabric or Databricks, so it is reported in its own
 `recorded-offline` category — never as a `live-backend` check — and a passing recorded proof must not be read
 as a live connection being validated. It proves the *pipeline and report path* are correct for each backend's
@@ -185,14 +187,16 @@ row shape; it does **not** replace the live golden-QA eval or Genie query. Those
 above.
 :::
 
-:::warning Skipped ≠ proven
+:::warning[Skipped ≠ proven]
+
 Treat `skipped` as **unvalidated**, not "working". The offline gate and unit tests cover tool contracts,
 quota math, and artifact generation deterministically, but they do not prove a live Fabric, Databricks, or
 Foundry round trip. Before a customer delivery, set the secrets for the platform you teach and run that
 backend in **required mode** so a skip turns the run red.
 :::
 
-:::warning Out of scope for an autonomous agent
+:::warning[Out of scope for an autonomous agent]
+
 Creating the federated credential mutates Microsoft Graph and may trigger an interactive Conditional Access /
 CAE challenge that a headless agent cannot satisfy. In that case the setup script prints the manual command —
 a facilitator runs it once, and subsequent runs are green.

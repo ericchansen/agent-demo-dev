@@ -5,7 +5,8 @@ title: Evaluation and Trace Replay
 
 # Evaluation and Trace Replay
 
-:::info Where you are · 🗓️ Day 2
+:::info[Where you are · 🗓️ Day 2]
+
 Use this lab after the agent is visible in Azure AI Foundry and before publishing to Microsoft 365. The goal is to
 turn one good trace and one failure trace into repeatable regression checks.
 :::

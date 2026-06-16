@@ -5,7 +5,8 @@ title: Ship It
 
 # Ship It
 
-:::info Where you are · 🗓️ Day 2
+:::info[Where you are · 🗓️ Day 2]
+
 Shipping is the **Day 2** payoff: the agent you grounded and tested on Day 1 now reaches
 business users in Teams and M365 Copilot Chat. See the [Workshop Overview](../intro) for the
 full Day 1 → Day 2 path.
@@ -143,7 +144,8 @@ Use this checklist for the facilitator handoff:
 | Reassign data RBAC | Grant the agent identity the minimum Fabric workspace/Data Agent, Databricks, storage, and Graph permissions required for its tools. | The agent, not just the facilitator, can query data and write artifacts. |
 | Test business surface | In Teams or M365 Copilot Chat, @mention the agent with the Tailspin Toys prompt. | The published agent responds; if not, use Foundry Playground as the fallback surface. |
 
-:::warning Publish preflight — read before you click Publish
+:::warning[Publish preflight — read before you click Publish]
+
 - **Select the active version.** Publishing targets a specific agent version. Confirm the
   version you verified (`[register] created WWISalesAgent version N`) is set active before publishing,
   or the business surface may serve a stale definition.

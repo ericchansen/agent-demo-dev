@@ -5,7 +5,8 @@ title: Foundry Local and DevUI
 
 # Foundry Local and DevUI
 
-:::info Optional Day 2 lab
+:::info[Optional Day 2 lab]
+
 Use this path when cloud access is blocked, when attendees need to debug orchestration before registering agents, or
 when you want a safe comparison between offline proof, local model runtime, and live Foundry Agent Service.
 :::

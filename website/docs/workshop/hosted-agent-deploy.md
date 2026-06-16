@@ -13,7 +13,8 @@ registered by `verify_foundry_agent.py` cannot be published directly — see
 
 This lab takes the container from **build → run locally → deploy → test**. Every command is copy-paste ready.
 
-:::info Where you are · 🗓️ Day 2
+:::info[Where you are · 🗓️ Day 2]
+
 The hosted agent is the Day 2 production deployment. Do the [Foundry Surface](../architecture/foundry-surface)
 registration first so you understand the account-based project and model deployment this container talks to.
 :::
@@ -142,7 +143,8 @@ azd ext install microsoft.foundry
 | `azd ai agent invoke "<prompt>"` | Sends a prompt to the **deployed** agent and prints the response. |
 | `azd ai agent monitor --follow` | Streams live container logs from the deployed agent. |
 
-:::note Source-code vs container
+:::note[Source-code vs container]
+
 `--deploy-mode code` (source ZIP) and the container image path are both preview. This repo ships a real
 [Dockerfile](https://github.com/ericchansen/agent-demo-dev/blob/main/src/orchestrator/hosted_agent/Dockerfile), so
 the container path below works today and gives you full control over the runtime. See
@@ -220,7 +222,8 @@ Foundry's Responses → Activity bridge.
 Hosted agents use **discrete versions** (`v1`, `v2`, …). When you deploy an update, requests go to one active
 version at a time.
 
-:::warning No traffic split for hosted agents
+:::warning[No traffic split for hosted agents]
+
 Foundry Agent Service hosted agents **do not** support canary, blue-green, or weighted traffic splitting — there is
 no `--traffic` flag or equivalent. The safe-promotion pattern is: deploy the new version, smoke-test it with
 `azd ai agent invoke` / the probes / the Agents playground, then cut M365/Teams publishing over to it. Keep the
