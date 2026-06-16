@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "12339238536282840261"
+      "templateHash": "1731421711476759922"
     }
   },
   "parameters": {
@@ -64,7 +64,7 @@
     "storageAccountName": {
       "type": "string",
       "metadata": {
-        "description": "Name of the Azure Storage account used by AI Foundry."
+        "description": "Name of the Azure Storage account for agent artifacts and reports."
       }
     },
     "containerRegistryName": {
@@ -76,25 +76,7 @@
     "cogServicesName": {
       "type": "string",
       "metadata": {
-        "description": "Name of the primary Cognitive Services / AI Services account (fabricagentai2026)."
-      }
-    },
-    "foundryHubCogServicesName": {
-      "type": "string",
-      "metadata": {
-        "description": "Name of the AI Foundry Hub Cognitive Services account (fsa-hub-2026)."
-      }
-    },
-    "foundryHubName": {
-      "type": "string",
-      "metadata": {
-        "description": "Name of the AI Foundry Hub workspace (fabric-agent-hub)."
-      }
-    },
-    "foundryProjectName": {
-      "type": "string",
-      "metadata": {
-        "description": "Name of the AI Foundry Project workspace (kind Project) parented to the hub. The workshop registers agents against this project."
+        "description": "Name of the AI Services account (Microsoft.CognitiveServices/accounts, kind=AIServices). This is the modern Foundry resource that hosts the agent SDK endpoint."
       }
     },
     "publicNetworkAccess": {
@@ -108,25 +90,11 @@
         "description": "Public network access for demo-facing resources. Keep Disabled for production; dev can override to Enabled for portal access."
       }
     },
-    "foundryHubStorageRoleAssignmentName": {
-      "type": "string",
-      "defaultValue": "",
-      "metadata": {
-        "description": "Optional existing role assignment name for the Foundry hub managed identity on storage. Use only to make redeploys idempotent when the assignment already exists with a non-default name."
-      }
-    },
     "enableRoleAssignments": {
       "type": "bool",
       "defaultValue": true,
       "metadata": {
         "description": "Whether to create RBAC role assignments. Requires Owner or User Access Administrator; dev CI uses false because the OIDC principal is Contributor-scoped."
-      }
-    },
-    "foundryHubPnaExemptionAssignmentId": {
-      "type": "string",
-      "defaultValue": "",
-      "metadata": {
-        "description": "Optional resource ID of an external (management-group) policy assignment whose \"modify\" effect forces Foundry hubs to publicNetworkAccess=Disabled. When set, a Waiver exemption is created so the dev hub stays reachable. Leave empty in production."
       }
     },
     "enablePolicyAssignments": {
@@ -770,420 +738,6 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
-      "name": "foundryHubCogServices",
-      "properties": {
-        "expressionEvaluationOptions": {
-          "scope": "inner"
-        },
-        "mode": "Incremental",
-        "parameters": {
-          "name": {
-            "value": "[parameters('foundryHubCogServicesName')]"
-          },
-          "location": {
-            "value": "[parameters('location')]"
-          },
-          "customSubDomainName": {
-            "value": "[parameters('foundryHubCogServicesName')]"
-          },
-          "publicNetworkAccess": {
-            "value": "[parameters('publicNetworkAccess')]"
-          },
-          "tags": {
-            "value": "[parameters('tags')]"
-          }
-        },
-        "template": {
-          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-          "contentVersion": "1.0.0.0",
-          "metadata": {
-            "_generator": {
-              "name": "bicep",
-              "version": "0.41.2.15936",
-              "templateHash": "7029321386326845302"
-            }
-          },
-          "parameters": {
-            "name": {
-              "type": "string",
-              "metadata": {
-                "description": "Name of the Cognitive Services account."
-              }
-            },
-            "location": {
-              "type": "string",
-              "metadata": {
-                "description": "Azure region."
-              }
-            },
-            "kind": {
-              "type": "string",
-              "defaultValue": "AIServices",
-              "metadata": {
-                "description": "Cognitive Services kind (e.g. AIServices, OpenAI, CognitiveServices)."
-              }
-            },
-            "skuName": {
-              "type": "string",
-              "defaultValue": "S0",
-              "allowedValues": [
-                "S0",
-                "S1",
-                "S2",
-                "S3",
-                "F0"
-              ],
-              "metadata": {
-                "description": "SKU name."
-              }
-            },
-            "customSubDomainName": {
-              "type": "string",
-              "defaultValue": "",
-              "metadata": {
-                "description": "Custom subdomain name (required when updating existing accounts that already have one)."
-              }
-            },
-            "tags": {
-              "type": "object",
-              "defaultValue": {},
-              "metadata": {
-                "description": "Resource tags."
-              }
-            },
-            "publicNetworkAccess": {
-              "type": "string",
-              "defaultValue": "Disabled",
-              "allowedValues": [
-                "Enabled",
-                "Disabled"
-              ],
-              "metadata": {
-                "description": "Public network access for the Cognitive Services account."
-              }
-            }
-          },
-          "resources": [
-            {
-              "type": "Microsoft.CognitiveServices/accounts",
-              "apiVersion": "2023-05-01",
-              "name": "[parameters('name')]",
-              "location": "[parameters('location')]",
-              "tags": "[parameters('tags')]",
-              "kind": "[parameters('kind')]",
-              "sku": {
-                "name": "[parameters('skuName')]"
-              },
-              "identity": {
-                "type": "SystemAssigned"
-              },
-              "properties": {
-                "disableLocalAuth": true,
-                "publicNetworkAccess": "[parameters('publicNetworkAccess')]",
-                "customSubDomainName": "[if(empty(parameters('customSubDomainName')), null(), parameters('customSubDomainName'))]",
-                "networkAcls": {
-                  "defaultAction": "[if(equals(parameters('publicNetworkAccess'), 'Enabled'), 'Allow', 'Deny')]",
-                  "ipRules": [],
-                  "virtualNetworkRules": []
-                }
-              }
-            }
-          ],
-          "outputs": {
-            "accountId": {
-              "type": "string",
-              "metadata": {
-                "description": "Resource ID of the Cognitive Services account."
-              },
-              "value": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('name'))]"
-            },
-            "principalId": {
-              "type": "string",
-              "metadata": {
-                "description": "Principal ID of the system-assigned managed identity."
-              },
-              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('name')), '2023-05-01', 'full').identity.principalId]"
-            }
-          }
-        }
-      }
-    },
-    {
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2025-04-01",
-      "name": "aiFoundry",
-      "properties": {
-        "expressionEvaluationOptions": {
-          "scope": "inner"
-        },
-        "mode": "Incremental",
-        "parameters": {
-          "hubName": {
-            "value": "[parameters('foundryHubName')]"
-          },
-          "location": {
-            "value": "[parameters('location')]"
-          },
-          "keyVaultId": {
-            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyVault'), '2025-04-01').outputs.keyVaultId.value]"
-          },
-          "storageAccountId": {
-            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'storage'), '2025-04-01').outputs.storageAccountId.value]"
-          },
-          "publicNetworkAccess": {
-            "value": "[parameters('publicNetworkAccess')]"
-          },
-          "storageRoleAssignmentName": {
-            "value": "[parameters('foundryHubStorageRoleAssignmentName')]"
-          },
-          "enableRoleAssignments": {
-            "value": "[parameters('enableRoleAssignments')]"
-          },
-          "tags": {
-            "value": "[parameters('tags')]"
-          }
-        },
-        "template": {
-          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-          "contentVersion": "1.0.0.0",
-          "metadata": {
-            "_generator": {
-              "name": "bicep",
-              "version": "0.41.2.15936",
-              "templateHash": "8665946723141727233"
-            }
-          },
-          "parameters": {
-            "hubName": {
-              "type": "string",
-              "metadata": {
-                "description": "Name of the AI Foundry Hub (MachineLearningServices workspace)."
-              }
-            },
-            "location": {
-              "type": "string",
-              "metadata": {
-                "description": "Azure region."
-              }
-            },
-            "keyVaultId": {
-              "type": "string",
-              "metadata": {
-                "description": "Resource ID of the linked Key Vault."
-              }
-            },
-            "storageAccountId": {
-              "type": "string",
-              "metadata": {
-                "description": "Resource ID of the linked Storage account."
-              }
-            },
-            "tags": {
-              "type": "object",
-              "defaultValue": {},
-              "metadata": {
-                "description": "Resource tags."
-              }
-            },
-            "publicNetworkAccess": {
-              "type": "string",
-              "defaultValue": "Disabled",
-              "allowedValues": [
-                "Enabled",
-                "Disabled"
-              ],
-              "metadata": {
-                "description": "Public network access for the AI Foundry hub."
-              }
-            },
-            "storageRoleAssignmentName": {
-              "type": "string",
-              "defaultValue": "",
-              "metadata": {
-                "description": "Optional role assignment resource name when the storage RBAC assignment already exists."
-              }
-            },
-            "enableRoleAssignments": {
-              "type": "bool",
-              "defaultValue": true,
-              "metadata": {
-                "description": "Whether to create the hub managed identity storage role assignment. Requires Owner or User Access Administrator; set false for Contributor-only CI deploys when the assignment already exists."
-              }
-            }
-          },
-          "variables": {
-            "storageBlobDataContributorRoleId": "ba92f5b4-2d11-453d-a403-e96b0029c9fe"
-          },
-          "resources": [
-            {
-              "type": "Microsoft.MachineLearningServices/workspaces",
-              "apiVersion": "2025-06-01",
-              "name": "[parameters('hubName')]",
-              "location": "[parameters('location')]",
-              "tags": "[parameters('tags')]",
-              "kind": "Hub",
-              "identity": {
-                "type": "SystemAssigned"
-              },
-              "properties": {
-                "keyVault": "[parameters('keyVaultId')]",
-                "storageAccount": "[parameters('storageAccountId')]",
-                "publicNetworkAccess": "[parameters('publicNetworkAccess')]",
-                "networkAcls": {
-                  "defaultAction": "[if(equals(parameters('publicNetworkAccess'), 'Enabled'), 'Allow', 'Deny')]",
-                  "ipRules": [],
-                  "resourceAccessRules": []
-                },
-                "systemDatastoresAuthMode": "identity"
-              }
-            },
-            {
-              "condition": "[parameters('enableRoleAssignments')]",
-              "type": "Microsoft.Authorization/roleAssignments",
-              "apiVersion": "2022-04-01",
-              "scope": "[resourceId('Microsoft.Storage/storageAccounts', last(split(parameters('storageAccountId'), '/')))]",
-              "name": "[if(empty(parameters('storageRoleAssignmentName')), guid(resourceId('Microsoft.Storage/storageAccounts', last(split(parameters('storageAccountId'), '/'))), resourceId('Microsoft.MachineLearningServices/workspaces', parameters('hubName')), variables('storageBlobDataContributorRoleId')), parameters('storageRoleAssignmentName'))]",
-              "properties": {
-                "principalId": "[reference(resourceId('Microsoft.MachineLearningServices/workspaces', parameters('hubName')), '2025-06-01', 'full').identity.principalId]",
-                "principalType": "ServicePrincipal",
-                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('storageBlobDataContributorRoleId'))]"
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.MachineLearningServices/workspaces', parameters('hubName'))]"
-              ]
-            }
-          ],
-          "outputs": {
-            "hubId": {
-              "type": "string",
-              "metadata": {
-                "description": "Resource ID of the Foundry Hub."
-              },
-              "value": "[resourceId('Microsoft.MachineLearningServices/workspaces', parameters('hubName'))]"
-            },
-            "hubPrincipalId": {
-              "type": "string",
-              "metadata": {
-                "description": "Principal ID of the hub system-assigned managed identity."
-              },
-              "value": "[reference(resourceId('Microsoft.MachineLearningServices/workspaces', parameters('hubName')), '2025-06-01', 'full').identity.principalId]"
-            }
-          }
-        }
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Resources/deployments', 'keyVault')]",
-        "[resourceId('Microsoft.Resources/deployments', 'storage')]"
-      ]
-    },
-    {
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2025-04-01",
-      "name": "foundryProject",
-      "properties": {
-        "expressionEvaluationOptions": {
-          "scope": "inner"
-        },
-        "mode": "Incremental",
-        "parameters": {
-          "projectName": {
-            "value": "[parameters('foundryProjectName')]"
-          },
-          "location": {
-            "value": "[parameters('location')]"
-          },
-          "hubResourceId": {
-            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'aiFoundry'), '2025-04-01').outputs.hubId.value]"
-          },
-          "tags": {
-            "value": "[parameters('tags')]"
-          }
-        },
-        "template": {
-          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-          "contentVersion": "1.0.0.0",
-          "metadata": {
-            "_generator": {
-              "name": "bicep",
-              "version": "0.41.2.15936",
-              "templateHash": "4619055348802470506"
-            }
-          },
-          "parameters": {
-            "projectName": {
-              "type": "string",
-              "metadata": {
-                "description": "Name of the AI Foundry Project (MachineLearningServices workspace, kind Project)."
-              }
-            },
-            "location": {
-              "type": "string",
-              "metadata": {
-                "description": "Azure region. Should match the parent hub region."
-              }
-            },
-            "hubResourceId": {
-              "type": "string",
-              "metadata": {
-                "description": "Resource ID of the parent AI Foundry Hub workspace."
-              }
-            },
-            "tags": {
-              "type": "object",
-              "defaultValue": {},
-              "metadata": {
-                "description": "Resource tags."
-              }
-            }
-          },
-          "resources": [
-            {
-              "type": "Microsoft.MachineLearningServices/workspaces",
-              "apiVersion": "2025-06-01",
-              "name": "[parameters('projectName')]",
-              "location": "[parameters('location')]",
-              "tags": "[parameters('tags')]",
-              "kind": "Project",
-              "identity": {
-                "type": "SystemAssigned"
-              },
-              "properties": {
-                "hubResourceId": "[parameters('hubResourceId')]"
-              }
-            }
-          ],
-          "outputs": {
-            "projectId": {
-              "type": "string",
-              "metadata": {
-                "description": "Resource ID of the Foundry Project."
-              },
-              "value": "[resourceId('Microsoft.MachineLearningServices/workspaces', parameters('projectName'))]"
-            },
-            "projectPrincipalId": {
-              "type": "string",
-              "metadata": {
-                "description": "Principal ID of the project system-assigned managed identity."
-              },
-              "value": "[reference(resourceId('Microsoft.MachineLearningServices/workspaces', parameters('projectName')), '2025-06-01', 'full').identity.principalId]"
-            },
-            "projectName": {
-              "type": "string",
-              "metadata": {
-                "description": "Discovery URL used by the azure-ai-projects SDK and the Foundry portal."
-              },
-              "value": "[parameters('projectName')]"
-            }
-          }
-        }
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Resources/deployments', 'aiFoundry')]"
-      ]
-    },
-    {
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2025-04-01",
       "name": "policies",
       "properties": {
         "expressionEvaluationOptions": {
@@ -1193,9 +747,6 @@
         "parameters": {
           "enablePolicyAssignments": {
             "value": "[parameters('enablePolicyAssignments')]"
-          },
-          "foundryHubPnaExemptionAssignmentId": {
-            "value": "[parameters('foundryHubPnaExemptionAssignmentId')]"
           }
         },
         "template": {
@@ -1205,7 +756,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.41.2.15936",
-              "templateHash": "4912145671903390924"
+              "templateHash": "10908722904593461144"
             }
           },
           "parameters": {
@@ -1214,13 +765,6 @@
               "defaultValue": true,
               "metadata": {
                 "description": "Whether to create resource-group policy assignments. Requires Owner or Resource Policy Contributor; set false for Contributor-only CI deploys."
-              }
-            },
-            "foundryHubPnaExemptionAssignmentId": {
-              "type": "string",
-              "defaultValue": "",
-              "metadata": {
-                "description": "Resource ID of an external (e.g. management-group) policy assignment whose \"modify\" effect forces AI Foundry hubs to publicNetworkAccess=Disabled. When provided, a resource-group-scoped Waiver exemption is created so the dev hub can keep public network access Enabled for portal reachability. Leave empty in production."
               }
             }
           },
@@ -1263,23 +807,6 @@
               "condition": "[parameters('enablePolicyAssignments')]",
               "type": "Microsoft.Authorization/policyAssignments",
               "apiVersion": "2023-04-01",
-              "name": "fsa-foundry-no-pubnet",
-              "properties": {
-                "displayName": "[FSA] AI Foundry Hub — disable public network access",
-                "description": "Audit Azure Machine Learning workspaces (Foundry hubs/projects) that allow public network access.",
-                "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/438c38d2-3772-465a-a9cc-7a6666a275ce",
-                "parameters": {
-                  "effect": {
-                    "value": "Audit"
-                  }
-                },
-                "enforcementMode": "Default"
-              }
-            },
-            {
-              "condition": "[parameters('enablePolicyAssignments')]",
-              "type": "Microsoft.Authorization/policyAssignments",
-              "apiVersion": "2023-04-01",
               "name": "fsa-aisvc-restrict-net",
               "properties": {
                 "displayName": "[FSA] AI Services — restrict network access",
@@ -1291,18 +818,6 @@
                   }
                 },
                 "enforcementMode": "Default"
-              }
-            },
-            {
-              "condition": "[not(empty(parameters('foundryHubPnaExemptionAssignmentId')))]",
-              "type": "Microsoft.Authorization/policyExemptions",
-              "apiVersion": "2022-07-01-preview",
-              "name": "exempt-hub-pna-dev",
-              "properties": {
-                "displayName": "[FSA] Dev Foundry hub — exempt from public-network modify policy",
-                "description": "Allows the dev AI Foundry hub to keep publicNetworkAccess=Enabled for portal reachability. Do not apply in production.",
-                "policyAssignmentId": "[parameters('foundryHubPnaExemptionAssignmentId')]",
-                "exemptionCategory": "Waiver"
               }
             }
           ]
@@ -1503,26 +1018,12 @@
       },
       "value": "[reference(resourceId('Microsoft.Resources/deployments', 'containerRegistry'), '2025-04-01').outputs.loginServer.value]"
     },
-    "foundryHubId": {
+    "cogServicesId": {
       "type": "string",
       "metadata": {
-        "description": "Resource ID of the AI Foundry Hub."
+        "description": "Resource ID of the AI Services account (modern Foundry). The Foundry project is a child resource created via SDK or Azure portal."
       },
-      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'aiFoundry'), '2025-04-01').outputs.hubId.value]"
-    },
-    "foundryHubPrincipalId": {
-      "type": "string",
-      "metadata": {
-        "description": "Principal ID of the Foundry Hub system-assigned managed identity."
-      },
-      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'aiFoundry'), '2025-04-01').outputs.hubPrincipalId.value]"
-    },
-    "foundryProjectId": {
-      "type": "string",
-      "metadata": {
-        "description": "Resource ID of the Foundry Project where workshop agents are registered."
-      },
-      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'foundryProject'), '2025-04-01').outputs.projectId.value]"
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'cogServices'), '2025-04-01').outputs.accountId.value]"
     }
   }
 }
