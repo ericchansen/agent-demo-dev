@@ -6,9 +6,9 @@ title: Enable Live Smoke
 # Enable Live Smoke
 
 The **Live Smoke** workflow (`.github/workflows/live-smoke.yml`) is the pre-customer readiness check. It runs
-five jobs: Foundry registration, Fabric golden-QA eval, Databricks Genie query, the published-site check, and
-the offline demo-readiness gate. The three live-backend jobs only execute when their secrets are present, and
-they only **fail the run** when you mark that backend as required.
+six jobs: Foundry registration, Fabric golden-QA eval, Databricks Genie query, the published-site check, the
+offline demo-readiness gate, and the recorded/offline backend E2E proof. The three live-backend jobs only
+execute when their secrets are present, and they only **fail the run** when you mark that backend as required.
 
 This page turns the recurring "required mode is red" blocker into a few facilitator commands.
 
@@ -142,7 +142,7 @@ Every run uploads `demo-readiness-report.json` and writes a Step Summary table. 
 - `required_backends`: the per-platform requirement the run used.
 
 The run fails only when a `required` backend is `failed` or `skipped`, or when an always-on check
-(published-site, offline readiness) fails.
+(published-site, offline readiness, recorded/offline backend E2E proof) fails.
 
 ## 5. Backend Validation Status
 
@@ -158,6 +158,32 @@ row from `skipped` to live-proven (`ran`).
 | **Databricks** (Genie query) | `skipped` until secrets set | A Genie space answers a query over Unity Catalog tables. | `DATABRICKS_GENIE_MCP_URL` + `DATABRICKS_HOST` + OAuth M2M (`DATABRICKS_CLIENT_ID`, `DATABRICKS_CLIENT_SECRET`) for managed MCP; or `DATABRICKS_WORKSPACE_URL` + `DATABRICKS_GENIE_SPACE_ID` + either OAuth M2M or `DATABRICKS_TOKEN` for SDK-direct. | Create a Genie space, grant `CAN RUN`, set the secrets, run `-f require_databricks=true`. |
 | **Published site** | `ran` on every push | The published workshop site is reachable. | none | Automatic — no secrets. |
 | **Offline readiness** | `ran` on every push | `demo_check.py`, offline eval, and artifact generation succeed without any cloud. | none | Automatic — runs on every push. |
+| **Recorded/offline backend E2E** | `ran` on every push | Recorded Fabric- and Databricks-shaped WWI rows flow through the **real** normalize → quota → report path and produce non-empty XLSX/HTML/PDF artifacts with source-specific citations. | none | Automatic — `python scripts/recorded_live_proof.py`. |
+
+### Recorded vs. live: what the offline proof does and does not cover
+
+The **recorded/offline backend E2E proof** (`scripts/recorded_live_proof.py`) closes a specific gap: in demo
+mode the live Fabric and Databricks jobs are `skipped`, so nothing exercises the end-to-end pipeline for those
+backend row shapes. The recorded proof replays non-secret, backend-shaped fixtures
+(`src/agents/quota_estimator/recorded_fixtures/`) through the **same** code path the live backends feed —
+`generate_quota_estimation_report` — and asserts that each platform's column contract normalizes, produces
+quota recommendations, and writes real XLSX/HTML/PDF artifacts with the correct per-source citation and
+methodology.
+
+Run it locally:
+
+```powershell
+python scripts/recorded_live_proof.py          # human-readable summary
+python scripts/recorded_live_proof.py --json    # machine-readable result
+```
+
+:::warning Recorded ≠ live
+The recorded proof is **offline**. It never contacts Fabric or Databricks, so it is reported in its own
+`recorded-offline` category — never as a `live-backend` check — and a passing recorded proof must not be read
+as a live connection being validated. It proves the *pipeline and report path* are correct for each backend's
+row shape; it does **not** replace the live golden-QA eval or Genie query. Those stay gated on real secrets
+above.
+:::
 
 :::warning Skipped ≠ proven
 Treat `skipped` as **unvalidated**, not "working". The offline gate and unit tests cover tool contracts,
