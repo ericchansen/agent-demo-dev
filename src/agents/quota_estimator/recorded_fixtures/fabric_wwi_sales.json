@@ -1,0 +1,17 @@
+{
+  "platform": "fabric",
+  "description": "Recorded (offline) Fabric Data Agent result over Wide World Importers SalesOrderHeader joined to SalesTerritory. Non-secret fixture used to prove the quota pipeline end to end without a live Fabric round trip.",
+  "query_surface": "Fabric Data Agent",
+  "source_query": "SELECT st.SalesTerritory, p.ProductCategory, soh.OrderDate, soh.TotalDue, sod.Quantity FROM SalesOrderHeader soh JOIN SalesTerritory st ON soh.TerritoryID = st.TerritoryID JOIN SalesOrderDetail sod ON soh.SalesOrderID = sod.SalesOrderID JOIN Product p ON sod.ProductID = p.ProductID WHERE soh.OrderDate >= DATEADD(month, -12, GETDATE())",
+  "columns": ["SalesTerritory", "ProductCategory", "OrderDate", "TotalDue", "Quantity"],
+  "rows": [
+    {"SalesTerritory": "Northwest", "ProductCategory": "Novelty Items", "OrderDate": "2025-07-12", "TotalDue": 184500.0, "Quantity": 412},
+    {"SalesTerritory": "Northwest", "ProductCategory": "Novelty Items", "OrderDate": "2026-03-04", "TotalDue": 251300.0, "Quantity": 528},
+    {"SalesTerritory": "Northwest", "ProductCategory": "Toys", "OrderDate": "2025-08-21", "TotalDue": 92750.0, "Quantity": 238},
+    {"SalesTerritory": "Northwest", "ProductCategory": "Toys", "OrderDate": "2026-04-18", "TotalDue": 121400.0, "Quantity": 305},
+    {"SalesTerritory": "Southeast", "ProductCategory": "Clothing", "OrderDate": "2025-09-09", "TotalDue": 156800.0, "Quantity": 351},
+    {"SalesTerritory": "Southeast", "ProductCategory": "Clothing", "OrderDate": "2026-05-02", "TotalDue": 168200.0, "Quantity": 366},
+    {"SalesTerritory": "Southeast", "ProductCategory": "Packaging Materials", "OrderDate": "2025-10-15", "TotalDue": 73400.0, "Quantity": 1840},
+    {"SalesTerritory": "Southeast", "ProductCategory": "Packaging Materials", "OrderDate": "2026-05-19", "TotalDue": 81100.0, "Quantity": 1995}
+  ]
+}

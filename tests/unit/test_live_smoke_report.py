@@ -20,6 +20,7 @@ def test_build_report_demo_mode_marks_unconfigured_live_backends_skipped() -> No
             "DATABRICKS_CONFIGURED": "false",
             "PUBLISHED_RESULT": "success",
             "READINESS_RESULT": "success",
+            "RECORDED_PROOF_RESULT": "success",
         }
     )
 
@@ -43,6 +44,7 @@ def test_build_report_required_mode_fails_skipped_live_backends() -> None:
             "DATABRICKS_CONFIGURED": "true",
             "PUBLISHED_RESULT": "success",
             "READINESS_RESULT": "success",
+            "RECORDED_PROOF_RESULT": "success",
         }
     )
 
@@ -65,6 +67,7 @@ def test_build_report_selective_backend_only_requires_chosen_platform() -> None:
             "DATABRICKS_CONFIGURED": "false",
             "PUBLISHED_RESULT": "success",
             "READINESS_RESULT": "success",
+            "RECORDED_PROOF_RESULT": "success",
         }
     )
 
@@ -90,6 +93,7 @@ def test_build_report_selective_backend_fails_when_required_platform_missing() -
             "DATABRICKS_CONFIGURED": "false",
             "PUBLISHED_RESULT": "success",
             "READINESS_RESULT": "success",
+            "RECORDED_PROOF_RESULT": "success",
         }
     )
 
@@ -112,6 +116,7 @@ def test_render_summary_includes_mode_and_totals() -> None:
             "DATABRICKS_CONFIGURED": "true",
             "PUBLISHED_RESULT": "success",
             "READINESS_RESULT": "success",
+            "RECORDED_PROOF_RESULT": "success",
         }
     )
 
@@ -130,6 +135,7 @@ def test_main_writes_json_summary_and_github_output(tmp_path: Path, monkeypatch)
     monkeypatch.setenv("DATABRICKS_CONFIGURED", "false")
     monkeypatch.setenv("PUBLISHED_RESULT", "success")
     monkeypatch.setenv("READINESS_RESULT", "success")
+    monkeypatch.setenv("RECORDED_PROOF_RESULT", "success")
     report_path = tmp_path / "report.json"
     summary_path = tmp_path / "summary.md"
     output_path = tmp_path / "github-output.txt"
@@ -142,3 +148,50 @@ def test_main_writes_json_summary_and_github_output(tmp_path: Path, monkeypatch)
     assert json.loads(report_path.read_text(encoding="utf-8"))["totals"]["skipped"] == 2
     assert "Live Smoke summary" in summary_path.read_text(encoding="utf-8")
     assert output_path.read_text(encoding="utf-8") == "failures=0\n"
+
+
+def test_recorded_proof_reported_separately_from_live_backends() -> None:
+    report = build_report(
+        {
+            "FOUNDRY_RESULT": "success",
+            "FOUNDRY_CONFIGURED": "false",
+            "FABRIC_RESULT": "success",
+            "FABRIC_CONFIGURED": "false",
+            "DATABRICKS_RESULT": "success",
+            "DATABRICKS_CONFIGURED": "false",
+            "PUBLISHED_RESULT": "success",
+            "READINESS_RESULT": "success",
+            "RECORDED_PROOF_RESULT": "success",
+        }
+    )
+
+    checks = {check["name"]: check for check in report["checks"]}
+    recorded = checks["Recorded/offline backend E2E proof"]
+    # The recorded proof ran and is its own category -- never counted as a live backend.
+    assert recorded["status"] == "ran"
+    assert recorded["category"] == "recorded-offline"
+    assert recorded["category"] != "live-backend"
+    assert "offline" in recorded["detail"].lower()
+    # Three unconfigured live backends remain honestly skipped despite the recorded proof.
+    assert report["totals"]["skipped"] == 3
+    assert report["totals"]["failed"] == 0
+
+
+def test_recorded_proof_failure_fails_the_workflow() -> None:
+    report = build_report(
+        {
+            "FOUNDRY_RESULT": "success",
+            "FOUNDRY_CONFIGURED": "true",
+            "FABRIC_RESULT": "success",
+            "FABRIC_CONFIGURED": "true",
+            "DATABRICKS_RESULT": "success",
+            "DATABRICKS_CONFIGURED": "true",
+            "PUBLISHED_RESULT": "success",
+            "READINESS_RESULT": "success",
+            "RECORDED_PROOF_RESULT": "failure",
+        }
+    )
+
+    checks = {check["name"]: check for check in report["checks"]}
+    assert checks["Recorded/offline backend E2E proof"]["status"] == "failed"
+    assert report["totals"]["failed"] == 1

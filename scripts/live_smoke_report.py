@@ -88,6 +88,7 @@ def build_report(env: Mapping[str, str]) -> dict[str, object]:
     )
     checks.append(_always_check("Published workshop site", env.get("PUBLISHED_RESULT", "")))
     checks.append(_always_check("Offline eval and demo readiness", env.get("READINESS_RESULT", "")))
+    checks.append(_recorded_proof_check(env.get("RECORDED_PROOF_RESULT", "")))
 
     failed = sum(1 for check in checks if check.status == "failed" or (check.required and check.status == "skipped"))
     skipped = sum(1 for check in checks if check.status == "skipped")
@@ -180,6 +181,37 @@ def _always_check(name: str, result: str) -> Check:
     return Check(
         name=name,
         category="offline-or-public",
+        required=True,
+        status=status,
+        job_result=result,
+        configured=True,
+        detail=detail,
+    )
+
+
+def _recorded_proof_check(result: str) -> Check:
+    """Recorded / offline backend E2E proof.
+
+    Unconditional and secret-free: it proves the normalize -> quota -> report
+    path runs end to end for the Fabric- and Databricks-shaped row contracts. It
+    is explicitly NOT a live backend round trip, so it is reported in its own
+    ``recorded-offline`` category and never as a ``live-backend`` check.
+    """
+
+    if result == "success":
+        status = "ran"
+        detail = (
+            "Recorded Fabric/Databricks fixtures drove the real pipeline to artifacts (offline, no live round trip)."
+        )
+    elif result == "failure":
+        status = "failed"
+        detail = "Recorded backend E2E proof failed."
+    else:
+        status = "skipped"
+        detail = f"Recorded backend E2E proof did not complete (result: {result})."
+    return Check(
+        name="Recorded/offline backend E2E proof",
+        category="recorded-offline",
         required=True,
         status=status,
         job_result=result,

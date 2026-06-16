@@ -1,0 +1,17 @@
+{
+  "platform": "databricks",
+  "description": "Recorded (offline) Databricks Genie / Unity Catalog result over Wide World Importers sales tables. Non-secret fixture used to prove the quota pipeline end to end without a live Databricks Genie round trip.",
+  "query_surface": "Databricks Genie Space backed by Unity Catalog",
+  "source_query": "SELECT sales_territory, product_category, order_timestamp, net_sales_amount, units_sold FROM wwi.sales.fact_sales_order WHERE order_timestamp >= date_sub(current_date(), 365)",
+  "columns": ["sales_territory", "product_category", "order_timestamp", "net_sales_amount", "units_sold"],
+  "rows": [
+    {"sales_territory": "Northwest", "product_category": "Novelty Items", "order_timestamp": "2025-07-12", "net_sales_amount": 184500.0, "units_sold": 412, "source_platform": "databricks"},
+    {"sales_territory": "Northwest", "product_category": "Novelty Items", "order_timestamp": "2026-03-04", "net_sales_amount": 251300.0, "units_sold": 528, "source_platform": "databricks"},
+    {"sales_territory": "Northwest", "product_category": "Toys", "order_timestamp": "2025-08-21", "net_sales_amount": 92750.0, "units_sold": 238, "source_platform": "databricks"},
+    {"sales_territory": "Northwest", "product_category": "Toys", "order_timestamp": "2026-04-18", "net_sales_amount": 121400.0, "units_sold": 305, "source_platform": "databricks"},
+    {"sales_territory": "Southeast", "product_category": "Clothing", "order_timestamp": "2025-09-09", "net_sales_amount": 156800.0, "units_sold": 351, "source_platform": "databricks"},
+    {"sales_territory": "Southeast", "product_category": "Clothing", "order_timestamp": "2026-05-02", "net_sales_amount": 168200.0, "units_sold": 366, "source_platform": "databricks"},
+    {"sales_territory": "Southeast", "product_category": "Packaging Materials", "order_timestamp": "2025-10-15", "net_sales_amount": 73400.0, "units_sold": 1840, "source_platform": "databricks"},
+    {"sales_territory": "Southeast", "product_category": "Packaging Materials", "order_timestamp": "2026-05-19", "net_sales_amount": 81100.0, "units_sold": 1995, "source_platform": "databricks"}
+  ]
+}

@@ -39,6 +39,9 @@ jobs:
       - name: Demo readiness
         run: python scripts/demo_check.py
 
+      - name: Recorded backend E2E proof
+        run: python scripts/recorded_live_proof.py
+
       - name: Workshop visual proof
         run: python scripts/check_workshop_visuals.py
 
