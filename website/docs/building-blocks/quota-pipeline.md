@@ -276,8 +276,8 @@ For the dev environment, `infra/parameters/dev.bicepparam` overrides this:
 param publicNetworkAccess = 'Enabled'
 ```
 
-This single parameter flows through `infra/main.bicep` to the AI Foundry hub
-(`infra/modules/ai-foundry.bicep`), Cognitive Services (`infra/modules/cognitive-services.bicep`), and storage
+This single parameter flows through `infra/main.bicep` to the AI Services account
+(`infra/modules/cognitive-services.bicep`) and storage
 (`infra/modules/storage.bicep`). When `Enabled`, each module also sets its `networkAcls.defaultAction` to `Allow`
 so the portal, Foundry runtime, and hosted container all stay reachable.
 
