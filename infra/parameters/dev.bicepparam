@@ -8,6 +8,7 @@ param fabricAdminUpn = 'admin@MngEnvMCAP529863.onmicrosoft.com'
 param storageAccountName = 'fsaagentstorage2026d'
 param containerRegistryName = 'fsaagentacr2026d'
 param cogServicesName = 'fabricagentaidev2026'
+param appInsightsName = 'fsa-agent-insights-dev'
 param publicNetworkAccess = 'Enabled'
 param enableRoleAssignments = false
 param enablePolicyAssignments = false

@@ -335,10 +335,18 @@ def check_azure_public_network_access() -> str:
     resource_group = _resource_group()
 
     # Check the AI Services (Foundry) account
-    cog_pna = _az_json([
-        "resource", "show", "--ids", _cog_services_resource_id(),
-        "--api-version", "2024-10-01", "--query", "properties.publicNetworkAccess",
-    ])
+    cog_pna = _az_json(
+        [
+            "resource",
+            "show",
+            "--ids",
+            _cog_services_resource_id(),
+            "--api-version",
+            "2024-10-01",
+            "--query",
+            "properties.publicNetworkAccess",
+        ]
+    )
     if cog_pna != "Enabled":
         raise ValueError(f"AI Services account publicNetworkAccess is {cog_pna!r}, expected 'Enabled'.")
 

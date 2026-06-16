@@ -37,6 +37,9 @@ param containerRegistryName string
 @description('Name of the AI Services account (Microsoft.CognitiveServices/accounts, kind=AIServices). This is the modern Foundry resource that hosts the agent SDK endpoint.')
 param cogServicesName string
 
+@description('Name of the Application Insights resource for Foundry agent tracing.')
+param appInsightsName string = ''
+
 @description('Public network access for demo-facing resources. Keep Disabled for production; dev can override to Enabled for portal access.')
 @allowed(['Enabled', 'Disabled'])
 param publicNetworkAccess string = 'Disabled'
@@ -116,6 +119,16 @@ module cogServices './modules/cognitive-services.bicep' = {
   }
 }
 
+module appInsights './modules/app-insights.bicep' = if (!empty(appInsightsName)) {
+  name: 'appInsights'
+  params: {
+    name: appInsightsName
+    location: location
+    publicNetworkAccess: publicNetworkAccess
+    tags: tags
+  }
+}
+
 module policies './modules/policy.bicep' = {
   name: 'policies'
   params: {
@@ -158,3 +171,6 @@ output containerRegistryEndpoint string = containerRegistry.outputs.loginServer
 
 @description('Resource ID of the AI Services account (modern Foundry). The Foundry project is a child resource created via SDK or Azure portal.')
 output cogServicesId string = cogServices.outputs.accountId
+
+@description('Application Insights connection string for Foundry agent tracing. Connect this in the Foundry portal under Traces > Connect.')
+output appInsightsConnectionString string = !empty(appInsightsName) ? appInsights!.outputs.connectionString : ''
