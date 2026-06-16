@@ -21,9 +21,9 @@ Most failures print a category in the error text — `azure/login`, `Configurati
 ### `ConfigurationError: FOUNDRY_PROJECT_ENDPOINT is not set`
 
 The SDK path in `src/orchestrator/foundry_agent.py` and `scripts/verify_foundry_agent.py` needs an
-**account-based** Foundry project endpoint, not the hub workspace.
+**account-based** Foundry project endpoint, not a legacy hub workspace.
 
-- **Wrong:** an `azureml://…` hub workspace id, or a hub workspace name.
+- **Wrong:** an `azureml://…` workspace id, or a hub workspace name.
 - **Right:** `https://<account>.services.ai.azure.com/api/projects/<project>`.
 
 ```dotenv

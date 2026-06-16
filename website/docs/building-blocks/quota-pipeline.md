@@ -286,13 +286,13 @@ so the portal, Foundry runtime, and hosted container all stay reachable.
 | Production (default) | `Disabled` | No — Private Link only | Locked-down deployments |
 | Dev (`dev.bicepparam`) | `Enabled` | Yes | Demos and rapid prototyping |
 
-> **If the Foundry portal will not load** (`ai.azure.com` spins or 403s), confirm the hub still has public access
+> **If the Foundry portal will not load** (`ai.azure.com` spins or 403s), confirm the AI Services account still has public access
 > enabled:
 >
 > ```powershell
-> az resource show --ids "<hub-resource-id>" --query "properties.publicNetworkAccess" -o tsv
+> az resource show --ids "<cog-services-resource-id>" --query "properties.publicNetworkAccess" -o tsv
 > ```
 >
-> It should return `Enabled` for the dev hub. Re-apply with
+> It should return `Enabled` for the dev account. Re-apply with
 > `az deployment group create -g $env:AZURE_RESOURCE_GROUP -f infra/main.bicep -p infra/parameters/dev.bicepparam`
 > if it has drifted back to `Disabled` (for example, after a governance policy re-applied the production default).
