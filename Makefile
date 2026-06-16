@@ -70,17 +70,7 @@ serve-sharepoint:
 	python -m src.agents.sharepoint.mcp_server
 
 demo:
-	@echo "=== Fabric Sales Agent Accelerator — Full Demo ==="
-	@echo ""
-	@echo "1. Load sample data:        make load-data"
-	@echo "2. Start researcher agent:   make serve-researcher  (in terminal 1)"
-	@echo "3. Start SharePoint agent:   make serve-sharepoint  (in terminal 2)"
-	@echo "4. Open the Fabric Data Agent in your browser and start chatting."
-	@echo ""
-	@echo "Prerequisites:"
-	@echo "  - Fabric workspace provisioned (make infra-deploy)"
-	@echo "  - .env configured with connection strings"
-	@echo "  - Python venv activated with dependencies installed"
+	copilot --no-custom-instructions
 
 diagrams:
 	python docs/diagrams/generate.py
