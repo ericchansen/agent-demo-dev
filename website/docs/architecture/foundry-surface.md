@@ -43,19 +43,19 @@ flowchart LR
 
 ## Project and portal experience
 
-There are **two kinds of Foundry project** and they are easy to confuse:
+This repo uses the **modern (account-based)** Foundry architecture exclusively:
 
 | Kind | Resource | Endpoint shape | Used by |
 |---|---|---|---|
-| **Hub-based** | `Microsoft.MachineLearningServices/workspaces` (`kind: 'Project'`) | `azureml://…` | classic hub/CLI workflows |
 | **Account-based** (Foundry Agent Service) | `Microsoft.CognitiveServices/accounts/projects` | `https://<account>.services.ai.azure.com/api/projects/<project>` | the `azure-ai-projects` SDK + Responses API used by `src/orchestrator/foundry_agent.py` |
 
 The agent SDK in this repo (`azure-ai-projects>=2.2.0`, `PromptAgentDefinition`, the Responses API)
 talks to an **account-based** project. `FOUNDRY_PROJECT_ENDPOINT` must therefore be the
-`…services.ai.azure.com/api/projects/…` URL, not the hub workspace.
+`…services.ai.azure.com/api/projects/…` URL.
 
-The workshop Bicep provisions a hub and hub-based project (`infra/modules/foundry-project.bicep`) for the classic
-surface, but agent registration runs against an account-based project.
+The Bicep IaC (`infra/main.bicep`) provisions the AI Services account; the child project is created
+via SDK or the Azure portal (not Bicep), because the account-based project model is provisioned
+as a child resource of the CognitiveServices account.
 
 ### Provision the account-based project and a model
 

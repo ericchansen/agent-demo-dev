@@ -217,14 +217,13 @@ az deployment group create -g $env:AZURE_RESOURCE_GROUP -f infra/main.bicep -p i
 ```
 
 The dev parameter file sets `publicNetworkAccess = 'Enabled'` so the Foundry portal and hosted runtime are
-reachable during the workshop. The Bicep deploy also provisions the hub-based project named by your parameters
-for the classic surface via `infra/modules/foundry-project.bicep`.
+reachable during the workshop.
 
 ### Account-based Foundry project for the agent SDK
 
 The agent code (`src/orchestrator/foundry_agent.py`) uses the `azure-ai-projects` SDK + Responses API,
-which targets an **account-based** Foundry project (`…services.ai.azure.com/api/projects/…`), not the
-hub workspace. Provision it and deploy a model once:
+which targets an **account-based** Foundry project (`…services.ai.azure.com/api/projects/…`).
+Provision it and deploy a model once:
 
 ```powershell
 # Enable project management on the AI Services account (one-time).
