@@ -12,7 +12,7 @@ Estimated monthly costs for running this accelerator. Actual costs depend on usa
 |---|---|---|---|
 | **Fabric Capacity** | F2 | ~$262/mo | Minimum for Data Agent. Can be paused. |
 | **Fabric Capacity** | F64 | ~$8,400/mo | Required if F2 doesn't support Data Agent in your tenant (preview limitation) |
-| **Azure AI Foundry Hub** | — | ~$0 | No standing cost — you pay for compute and model usage only |
+| **Azure AI Services Account** | — | ~$0 | No standing cost — you pay for model usage only |
 | **Azure OpenAI (GPT-4o)** | Pay-as-you-go | ~$5–50/mo | Demo-scale usage (~10–100 queries/day) |
 | **Azure Key Vault** | Standard | ~$0.03/10K operations | Negligible at demo scale |
 | **Azure Bot Service** | Free tier (F0) | $0 | Free tier supports up to 10K messages/mo |

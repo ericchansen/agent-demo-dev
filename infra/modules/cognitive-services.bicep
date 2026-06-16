@@ -8,7 +8,7 @@
 //   • publicNetworkAccess defaults to Disabled → no direct internet exposure
 //
 // ⚠️  MANUAL STEP BEFORE DISABLING PUBLIC ACCESS:
-//   Confirm all consumers (Foundry hub, orchestrator containers) reach this
+//   Confirm all consumers (Foundry project, orchestrator containers) reach this
 //   account via private endpoint or a VNet-integrated runtime. Setting
 //   publicNetworkAccess=Disabled without an endpoint will make the account
 //   unreachable from outside Azure virtual networks.
