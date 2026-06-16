@@ -184,7 +184,8 @@ still use deterministic Databricks-shaped rows so the workshop can be completed 
 4. **Authentication** — the `databricks-sdk` `WorkspaceClient` resolves credentials from the standard Databricks
    auth chain (env vars, `~/.databrickscfg` profile, or Azure CLI / managed identity).
 
-:::tip Smoke either transport
+:::tip[Smoke either transport]
+
 The same smoke command exercises whichever transport is configured. Set `DATABRICKS_GENIE_MCP_URL` to run it over
 the managed MCP server, or set `DATABRICKS_WORKSPACE_URL` + `DATABRICKS_GENIE_SPACE_ID` for the SDK-direct path.
 The Live Smoke workflow reports the Databricks check as RAN, SKIPPED, or FAILED accordingly.
@@ -200,7 +201,8 @@ A successful run returns normalized rows plus the `conversation_id` / `message_i
 API round-trip worked. If the variables are unset, record live Genie as blocked and use the multi-agent PoC
 command below for the deterministic offline checkpoint.
 
-:::caution Genie Agent Mode billing — know this before you demo live
+:::caution[Genie Agent Mode billing — know this before you demo live]
+
 Genie runs on a **serverless, pay-as-you-go** model billed in DBUs, not a flat license. **Genie billing starts
 July 6, 2026** — before that date usage was not billed. Two cost lines stack up:
 

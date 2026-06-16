@@ -10,7 +10,8 @@ the part of the stack that fails: **Foundry**, **OIDC / Live Smoke**, **Fabric**
 **Microsoft 365 publishing**, **hosted agent**, and the **website build**. Each entry lists the symptom, the
 most common cause, and the exact command or setting that fixes it.
 
-:::tip Read the error category first
+:::tip[Read the error category first]
+
 Most failures print a category in the error text — `azure/login`, `ConfigurationError`, `MCP`, `RBAC`,
 `Docusaurus`. Jump to the matching section below rather than reading top to bottom.
 :::

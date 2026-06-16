@@ -13,7 +13,8 @@ agent from a developer prototype to a production surface in Microsoft 365 Copilo
 This page is the **single entry point** for the workshop. Follow the links in order and you
 will go from a fresh clone to a published, monitored agent.
 
-:::tip The one-sentence version
+:::tip[The one-sentence version]
+
 Prototype in **GitHub Copilot CLI**, ground the agent in **Microsoft Fabric** or **Databricks**,
 arm it with **tools and skills**, then publish through **Azure AI Foundry** to **M365 Copilot + Teams** —
 all on the Wide World Importers sample dataset.

@@ -81,7 +81,8 @@ Run it locally before registering agents in Foundry:
 uv run python -m src.orchestrator.multi_agent "Generate a quota report for Tailspin Toys" --customer "Tailspin Toys" --data-source databricks
 ```
 
-:::note Which runtime actually runs?
+:::note[Which runtime actually runs?]
+
 The `WWI_MULTI_AGENT_RUNTIME` switch (or `--runtime`) selects how the pipeline executes:
 
 | Runtime | Default? | What it is |
