@@ -32,8 +32,7 @@ MODEL_DEPLOYMENT_NAME=gpt-4o
 ```
 
 See [Foundry Surface → Project and portal experience](../architecture/foundry-surface#project-and-portal-experience)
-for why hub-based projects and account-based Foundry Agent Service projects are different
-resources.
+for details on the account-based Foundry project architecture.
 
 ### The agent is not visible in the Foundry portal
 
