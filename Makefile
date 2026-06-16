@@ -7,7 +7,7 @@ MOCK ?= 1
 PASS_RATE ?= 100
 CATEGORY ?=
 
-.PHONY: lint format format-check typecheck test test-integration test-eval predemo \
+.PHONY: lint format format-check typecheck test test-integration test-eval recorded-proof predemo \
         infra-validate infra-deploy infra-teardown load-data load-market-data \
         configure-market-agent serve-researcher serve-sharepoint demo diagrams clean
 
@@ -31,6 +31,12 @@ test-integration:
 
 test-eval:
 	python tests/eval/run_eval.py $(if $(filter 1 true yes,$(MOCK)),--mock,) --pass-rate $(PASS_RATE) $(if $(CATEGORY),--category $(CATEGORY),)
+
+# Recorded / offline backend E2E proof: replays non-secret Fabric- and
+# Databricks-shaped fixtures through the real quota pipeline -> report path.
+# Offline only; never contacts a live backend.
+recorded-proof:
+	python scripts/recorded_live_proof.py
 
 predemo:
 	python scripts/predemo.py
