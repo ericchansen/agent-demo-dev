@@ -53,7 +53,7 @@ citation text. You can also pass `data_source: "fabric"` or `data_source: "datab
 
 ## Day 1 implementation steps
 
-1. **Create the semantic data endpoint.** In Fabric, create a Data Agent over the WWI Lakehouse. In Databricks,
+1. **Create the semantic data endpoint.** In Fabric, create a Data Agent over the sales lakehouse. In Databricks,
    create a Genie Space over Unity Catalog sales tables.
 2. **Teach the endpoint the row contract.** Add instructions and examples that force the five required concepts
    above. This is more important than matching physical column names.

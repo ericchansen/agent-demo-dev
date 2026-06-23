@@ -73,7 +73,7 @@ In Azure AI Foundry, create a new agent and register your tools:
 - **Custom function** — report generation + OneDrive upload
 
 Register and verify the live agent with `uv run python scripts/verify_foundry_agent.py` (it registers
-`WWISalesAgent`, confirms it is listed in the project, and runs one Playground-style query).
+`SalesAgent`, confirms it is listed in the project, and runs one Playground-style query).
 
 The agent's system prompt encodes the same logic your skills defined: when asked for a customer brief, call both data and context tools, then format the response.
 
@@ -85,7 +85,7 @@ Before publishing, run both production patterns and compare their traces:
 
 | Pattern | Command or portal action | Choose it when |
 |---|---|---|
-| Single agent with multiple tools | Test `WWISalesAgent` in Foundry playground. | You want the simplest production path. |
+| Single agent with multiple tools | Test `SalesAgent` in Foundry playground. | You want the simplest production path. |
 | Multi-agent pipeline | `uv run python -m src.orchestrator.multi_agent "Generate a quota report for Tailspin Toys" --customer "Tailspin Toys"` | You want separate planner/data/research/context/report ownership and observability. |
 
 Both patterns must produce the same XLSX/HTML/PDF quota artifacts so attendees compare architecture trade-offs,
@@ -101,22 +101,22 @@ invocation locally before deploying to managed compute:
 docker build -f src/orchestrator/hosted_agent/Dockerfile -t wwi-hosted-agent .
 
 # Run and probe
-docker run -d --name wwi-agent -p 8080:8088 wwi-hosted-agent
+docker run -d --name sales-agent -p 8080:8088 wwi-hosted-agent
 curl http://127.0.0.1:8080/healthz   # -> {"status": "alive"}
 curl http://127.0.0.1:8080/readyz    # -> {"status": "ready", "adapter": "local-runtime"}
 curl http://127.0.0.1:8080/readiness # -> {"status": "ready", "adapter": "local-runtime"}
 
 # Invoke custom automation (LocalDeterministicAdapter answers without Azure creds)
 curl -X POST http://127.0.0.1:8080/invoke -H "Content-Type: application/json" `
-  -d '{"input":"Generate a base quota estimation report for Wide World Importers"}'
+  -d '{"input":"Generate a base quota estimation report for sales"}'
 # -> {"output": "Generated a quota estimation report ... Artifacts: { xlsx, html, pdf }"}
 
 # Invoke the Hosted Agents Responses protocol used by Foundry/M365
 curl -X POST http://127.0.0.1:8080/responses -H "Content-Type: application/json" `
-  -d '{"input":"Generate a base quota estimation report for Wide World Importers","model":"gpt-4o"}'
+  -d '{"input":"Generate a base quota estimation report for sales","model":"gpt-4o"}'
 # -> {"object":"response","status":"completed","output_text":"Generated ..."}
 
-docker rm -f wwi-agent
+docker rm -f sales-agent
 ```
 
 `/healthz` is the liveness probe and `/readyz` plus `/readiness` are readiness probes; wire them into your managed
@@ -137,7 +137,7 @@ Use this checklist for the facilitator handoff:
 | Step | Command or portal action | Proof |
 |---|---|---|
 | Register Bot Service provider | `az provider register --namespace Microsoft.BotService` then `az provider show --namespace Microsoft.BotService --query registrationState -o tsv` | State is `Registered`. |
-| Verify prompt agent in Foundry | Run `uv run python scripts/verify_foundry_agent.py`, then open **Agents > WWISalesAgent > Playground**. | CLI prints `[OK] live registration + Playground response verified`; Playground returns an answer. |
+| Verify prompt agent in Foundry | Run `uv run python scripts/verify_foundry_agent.py`, then open **Agents > SalesAgent > Playground**. | CLI prints `[OK] live registration + Playground response verified`; Playground returns an answer. |
 | Deploy hosted agent | Build/push the hosted container and deploy `src/orchestrator/hosted_agent/agent.yaml` so `WWISalesHostedAgent` exposes `responses` and `invocations`. | Foundry shows a hosted agent endpoint and a dedicated agent identity. |
 | Publish | In Foundry, choose **Publish** and select Microsoft 365 Copilot / Teams. | The hosted Responses endpoint is published with an Entra identity and assignment surface. |
 | Assign users/groups | Add the workshop pilot group or test users to the application assignment/RBAC surface. | The same user who will demo can see the agent. |
@@ -147,7 +147,7 @@ Use this checklist for the facilitator handoff:
 :::warning[Publish preflight — read before you click Publish]
 
 - **Select the active version.** Publishing targets a specific agent version. Confirm the
-  version you verified (`[register] created WWISalesAgent version N`) is set active before publishing,
+  version you verified (`[register] created SalesAgent version N`) is set active before publishing,
   or the business surface may serve a stale definition.
 - **Choose the right scope.** **"Just you"** is the no-admin demo path — pick it for the workshop so you
   don't wait on a tenant admin. **Organization** scope requires admin approval and can block the demo.
@@ -166,11 +166,11 @@ Use this checklist for the facilitator handoff:
 Business users @mention the agent in M365 Copilot Chat or Teams:
 
 ```
-@WWISalesAgent Brief me on Tailspin Toys — what's our recent engagement and sales activity?
+@SalesAgent Brief me on Tailspin Toys — what's our recent engagement and sales activity?
 ```
 
 ```
-@WWISalesAgent Generate an FY27 quota forecast report for Tailspin Toys
+@SalesAgent Generate an FY27 quota forecast report for Tailspin Toys
 ```
 
 The agent responds inline (with data tables and summaries) and can attach generated DOCX reports as OneDrive links.
@@ -193,7 +193,7 @@ independent proofs:
 
 | Job | What it proves | Missing config behavior |
 |---|---|---|
-| Foundry registration | `WWISalesAgent` can register and answer in the configured project. | Reports blocked when Azure/Foundry secrets are absent. |
+| Foundry registration | `SalesAgent` can register and answer in the configured project. | Reports blocked when Azure/Foundry secrets are absent. |
 | Fabric live eval | Golden-QA questions reach the Fabric Data Agent MCP endpoint. | Reports blocked when Fabric MCP or Azure auth values are absent. |
 | Databricks Genie | The Genie SDK adapter returns normalized rows. | Reports blocked when workspace/space values are absent. |
 | Published site | The GitHub Pages workshop site is reachable and docs links resolve. | Always runs; failures indicate a public docs issue. |

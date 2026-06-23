@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Download Wide World Importers DW Parquet files for the Fabric Sales Agent demo.
+"""Download sales DW Parquet files for the Fabric Sales Agent demo.
 
 Source: Microsoft Fabric tutorial sample data (public Azure Blob Storage).
 Downloads Parquet files locally, with optional future support for direct
 Lakehouse upload via the Fabric SDK.
 
 Usage:
-    python demo/load-wwi-data.py
-    python demo/load-wwi-data.py --output-dir demo/sample-data
-    python demo/load-wwi-data.py --workspace-id <guid> --lakehouse-id <guid>
+    python demo/load-sample-data.py
+    python demo/load-sample-data.py --output-dir demo/sample-data
+    python demo/load-sample-data.py --workspace-id <guid> --lakehouse-id <guid>
 """
 
 from __future__ import annotations
@@ -218,7 +218,7 @@ def try_fabric_upload(workspace_id: str, lakehouse_id: str, parquet_files: list[
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Download Wide World Importers DW sample data for Fabric demo")
+    parser = argparse.ArgumentParser(description="Download sales DW sample data for Fabric demo")
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -247,7 +247,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
 
     print("=" * 55)
-    print("  Wide World Importers DW — Sample Data Loader")
+    print("  sales DW — Sample Data Loader")
     print("=" * 55)
 
     if args.skip_download:

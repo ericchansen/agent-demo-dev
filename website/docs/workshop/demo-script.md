@@ -7,7 +7,7 @@ title: Demo Script
 
 ## The scene
 
-You're an Account Executive at Wide World Importers preparing for a Quarterly Business Review with Tailspin Toys. You need a quota forecast brief — sales data, engagement context, and a formatted report.
+You're an Account Executive at sales preparing for a Quarterly Business Review with Tailspin Toys. You need a quota forecast brief — sales data, engagement context, and a formatted report.
 
 This demo shows the same workflow in two surfaces.
 
@@ -24,7 +24,7 @@ file sizes.*
 ### Query 1: Sales data
 
 ```
-@wwi-sales-data What were Tailspin Toys' total sales by product category for the last 12 months?
+@sales-data What were Tailspin Toys' total sales by product category for the last 12 months?
 ```
 
 *Expected: The agent queries the Fabric Data Agent → returns a sales breakdown table*
@@ -85,7 +85,7 @@ keep the story honest and use the Foundry Playground as the business-user fallba
 ### Query 1: Customer brief
 
 ```
-@WWISalesAgent Brief me on Tailspin Toys — what's our recent engagement and sales activity?
+@SalesAgent Brief me on Tailspin Toys — what's our recent engagement and sales activity?
 ```
 
 *Expected: Agent pulls Fabric sales data + WorkIQ activity data → combined summary*
@@ -98,7 +98,7 @@ keep the story honest and use the Foundry Playground as the business-user fallba
 ### Query 2: Forecast report
 
 ```
-@WWISalesAgent Generate an FY27 quota forecast report for Tailspin Toys
+@SalesAgent Generate an FY27 quota forecast report for Tailspin Toys
 ```
 
 *Expected: Agent queries Fabric, adds WorkIQ context, generates XLSX/HTML/PDF artifacts -> returns file paths or sharing links*

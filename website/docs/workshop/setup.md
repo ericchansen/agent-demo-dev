@@ -131,7 +131,7 @@ Edit `.github/mcp.json` with your Fabric workspace ID:
 ```json
 {
   "mcpServers": {
-    "wwi-sales-data": {
+    "sales-data": {
       "type": "http",
       "url": "https://api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagents/YOUR-DATA-AGENT-ID/agent"
     }
@@ -142,7 +142,7 @@ Edit `.github/mcp.json` with your Fabric workspace ID:
 Or use the CLI:
 
 ```bash
-copilot mcp add --transport http wwi-sales-data \
+copilot mcp add --transport http sales-data \
   "https://api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagents/YOUR-DATA-AGENT-ID/agent"
 ```
 

@@ -44,13 +44,13 @@ data_agent_json = {
             "workspaceId": WS,
             "artifactId": LH,
             "displayName": "wwi_lakehouse",
-            "description": "Wide World Importers sales data",
+            "description": "sales sales data",
         }
     ],
 }
 
 instructions = """\
-You are an AI assistant for Wide World Importers, a wholesale novelty goods distributor.
+You are an AI assistant for sales, a wholesale novelty goods distributor.
 Help sales users query their pipeline, analyze customer trends, and prepare account plans.
 
 ## Data Sources
@@ -82,9 +82,9 @@ platform_json = {
     "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
     "metadata": {
         "type": "DataAgent",
-        "displayName": "WWI Sales Agent",
+        "displayName": "Sales Agent",
         "description": (
-            "AI assistant for Wide World Importers. Queries sales pipeline, "
+            "AI assistant for sales. Queries sales pipeline, "
             "customer data, product catalog, and territory information."
         ),
     },

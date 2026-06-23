@@ -115,7 +115,7 @@ Each tool call emits a structured, content-free log line (`tool=… status=… d
 
 The deterministic local adapter, factory selection, and tool routing are covered by offline unit tests and the `python scripts/demo_check.py --docker` smoke check. The `azure` adapter is unit-tested against a mocked model client; live model validation is **not** exercised in CI and requires a real `MODEL_ENDPOINT` and managed-identity credentials.
 
-The live Fabric Data Agent path **has** been validated out-of-band against the dev workspace. A manual MCP smoke test (`initialize` → `tools/list` → `tools/call`) against the `DataAgent_WWI_Sales_Agent` tool returned real Wide World Importers results — for example, "top 3 customers by total sales" resolved to Wingtip Toys (~$712M) and Tailspin Toys (~$605M) over the WWI warehouse. This confirms token acquisition for `api.fabric.microsoft.com`, the MCP endpoint, and natural-language query execution all work end to end; it is exercised manually because CI has no Fabric credentials.
+The live Fabric Data Agent path **has** been validated out-of-band against the dev workspace. A manual MCP smoke test (`initialize` → `tools/list` → `tools/call`) against the `DataAgent_WWI_Sales_Agent` tool returned real sales results — for example, "top 3 customers by total sales" resolved to Wingtip Toys (~$712M) and Tailspin Toys (~$605M) over the sales warehouse. This confirms token acquisition for `api.fabric.microsoft.com`, the MCP endpoint, and natural-language query execution all work end to end; it is exercised manually because CI has no Fabric credentials.
 
 The agent's system prompt encodes the orchestration logic — when to call which tool, how to combine results, and how to format output.
 

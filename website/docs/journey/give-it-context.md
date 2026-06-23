@@ -41,7 +41,7 @@ WorkIQ is available as an MCP server for Copilot CLI:
 ```json
 {
   "mcpServers": {
-    "wwi-sales-data": {
+    "sales-data": {
       "type": "http",
       "url": "api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagent"
     },

@@ -91,7 +91,7 @@ Run these before participants arrive and record each as **passed** or **blocked 
 
 | Check | Command | Pass condition |
 |---|---|---|
-| Foundry agent | `uv run python scripts/verify_foundry_agent.py` | `WWISalesAgent` is listed and the script prints `[OK] live registration + Playground response verified`. |
+| Foundry agent | `uv run python scripts/verify_foundry_agent.py` | `SalesAgent` is listed and the script prints `[OK] live registration + Playground response verified`. |
 | Fabric live eval | `uv run python tests/eval/run_eval.py --pass-rate 80` | Golden-QA pass rate meets threshold, or the command blocks before question 1 because Fabric MCP env is missing. |
 | Databricks Genie | `uv run python -m src.orchestrator "Use Databricks Genie to show sales by territory for Tailspin Toys"` | JSON includes `status: "ok"`, rows, `conversation_id`, and `message_id`, or `configuration_error` when the customer chose Fabric. |
 | Publish prerequisites | `az provider show --namespace Microsoft.BotService --query registrationState -o tsv` | `Registered`; then verify published-agent RBAC and @mention visibility. |

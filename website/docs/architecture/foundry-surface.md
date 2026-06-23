@@ -100,7 +100,7 @@ uv run python -m src.orchestrator "Compute quota attainment: target 1,000,000, y
 uv run python scripts/verify_foundry_agent.py
 ```
 
-`verify_foundry_agent.py` is the canonical proof: it registers or reuses the fingerprinted `WWISalesAgent`
+`verify_foundry_agent.py` is the canonical proof: it registers or reuses the fingerprinted `SalesAgent`
 definition, lists the project agents to confirm portal visibility, and runs one Responses-API query (the same
 call the Playground makes). The check intentionally clears preview platform-tool connection ids for this
 single smoke query so it uses the deterministic local `fabric_query` / `get_account_activity` function tools.
@@ -113,7 +113,7 @@ catalog, and keep the portal trace ID in your private run notes.
 Once it has run successfully at least once, open the Foundry portal (`https://ai.azure.com`):
 
 1. Open the project named in `FOUNDRY_PROJECT_ENDPOINT`.
-2. Open **Agents**. You should now see the `WWISalesAgent` registration. (If the list is empty, the
+2. Open **Agents**. You should now see the `SalesAgent` registration. (If the list is empty, the
    registration step above has not completed — re-run it and check the CLI output for errors.)
 3. Open the agent in **Playground** and run `Generate a quota report for Tailspin Toys`.
 4. Open tracing or observability views and inspect the tool calls, latency, and generated artifact metadata.
@@ -123,7 +123,7 @@ Once it has run successfully at least once, open the Foundry portal (`https://ai
 
 *Schematic diagram — a labeled representation of the portal layout, not a screenshot. The live Foundry portal UI will differ in exact styling.*
 
-Use this visual as the Day 2 checkpoint: the left pane confirms `WWISalesAgent` exists, the Playground prompt
+Use this visual as the Day 2 checkpoint: the left pane confirms `SalesAgent` exists, the Playground prompt
 proves the Responses API path works, and the trace pane confirms tool-call observability without logging payloads.
 
 > **Fabric IQ vs. the demo fallback.** The `FabricIQPreviewTool` is a *platform* tool that requires a

@@ -42,7 +42,7 @@ For manual deployment or customization, see [infra/README.md](../infra/README.md
 
 ## Step 2: Load Sample Data
 
-Load the **Wide World Importers** sample dataset into your Fabric Lakehouse. This dataset represents a wholesale novelty goods distributor with customers, orders, products, and sales pipeline data.
+Load the **sales** sample dataset into your Fabric Lakehouse. This dataset represents a wholesale novelty goods distributor with customers, orders, products, and sales pipeline data.
 
 ```bash
 make load-data

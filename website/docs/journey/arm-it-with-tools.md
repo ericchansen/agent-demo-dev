@@ -37,14 +37,14 @@ Some examples of tools in this accelerator:
 
 | Tool | What it does | Surface |
 |---|---|---|
-| `wwi-sales-data` | Queries WWI Lakehouse via Data Agent | CLI (MCP) |
+| `sales-data` | Queries sales lakehouse via Data Agent | CLI (MCP) |
 | `market-data-agent` | Queries Market Data Lakehouse (SEC EDGAR) | CLI (MCP) |
 | `workiq` | Retrieves M365 activity signals | CLI (MCP) |
 | `researcher` | Web search for market intelligence | CLI (MCP) |
 | `sharepoint-agent` | SharePoint / Graph document access | CLI (MCP) |
 | `sales-analysis` | Multi-source customer analysis with Excel output | CLI (skill) |
 | `company-financials` | SEC EDGAR financial lookup | CLI (skill) |
-| `FabricIQPreviewTool` | Same as wwi-sales-data, registered as Foundry tool | Foundry |
+| `FabricIQPreviewTool` | Same as sales-data, registered as Foundry tool | Foundry |
 | `WorkIQPreviewTool` | Same as workiq, registered as Foundry tool | Foundry |
 | Report generator function | Produces DOCX with charts, uploads to OneDrive | Foundry |
 
@@ -65,7 +65,7 @@ The implementation lives in `src/agents/report_generator/`. It uses Python's `py
 
 The CLI uses a **skill** — a prompt template that chains multiple tool calls and formats the output. The `quota-forecast` skill:
 
-1. Calls `wwi-sales-data` to get historical sales
+1. Calls `sales-data` to get historical sales
 2. Runs a forecast calculation
 3. Formats the result as inline markdown with tables and projections
 
@@ -81,7 +81,7 @@ copilot
 The Foundry agent uses a **custom function tool** that wraps the same report generation logic but adds OneDrive upload:
 
 ```
-@WWISalesAgent Generate an FY27 quota forecast report for Tailspin Toys
+@SalesAgent Generate an FY27 quota forecast report for Tailspin Toys
 ```
 
 The agent generates the DOCX, uploads it to the user's OneDrive, and returns a download link — all within M365 Copilot Chat.

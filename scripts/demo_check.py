@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 EXPECTED_MCP_SERVERS = {
     "fabric-core",
-    "wwi-sales-data",
+    "sales-data",
     "market-data",
     "researcher-agent",
     "sharepoint-agent",
@@ -413,7 +413,7 @@ def check_docker_smoke() -> str:
         ],
         timeout=120,
     )
-    if "Hosted WWI sales agent is ready" not in output:
+    if "Hosted Sales Agent is ready" not in output:
         raise ValueError(f"Unexpected Docker smoke output: {output[:200]}")
     return f"{image} built and imported"
 

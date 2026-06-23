@@ -24,7 +24,7 @@ This workshop is a hands-on path from a local Copilot CLI prototype to a product
 
 | Time | Module | Hands-on outcome |
 |---|---|---|
-| 09:00-10:00 | Foundry agent registration | Create or verify the account-based Foundry project, register `WWISalesAgent`, and run `scripts/verify_foundry_agent.py`. |
+| 09:00-10:00 | Foundry agent registration | Create or verify the account-based Foundry project, register `SalesAgent`, and run `scripts/verify_foundry_agent.py`. |
 | 10:00-11:00 | Foundry Playground | Open the agent in the portal, run the Tailspin Toys prompt, and inspect tool-call traces and generated artifact metadata. |
 | 11:00-12:00 | Publish to Microsoft 365 | Use the current Foundry **Publish** flow to make the registered agent available in Microsoft 365 Copilot and Teams with the right Entra/RBAC assignments. |
 | 13:00-14:00 | Customize for your data | Swap WWI sample assumptions for the participant's Fabric warehouse, Databricks Genie Space, or enterprise data contract. |

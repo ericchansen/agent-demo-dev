@@ -18,7 +18,7 @@ The same Python package powers both demo surfaces:
 
 ```text
 Copilot CLI skill
-  -> wwi-sales-data Fabric Data Agent MCP OR Databricks Genie adapter
+  -> sales-data Fabric Data Agent MCP OR Databricks Genie adapter
   -> researcher-agent MCP
   -> synthetic or mock WorkIQ activity
   -> quota-estimator MCP (scenario: conservative | base | aggressive)
@@ -41,12 +41,12 @@ only the surface and phrasing differ. Use these as a known-good script when rehe
 |---|---|---|
 | Copilot CLI | `Generate a base quota forecast report for Tailspin Toys` | End-to-end CLI → MCP → artifacts. |
 | Copilot CLI | `Generate an aggressive quota forecast report for Wingtip Toys and summarize the upside vs. the base case` | Scenario comparison in one turn. |
-| Foundry / M365 | `@WWISalesAgent Build a quota estimation report for Tailspin Toys using our trailing sales and current market trends` | Fabric query → research → function tool. |
-| Foundry / M365 | `@WWISalesAgent Give me conservative, base, and aggressive quota targets for Contoso Ltd with the assumptions behind each` | All three scenarios + methodology. |
+| Foundry / M365 | `@SalesAgent Build a quota estimation report for Tailspin Toys using our trailing sales and current market trends` | Fabric query → research → function tool. |
+| Foundry / M365 | `@SalesAgent Give me conservative, base, and aggressive quota targets for Contoso Ltd with the assumptions behind each` | All three scenarios + methodology. |
 | Hosted agent (HTTP) | `POST /invoke {"input": "Generate a quota report for Tailspin Toys"}` | Container runtime returns artifact summary JSON. |
 
 > **Tip:** The word the model keys on for scenarios is `conservative`, `base`, or `aggressive`. Omitting it
-> defaults to `base`. Naming a customer that exists in the WWI dataset (Tailspin Toys, Wingtip Toys, Contoso Ltd)
+> defaults to `base`. Naming a customer that exists in the sales dataset (Tailspin Toys, Wingtip Toys, Contoso Ltd)
 > keeps the Fabric query grounded.
 
 
@@ -225,13 +225,13 @@ Configure the local MCP servers from `src/cli/mcp-config.json`, then invoke the 
 Generate an aggressive quota forecast report for Tailspin Toys
 ```
 
-The skill instructs Copilot CLI to query `wwi-sales-data`, call `researcher-agent`, use mock or synthetic WorkIQ
+The skill instructs Copilot CLI to query `sales-data`, call `researcher-agent`, use mock or synthetic WorkIQ
 activity when needed, then call `quota-estimator.generate_quota_estimation_report` with the requested scenario.
 
 > **MCP configuration:** `src/cli/mcp-config.json` is the authoritative, fully documented server registry for the
 > CLI surface. The workspace files `.github/mcp.json` and `.vscode/mcp.json` are kept in sync and list the same
 > stdio servers (`researcher-agent`, `sharepoint-agent`, `report-generator`, `quota-estimator`) plus the
-> `wwi-sales-data` HTTP endpoint, so the skill's referenced servers resolve in both VS Code and Copilot CLI.
+> `sales-data` HTTP endpoint, so the skill's referenced servers resolve in both VS Code and Copilot CLI.
 
 > **WorkIQ fallback:** When no WorkIQ connection is configured the pipeline accepts synthetic activity from
 > `demo_workiq_activity(...)`. It is clearly labelled `synthetic demo activity (WorkIQ credentials not configured)`

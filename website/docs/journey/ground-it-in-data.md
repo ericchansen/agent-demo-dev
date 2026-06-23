@@ -26,7 +26,7 @@ The chain is: you ask a question → the agent routes it to the [Fabric Data Age
 
 This accelerator supports **multiple data paths**:
 
-- **WWI Sales Data in Fabric** — [Wide World Importers](../building-blocks/wwi-dataset) simulates a wholesale company with customers, orders, products, and territories.
+- **WWI Sales Data in Fabric** — [sales](../building-blocks/wwi-dataset) simulates a wholesale company with customers, orders, products, and territories.
 - **WWI-shaped sales data in Databricks** — Unity Catalog tables exposed through a Genie Space.
 - **Market Data** — SEC EDGAR filings provide real-world company financials for competitive intelligence and market research.
 
@@ -41,7 +41,7 @@ The repo includes a `.github/mcp.json` file that Copilot CLI auto-discovers. Set
 ```json
 {
   "mcpServers": {
-    "wwi-sales-data": {
+    "sales-data": {
       "type": "http",
       "url": "api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagent"
     }
@@ -54,7 +54,7 @@ The repo includes a `.github/mcp.json` file that Copilot CLI auto-discovers. Set
 ### Option B: CLI one-liner
 
 ```bash
-copilot mcp add --transport http wwi-sales-data \
+copilot mcp add --transport http sales-data \
   "api.fabric.microsoft.com/v1/mcp/workspaces/YOUR-WORKSPACE-ID/dataagent"
 ```
 
@@ -67,7 +67,7 @@ copilot
 > What were Tailspin Toys' total sales by product category for the last 12 months?
 ```
 
-The agent calls the `wwi-sales-data` MCP server, which hits the Data Agent, which translates your question to SQL, queries the Lakehouse, and returns a table. No SQL writing required.
+The agent calls the `sales-data` MCP server, which hits the Data Agent, which translates your question to SQL, queries the Lakehouse, and returns a table. No SQL writing required.
 
 ### What's happening under the hood
 

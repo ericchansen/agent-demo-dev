@@ -19,9 +19,9 @@ instruction or tool-contract tweak.
 
 | File | Purpose |
 |---|---|
-| `evals/wwi-agent/eval.yaml` | Foundry-native eval configuration for the WWI sales agent. |
-| `evals/wwi-agent/datasets/golden-prompts.jsonl` | Golden prompts covering Fabric, Databricks, scenario control, artifacts, and trace-to-eval conversion. |
-| `evals/wwi-agent/rubrics/quota-quality.md` | Human-readable rubric for quota-report quality. |
+| `evals/sales-agent/eval.yaml` | Foundry-native eval configuration for the Sales Agent. |
+| `evals/sales-agent/datasets/golden-prompts.jsonl` | Golden prompts covering Fabric, Databricks, scenario control, artifacts, and trace-to-eval conversion. |
+| `evals/sales-agent/rubrics/quota-quality.md` | Human-readable rubric for quota-report quality. |
 
 The eval is environment-driven. Keep tenant-specific values in your private `.env` or shell profile:
 
@@ -39,7 +39,7 @@ uv run python scripts/verify_foundry_agent.py
 uv run python -m src.orchestrator "Generate a base quota estimation report for Tailspin Toys"
 ```
 
-In the Foundry portal, open the project from `FOUNDRY_PROJECT_ENDPOINT`, choose **Agents**, open `WWISalesAgent`,
+In the Foundry portal, open the project from `FOUNDRY_PROJECT_ENDPOINT`, choose **Agents**, open `SalesAgent`,
 and run the Tailspin Toys prompt in the Playground.
 
 ## 2. Inspect the trace
@@ -55,7 +55,7 @@ Open the trace or observability view for the Playground run. Capture these facts
 
 ## 3. Convert the trace into an eval case
 
-If the trace is a keeper, add a minimal case to `evals/wwi-agent/datasets/golden-prompts.jsonl`. If the trace failed,
+If the trace is a keeper, add a minimal case to `evals/sales-agent/datasets/golden-prompts.jsonl`. If the trace failed,
 write the desired behavior as `expected_traits` instead of copying the bad answer. Keep the prompt short enough that
 it can be rerun after every instruction change.
 
@@ -68,12 +68,12 @@ Example JSONL row:
 ## 4. Run the Foundry eval
 
 Install or update the Azure Developer CLI extension that provides agent evaluations, then run the eval from the
-`evals/wwi-agent` folder:
+`evals/sales-agent` folder:
 
 ```powershell
 azd auth login
 azd extension install azure.ai.agents
-cd evals/wwi-agent
+cd evals/sales-agent
 azd ai agent eval update
 azd ai agent eval run --config eval.yaml
 ```

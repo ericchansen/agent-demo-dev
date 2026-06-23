@@ -23,7 +23,7 @@ Skills live as files in your repository (`src/cli/skills/` or `.github/copilot/s
 
 | Skill | Purpose | Tools used |
 |---|---|---|
-| `quota-forecast` | QBR quota forecast for a customer | wwi-sales-data, workiq |
+| `quota-forecast` | QBR quota forecast for a customer | sales-data, workiq |
 | `sales-analysis` | Multi-source customer analysis with Excel output | sales data, research, report generator |
 | `competitive-intel` | Customer and market research brief | web research, market data |
 

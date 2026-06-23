@@ -37,7 +37,7 @@ flowchart TB
     end
 
     subgraph Backend["Shared Backend Services"]
-        DA_WWI["Fabric Data Agent\n(WWI Lakehouse)"]
+        DA_WWI["Fabric Data Agent\n(sales lakehouse)"]
         DBX["Databricks Genie Space\n(Unity Catalog sales tables)"]
         DA_MKT["Fabric Data Agent\n(Market Data Lakehouse)"]
         Graph["M365 Graph\n(WorkIQ + SharePoint)"]

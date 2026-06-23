@@ -7,9 +7,9 @@ title: Sample Datasets
 
 This accelerator ships with **two data paths**, each backed by its own Fabric Data Agent and Lakehouse. Together they demonstrate how an agent can combine internal business data with external market intelligence.
 
-## Wide World Importers (WWI)
+## sales (WWI)
 
-The [Wide World Importers (WWI)](https://learn.microsoft.com/sql/samples/wide-world-importers-what-is) dataset is a Microsoft-maintained sample simulating a wholesale novelty goods company. It's the primary demo data for sales queries, forecasts, and reports throughout this workshop.
+The [sales (WWI)](https://learn.microsoft.com/sql/samples/wide-world-importers-what-is) dataset is a Microsoft-maintained sample simulating a wholesale novelty goods company. It's the primary demo data for sales queries, forecasts, and reports throughout this workshop.
 
 ## Why WWI?
 
@@ -49,14 +49,14 @@ The WWI sample data is available in Fabric workspaces:
 
 1. Open your Fabric workspace
 2. Create a new Lakehouse
-3. Use the "Load sample data" option → select Wide World Importers
+3. Use the "Load sample data" option → select sales
 4. Tables appear automatically in the Lakehouse
 
-> 📖 [Wide World Importers sample databases](https://learn.microsoft.com/sql/samples/wide-world-importers-what-is)
+> 📖 [sales sample databases](https://learn.microsoft.com/sql/samples/wide-world-importers-what-is)
 
 ## Customizing for your scenario
 
-The WWI dataset works well for sales demos. If you want to use your own data:
+The sales dataset works well for sales demos. If you want to use your own data:
 
 1. Load your tables into a Fabric Lakehouse
 2. Update the Data Agent configuration to point to your tables
@@ -83,8 +83,8 @@ Most real-world agents need both internal and external data. The dual-path archi
 
 ## Further reading
 
-- [Wide World Importers overview](https://learn.microsoft.com/sql/samples/wide-world-importers-what-is)
+- [sales overview](https://learn.microsoft.com/sql/samples/wide-world-importers-what-is)
 - [WWI database schema](https://learn.microsoft.com/sql/samples/wide-world-importers-oltp-database-catalog)
 - SEC EDGAR company facts API documentation (referenced without a direct link because sec.gov blocks automated link validation)
-- [Wide World Importers sample databases](https://learn.microsoft.com/sql/samples/wide-world-importers-what-is)
+- [sales sample databases](https://learn.microsoft.com/sql/samples/wide-world-importers-what-is)
 - [Fabric Data Agent setup](https://learn.microsoft.com/en-us/fabric/data-science/how-to-create-data-agent)

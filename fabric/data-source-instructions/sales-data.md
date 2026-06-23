@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Wide World Importers data warehouse is hosted on a Microsoft Fabric SQL analytics endpoint. All tables use the `dbo` schema. The star schema centers on `fact_Sale` with four dimension tables joined by surrogate keys.
+The sales data warehouse is hosted on a Microsoft Fabric SQL analytics endpoint. All tables use the `dbo` schema. The star schema centers on `fact_Sale` with four dimension tables joined by surrogate keys.
 
 ## Fact Table: `fact_Sale`
 

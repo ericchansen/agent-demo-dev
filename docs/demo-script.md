@@ -17,7 +17,7 @@ az fabric capacity resume \
   --subscription "$AZURE_SUBSCRIPTION_ID"
 
 # 2. Verify Fabric Data Agent is responding
-# In Copilot CLI, run: @wwi-sales-data "What tables are available?"
+# In Copilot CLI, run: @sales-data "What tables are available?"
 
 # 3. Ensure Node.js + ExcelJS available (for Excel artifact)
 cd src/cli/report-scripts && npm ls exceljs || npm install exceljs
@@ -83,7 +83,7 @@ responsive layout, no server needed.
 who prefer the Microsoft 365 experience."
 
 1. Open M365 Copilot Chat (copilot.microsoft.com)
-2. Select the published **WWI Sales Agent**
+2. Select the published **Sales Agent**
 3. Ask: "What are the top 5 customers by revenue this year?"
 4. Ask: "Show monthly sales trend for the Southeast territory"
 

@@ -13,7 +13,7 @@ graph LR
     end
 
     subgraph "MCP Servers"
-        M1["wwi-sales-data<br/>(HTTP)"]
+        M1["sales-data<br/>(HTTP)"]
         M2["market-data<br/>(HTTP)"]
         M3["researcher-agent<br/>(stdio)"]
     end
@@ -21,7 +21,7 @@ graph LR
     subgraph "Microsoft Fabric"
         DA1["WWI Data Agent"]
         DA2["Market Data Agent"]
-        LH1["WWI Lakehouse<br/>14 tables"]
+        LH1["sales lakehouse<br/>14 tables"]
         LH2["Market Data Lakehouse<br/>2 tables"]
     end
 
@@ -41,14 +41,14 @@ graph LR
 |---|---|---|
 | **Source** | Microsoft Fabric tutorial sample data | SEC EDGAR Financial Statement Data Sets |
 | **License** | Microsoft sample (MIT) | US government (public domain) |
-| **Companies** | 1 fictional (Wide World Importers) | ~50 real US public companies |
+| **Companies** | 1 fictional (sales) | ~50 real US public companies |
 | **Tables** | 14 (facts + dimensions) | 2 (`company_financials`, `companies`) |
 | **Metrics** | Sales, orders, purchases, stock | Revenue, net income, total assets |
 | **Time range** | FY2013–FY2016 (static) | Recent SEC quarterly filings |
 | **Use cases** | Internal sales ops, quota tracking | Market research, competitive intel |
-| **MCP server** | `wwi-sales-data` | `market-data` |
+| **MCP server** | `sales-data` | `market-data` |
 | **Skills** | quota-attainment, quota-forecast, pipeline-query, pipeline-coverage, account-plan | company-financials, market-overview, competitive-intel |
-| **Foundry tool** | `wwi_sales_data` | `real_world_market_data` |
+| **Foundry tool** | `sales_data` | `real_world_market_data` |
 
 ## WWI Sales Data Path (Default)
 

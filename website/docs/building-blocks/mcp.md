@@ -26,7 +26,7 @@ This means you can write a tool server once and connect it to any MCP-compatible
 
 | Server | Transport | What it does |
 |---|---|---|
-| `wwi-sales-data` | HTTP | Fabric Data Agent — WWI sales Lakehouse |
+| `sales-data` | HTTP | Fabric Data Agent — WWI sales Lakehouse |
 | `market-data-agent` | HTTP | Fabric Data Agent — SEC EDGAR financials |
 | `workiq` | npm (stdio) | M365 activity signals |
 | `researcher` | stdio | Web search for market intelligence |
@@ -39,7 +39,7 @@ Tools are registered in `.github/mcp.json` (workspace-scoped) or via `copilot mc
 ```json
 {
   "mcpServers": {
-    "wwi-sales-data": {
+    "sales-data": {
       "type": "http",
       "url": "api.fabric.microsoft.com/v1/mcp/workspaces/{id}/dataagent"
     }

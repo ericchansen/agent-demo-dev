@@ -40,7 +40,7 @@ This accelerator supports **two parallel data paths**, each backed by a separate
 
 | Path | Lakehouse | Tables | Use case |
 |---|---|---|---|
-| **WWI Sales Data** | WWI Lakehouse | 14 tables | Internal sales, customers, territories |
+| **WWI Sales Data** | sales lakehouse | 14 tables | Internal sales, customers, territories |
 | **Market Data** | Market Data Lakehouse | 2 tables | SEC EDGAR company financials |
 
 Both paths use the same technology stack — only the data and skills differ. See the `docs/data-paths.md` in the repo for the full comparison.
@@ -63,7 +63,7 @@ The Data Agent exposes an HTTP endpoint compatible with the [Model Context Proto
 https://api.fabric.microsoft.com/v1/mcp/workspaces/{workspace-id}/dataagents/{data-agent-id}/agent
 ```
 
-This is what the `wwi-sales-data` MCP server points to. In the Foundry surface, the same data source can be
+This is what the `sales-data` MCP server points to. In the Foundry surface, the same data source can be
 wrapped as `FabricIQPreviewTool`, while the live eval harness calls the MCP endpoint directly with Entra auth.
 
 > 📖 [Data Agent MCP server](https://learn.microsoft.com/en-us/fabric/data-science/data-agent-mcp-server) · [Fabric REST API](https://learn.microsoft.com/rest/api/fabric/)

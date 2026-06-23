@@ -11,7 +11,7 @@
 Fabric's built-in "Publish to Agent Store" feature pushes a Data Agent straight into the M365 Copilot ecosystem. End users `@mention` the agent in M365 Copilot Chat, and Copilot translates natural-language questions into SQL against your Fabric lakehouse/warehouse.
 
 ```
-User → M365 Copilot Chat → @WWISalesAgent → Fabric Data Agent → Lakehouse SQL → Answer
+User → M365 Copilot Chat → @SalesAgent → Fabric Data Agent → Lakehouse SQL → Answer
 ```
 
 No Azure AI Foundry, no Copilot Studio — just Fabric + M365.
@@ -47,8 +47,8 @@ No Azure AI Foundry, no Copilot Studio — just Fabric + M365.
 1. In the Data Agent editor, click **Publish**.
 2. Check **"Publish to Agent Store"** — this makes the agent discoverable in M365 Copilot.
 3. Fill in the metadata:
-   - **Name**: e.g., `WWI Sales Agent`
-   - **Description**: e.g., "Ask questions about Wide World Importers sales data."
+   - **Name**: e.g., `Sales Agent`
+   - **Description**: e.g., "Ask questions about sales sales data."
    - **Icon** (optional): Upload a custom icon.
 4. Click **Publish**.
 
@@ -59,8 +59,8 @@ The agent may take **up to 24 hours** to appear in the M365 Copilot agent store.
 ### 4. Use in M365 Copilot Chat
 
 1. Open **M365 Copilot Chat** (at [m365.cloud.microsoft/chat](https://m365.cloud.microsoft/chat)).
-2. Type `@` and search for your agent name (e.g., `@WWISalesAgent`).
-3. Ask a question: `@WWISalesAgent What were total sales by region last quarter?`
+2. Type `@` and search for your agent name (e.g., `@SalesAgent`).
+3. Ask a question: `@SalesAgent What were total sales by region last quarter?`
 4. Copilot translates the question to SQL, executes against Fabric, and returns the answer.
 
 ---
@@ -81,7 +81,7 @@ The agent may take **up to 24 hours** to appear in the M365 Copilot agent store.
 
 ### User Experience
 
-- Users `@mention` the agent in M365 Copilot Chat — e.g., `@WWISalesAgent`.
+- Users `@mention` the agent in M365 Copilot Chat — e.g., `@SalesAgent`.
 - Copilot's **Code Interpreter** can render charts from query results.
 - Agents can be **shared via link** to other licensed users in the tenant.
 - The M365 orchestrator may rephrase or summarize answers before presenting them.

@@ -117,10 +117,10 @@ from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import FabricIQPreviewTool, FunctionTool, PromptAgentDefinition
 
 agent = project_client.agents.create_version(
-    agent_name="WWISalesAgent",
+    agent_name="SalesAgent",
     definition=PromptAgentDefinition(
         model=model_deployment_name,
-        instructions="You are a sales analyst for Wide World Importers...",
+        instructions="You are a sales analyst for sales...",
         tools=[fabric_tool, function_tool],
     ),
 )

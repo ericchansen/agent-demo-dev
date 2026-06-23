@@ -37,7 +37,7 @@ parameters:
     description: Target fiscal year (e.g., "FY27")
     required: true
 steps:
-  - tool: wwi-sales-data
+  - tool: sales-data
     prompt: "Get {customer}'s sales by category for the last 4 quarters"
   - tool: workiq
     prompt: "Summarize my recent engagement with {customer}"
@@ -73,7 +73,7 @@ These terms get confused often. Here's how they relate in this architecture:
 
 | Concept | What it is | Example |
 |---|---|---|
-| **Tool** | A single capability the agent can call | `wwi-sales-data` (query Lakehouse) |
+| **Tool** | A single capability the agent can call | `sales-data` (query Lakehouse) |
 | **Skill** | A workflow template that chains tools | `quota-forecast` (data + context + format) |
 | **Agent** | The orchestrator that selects tools/skills based on intent | Copilot CLI, Foundry Agent |
 

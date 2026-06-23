@@ -1,5 +1,5 @@
 {
-  "description": "Synthetic M365 activity data for WWI customers. Used by the sales-analysis skill when WorkIQ is unavailable. Based on Wide World Importers sample dataset customers.",
+  "description": "Synthetic M365 activity data for WWI customers. Used by the sales-analysis skill when WorkIQ is unavailable. Based on sales sample dataset customers.",
   "generated_at": "2026-06-14T00:00:00Z",
   "customers": {
     "Tailspin Toys": {

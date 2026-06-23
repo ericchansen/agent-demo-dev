@@ -17,7 +17,7 @@ will go from a fresh clone to a published, monitored agent.
 
 Prototype in **GitHub Copilot CLI**, ground the agent in **Microsoft Fabric** or **Databricks**,
 arm it with **tools and skills**, then publish through **Azure AI Foundry** to **M365 Copilot + Teams** —
-all on the Wide World Importers sample dataset.
+all on the sales sample dataset.
 :::
 
 ## The two-day journey at a glance
