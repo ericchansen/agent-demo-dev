@@ -3,7 +3,7 @@ import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
-  title: 'Fabric Sales Agent Accelerator',
+  title: 'Sales Agent Demo',
   tagline:
     'A workshop for building AI agents that actually do work — connected to your data, your context, and real tools.',
   favicon: 'img/favicon.ico',
@@ -59,7 +59,7 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      title: 'Fabric Sales Agent Accelerator',
+      title: 'Sales Agent Demo',
       items: [
         {
           type: 'docSidebar',

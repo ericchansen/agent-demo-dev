@@ -26,7 +26,7 @@ The workshop must show agents running INSIDE Azure AI Foundry, not just as local
     This is what `FOUNDRY_PROJECT_ENDPOINT` must point to.
 - **Agent Registration**: Use the Azure AI Foundry SDK (`azure-ai-projects`) to register
   agents in the project. Verify with `scripts/verify_foundry_agent.py` — the agent
-  (`WWISalesAgent`) is then visible in the Foundry portal playground. When `FABRIC_IQ_CONNECTION_ID`
+  (`SalesAgent`) is then visible in the Foundry portal playground. When `FABRIC_IQ_CONNECTION_ID`
   is unset, a demo-safe `fabric_query` function tool stands in for the Fabric IQ platform tool.
 - **What to show in docs**:
   * Creating an agent in the Foundry portal UI (screenshots or step-by-step)
@@ -99,14 +99,14 @@ This is a 2-day hands-on workshop. The docs site and repo must deliver a "wow" e
 - Import errors or missing dependencies
 - Stale screenshots that don't match current UI
 
-**Fabric Sales Agent Accelerator** is an open-source reference implementation demonstrating how to combine Microsoft Fabric Data Agent with agentic AI workflows. It uses the Wide World Importers sample dataset (wholesale novelty goods).
+**Sales Agent Demo** is a reference implementation demonstrating how to combine Microsoft Fabric Data Agent with agentic AI workflows. It uses SEC EDGAR financial data for ~50 US public companies.
 
 ## Architecture
 
-This demo is scoped to **two delivery surfaces** that share the same WWI sales scenario and Fabric backend:
+This demo is scoped to **five delivery surfaces** that share the same sales intelligence workflow and Fabric backend:
 
 1. **GitHub Copilot CLI (prototype)** — MCP-based developer surface
-   - `wwi-sales-data` for Fabric Data Agent queries
+   - `sales-data` for Fabric Data Agent queries
    - `workiq` for M365 activity context (**mocked in the demo tenant**)
    - `quota-forecast` skill for inline report output
 2. **M365 Copilot + Teams (production path)** — Azure AI Foundry agent published to M365/Teams channels via its agent card (the stable endpoint and Entra identity live on the Agent object; the legacy application resource is being [retired](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/migrate))
@@ -149,7 +149,7 @@ All four must pass. The Bicep template is also validated (`az bicep build --file
 | `src/cli/` | Copilot CLI MCP config and skills for the prototype surface |
 | `infra/` | Bicep IaC (Fabric capacity, Key Vault, Entra app, Foundry) |
 | `fabric/` | Fabric Data Agent config, instructions, few-shot examples |
-| `demo/` | Sample data (WWI) and demo assets |
+| `demo/` | Demo scripts and sample data |
 | `docs/` | Architecture, security, setup, and two-surface guidance |
 | `docs/surfaces/` | Reference-only documentation for additional surfaces |
 | `tests/` | Unit, integration, and eval tests |
@@ -161,4 +161,4 @@ All four must pass. The Bicep template is also validated (`az bicep build --file
 - **Fabric MCP is built-in** — use the Data Agent's native MCP server, not a custom wrapper.
 - **Auth split** — interactive for CLI, managed identity for Foundry, OIDC for CI, bot reg for M365.
 - **WorkIQ demo mode** — production targets WorkIQ / OBO flows; the demo tenant uses mock M365 activity data until provisioning is available.
-- **No customer data in repo** — all data is Wide World Importers (Microsoft sample).
+- **No customer data in repo** — all data is SEC EDGAR public filings and synthetic sales fixtures.

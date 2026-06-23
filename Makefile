@@ -1,4 +1,4 @@
-# Fabric Sales Agent Accelerator — Makefile
+# Sales Agent Demo — Makefile
 # Usage: make <target>
 
 RG ?= fsa-demo-rg

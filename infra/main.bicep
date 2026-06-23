@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// main.bicep — Top-level orchestration for Fabric Sales Agent Accelerator
+// main.bicep — Top-level orchestration for Sales Agent Demo
 //
 // Uses the MODERN Foundry architecture (CognitiveServices/accounts + project)
 // exclusively. No legacy hub-based (MachineLearningServices) resources.
