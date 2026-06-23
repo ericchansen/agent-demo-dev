@@ -1,105 +1,28 @@
-# Security Model
+# Security Model (Demo)
 
-This document describes the authentication, authorization, data protection, and governance controls for the Fabric Sales Agent Accelerator.
+> This is a **demo environment**. Production hardening (network isolation, RBAC, DLP policies) is disabled by default for ease of setup. See `infra/main.bicep` parameters to enable.
 
----
+## Authentication Modes
 
-## Authentication
-
-The system supports multiple authentication modes to cover all runtime contexts.
-
-### Interactive Delegated (Entra ID)
-
-For **CLI and VS Code users**. The user signs in interactively via Entra ID (Azure AD), and delegated tokens are used to call downstream services (Fabric, Graph API, Azure OpenAI). This is the default mode for local development and demos.
-
-### Managed Identity
-
-For **Azure AI Foundry runtime**. When the orchestrator runs as a deployed Foundry agent, a system-assigned managed identity authenticates to all downstream services. No credentials are stored in code or config — identity is assigned at the infrastructure level via Bicep (`infra/modules/`).
-
-### OIDC Federated Credential
-
-For **GitHub Actions CI/CD**. Workload identity federation allows GitHub Actions to authenticate to Azure without storing secrets. The federated credential is scoped to the repository and branch, and tokens are short-lived.
-
-### Bot App Registration
-
-For the **M365 Copilot channel**. When the agent is published to M365 Copilot Chat or Teams, a bot app registration in Entra ID handles the OAuth flow. The bot identity is granted only the permissions required to relay user requests to the Fabric Data Agent.
-
----
-
-## Authorization
-
-### Fabric
-
-- **Workspace permissions** control who can access the Fabric workspace (Viewer, Contributor, Admin).
-- **Row-level security (RLS)** is enforced on the Lakehouse tables. The Fabric Data Agent runs queries in the context of the authenticated user, so RLS rules apply automatically.
-- The Data Agent is **read-only** — no write operations are permitted.
-
-### SharePoint
-
-- The SharePoint Agent calls the Microsoft Graph API using the authenticated user's identity (delegated flow) or a managed identity with `Sites.Read.All` (application flow).
-- **Site, library, and item-level permissions** are enforced by Graph API. The agent cannot access documents the user (or MI) does not have permission to read.
-- No SharePoint data is cached by the agent.
-
-### Azure AI Foundry
-
-- Access to the Foundry project requires **RBAC roles**: at minimum `AI Developer` for deploying and running agents.
-- Model endpoints (Azure OpenAI) are scoped to the Foundry project and require `Cognitive Services OpenAI User` or equivalent.
-- The Foundry project's managed identity is granted only the roles it needs (least-privilege).
-
----
+| Mode | Surface | Details |
+|------|---------|---------|
+| Interactive (Entra ID) | CLI, VS Code | User signs in; delegated tokens flow to downstream services |
+| Managed Identity | Foundry runtime | System-assigned MI on the Foundry project |
+| Bot Registration | M365/Teams | Bot app reg handles OAuth for channel delivery |
+| OIDC Federation | GitHub Actions | Workload identity — no stored secrets |
 
 ## Data Protection
 
-### At Rest
+- **Fabric Data Agent** enforces row-level security at the lakehouse layer
+- **No customer data in this repo** — all data is sample/synthetic
+- External calls (market research) send only company names and search queries
+- Generated reports are ephemeral (local files or OneDrive upload)
 
-- **Fabric OneLake**: All data in OneLake is encrypted at rest using Microsoft-managed keys. Customer-managed keys (CMK) are available for workspaces that require them.
-- **SharePoint Online**: Documents are encrypted at rest using Microsoft 365 service encryption.
+## What's Disabled for Demo
 
-### In Transit
-
-- **TLS 1.3** is enforced between all services — Fabric, Graph API, Azure OpenAI, and the custom MCP servers.
-- MCP server communication (stdio or SSE transport) is local or over HTTPS.
-
-### LLM Data Handling
-
-- **Azure OpenAI** does not retain prompts or completions. Data is not used to train models. This applies to all Azure OpenAI deployments used by this accelerator.
-- Prompts may contain data from Fabric queries and SharePoint documents. Organizations should review their Azure OpenAI data processing terms.
-
-### Researcher Agent
-
-- Only the **search query text** is sent to the external web search provider (Bing or Tavily). No internal data (Fabric results, SharePoint documents, user identity) is included in the search request.
-- Search results are summarized by the LLM before being included in the final response.
-
----
-
-## Governance
-
-### Microsoft Purview
-
-- **Data Loss Prevention (DLP) policies** configured in Microsoft Purview are enforced on Fabric data. If a DLP policy blocks access to certain data, the Fabric Data Agent will not return it.
-- Sensitivity labels applied to Fabric items are respected.
-
-### SharePoint Sensitivity Labels
-
-- **Sensitivity labels** on SharePoint documents are respected by the Graph API. If a document is labeled as confidential and the user lacks the required permissions, it will not be returned.
-- The agent does not strip or modify sensitivity labels.
-
-### Auditability
-
-- All agent interactions are auditable:
-  - **Fabric**: Query logs are available in the Fabric admin portal.
-  - **SharePoint**: Graph API calls are logged in the Microsoft 365 unified audit log.
-  - **Azure AI Foundry**: Agent runs, tool calls, and LLM interactions are logged in the Foundry project's tracing store.
-  - **GitHub Actions**: CI/CD workflow runs are logged in the repository's Actions tab.
-
----
-
-## Report Provenance
-
-Every report generated by the Report Generator includes provenance metadata so readers can trace claims back to their sources.
-
-- **Source citations**: Each data point, web search result, and SharePoint document is cited inline with a numbered reference.
-- **Timestamps**: Reports include the date and time of generation, as well as the retrieval timestamps for each data source.
-- **Data source identifiers**: Fabric queries include the workspace, lakehouse, and table names. SharePoint citations include the site, library, and document path.
-- **Web URLs**: Research results include the source URL for every web page cited.
-- **Human review recommended**: Generated reports are AI-assisted drafts. Organizations should review reports before distributing them externally.
+| Control | Production Default | Demo Default | Re-enable |
+|---------|-------------------|--------------|-----------|
+| Network isolation | Private endpoints | Public access | Set `publicNetworkAccess=Disabled` in Bicep |
+| Azure Policy | Deny non-compliant | No policy | Deploy policy assignments separately |
+| RBAC lock-down | Least privilege | Contributor | Scope role assignments in `infra/modules/` |
+| Key Vault soft-delete | Enabled | Enabled | Already on (required by Azure) |
