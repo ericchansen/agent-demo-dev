@@ -291,9 +291,9 @@ def test_build_quota_estimate_requires_sales_rows() -> None:
 def test_end_to_end_demo_artifacts_smoke(tmp_path: Path) -> None:
     """CI smoke test: the full demo data path produces valid, non-empty artifacts."""
     result = generate_quota_estimation_report(
-        customer_name="Wide World Importers",
+        customer_name="Contoso",
         sales_rows=demo_sales_rows(as_of=_FIXED_AS_OF),
-        workiq_activity=demo_workiq_activity("Wide World Importers", as_of=_FIXED_AS_OF),
+        workiq_activity=demo_workiq_activity("Contoso", as_of=_FIXED_AS_OF),
         scenario="aggressive",
         output_dir=tmp_path,
         generated_at=_FIXED_GENERATED_AT,

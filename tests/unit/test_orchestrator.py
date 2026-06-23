@@ -192,7 +192,7 @@ def test_build_instructions_without_market_data() -> None:
     config = config_cls(
         foundry_project_endpoint="https://test.endpoint",
         model_deployment_name="gpt-4o",
-        fabric_iq_connection_id="test-wwi-id",
+        fabric_iq_connection_id="test-fabric-id",
         market_data_connection_id=None,
     )
 
@@ -209,7 +209,7 @@ def test_build_instructions_with_market_data() -> None:
     config = config_cls(
         foundry_project_endpoint="https://test.endpoint",
         model_deployment_name="gpt-4o",
-        fabric_iq_connection_id="test-wwi-id",
+        fabric_iq_connection_id="test-fabric-id",
         market_data_connection_id="test-market-id",
     )
 
@@ -225,7 +225,7 @@ def test_config_market_data_from_env() -> None:
     env = {
         "FOUNDRY_PROJECT_ENDPOINT": "https://test.endpoint",
         "MODEL_DEPLOYMENT_NAME": "gpt-4o",
-        "FABRIC_IQ_CONNECTION_ID": "test-wwi-id",
+        "FABRIC_IQ_CONNECTION_ID": "test-fabric-id",
         "MARKET_DATA_CONNECTION_ID": "test-market-id",
     }
 
@@ -241,7 +241,7 @@ def test_config_market_data_absent() -> None:
     env = {
         "FOUNDRY_PROJECT_ENDPOINT": "https://test.endpoint",
         "MODEL_DEPLOYMENT_NAME": "gpt-4o",
-        "FABRIC_IQ_CONNECTION_ID": "test-wwi-id",
+        "FABRIC_IQ_CONNECTION_ID": "test-fabric-id",
     }
 
     with patch.dict("os.environ", env, clear=True), patch("dotenv.load_dotenv"):

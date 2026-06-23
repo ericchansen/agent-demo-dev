@@ -14,20 +14,20 @@ _spec.loader.exec_module(verify_foundry_agent)
 
 
 def test_check_agent_identity_passes_for_new_model() -> None:
-    agent = SimpleNamespace(name="WWISalesAgent", identity=SimpleNamespace(type="ManagedIdentity"))
+    agent = SimpleNamespace(name="SalesAgent", identity=SimpleNamespace(type="ManagedIdentity"))
     ok, message = verify_foundry_agent.check_agent_identity(agent)
     assert ok is True
     assert "new agent model" in message
 
 
 def test_check_agent_identity_fails_for_legacy_model() -> None:
-    agent = SimpleNamespace(name="WWISalesAgent", identity=None)
+    agent = SimpleNamespace(name="SalesAgent", identity=None)
     ok, message = verify_foundry_agent.check_agent_identity(agent)
     assert ok is False
     assert "legacy agent model" in message
 
 
 def test_check_agent_identity_handles_missing_attribute() -> None:
-    agent = SimpleNamespace(name="WWISalesAgent")
+    agent = SimpleNamespace(name="SalesAgent")
     ok, _ = verify_foundry_agent.check_agent_identity(agent)
     assert ok is False

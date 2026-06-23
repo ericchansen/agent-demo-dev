@@ -149,7 +149,7 @@ def _mock_answer(question: str, qa: dict | None = None) -> str:
         return _MOCK_ANSWERS[best_key]
     if qa:
         return "Mock result: " + "; ".join(str(term) for term in qa.get("expected_contains", []))
-    return f"I found results related to your question about Wide World Importers: {question}"
+    return f"I found results related to your question about sales data: {question}"
 
 
 # -- Data Agent client --------------------------------------------------------

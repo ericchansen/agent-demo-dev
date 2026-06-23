@@ -16,11 +16,11 @@ from src.orchestrator.databricks_supervisor import (
 
 
 def test_genie_space_tool_payload() -> None:
-    tool = SupervisorToolSpec.genie_space(name="WWI sales Genie", space_id="space-123")
+    tool = SupervisorToolSpec.genie_space(name="Sales Genie", space_id="space-123")
 
     assert tool.to_payload() == {
         "type": "genie_space",
-        "name": "WWI sales Genie",
+        "name": "Sales Genie",
         "genie_space": {"space_id": "space-123"},
     }
 
