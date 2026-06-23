@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "fabricCapacityName": { "value": "fabricagentdemodev" },
+    "keyVaultName": { "value": "fsa-agent-kv-dev-2026" },
+    "entraAppName": { "value": "fsa-agent-app-dev" },
+    "storageAccountName": { "value": "fsaagentstorage2026d" },
+    "containerRegistryName": { "value": "fsaagentacr2026d" },
+    "cogServicesName": { "value": "fabricagentaidev2026" }
+  }
+}
