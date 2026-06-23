@@ -2,7 +2,7 @@
 
 > **Canonical diagram and surface matrix:** See [`docs/diagrams/architecture.md`](diagrams/architecture.md)
 >
-> **Live validation:** SalesAgent registers and responds in Foundry project `fsa-foundry-project-dev` (verified 2026-06-23).
+> **Live validation (2026-06-23):** SalesAgent registers and responds in Foundry project `fsa-foundry-project-dev`. Bicep what-if clean. Full deploy blocked by Fabric capacity transient state.
 
 This repo implements a **sales intelligence workflow** that queries internal CRM/sales data (via Microsoft Fabric Data Agent or Databricks Genie) and external market data (via a separate [market-research](https://github.com/ericchansen/market-research) service), then synthesizes findings into cited reports.
 
