@@ -1,21 +1,21 @@
 ---
 name: quota-forecast
-description: Generate FY quota estimation artifacts from WWI sales, market research, and WorkIQ activity
+description: Generate FY quota estimation artifacts from sales, market research, and WorkIQ activity
 ---
 
 # Quota Estimation Report Generator
 
-You are generating a fiscal year quota estimation report for a Wide World Importers customer. Produce real
+You are generating a fiscal year quota estimation report for a sales customer. Produce real
 artifacts, not only inline markdown.
 
 ## Steps
 
-1. **Query sales data**: Use the `wwi-sales-data` MCP server to get the customer's trailing historical sales
+1. **Query sales data**: Use the `sales-data` MCP server to get the customer's trailing historical sales
    from `SalesOrderHeader` joined to `SalesTerritory`, broken down by territory and product category when the
    semantic model exposes category. Include at least territory, category, order date, revenue, and quantity.
    Example query:
    ```
-   For [customer], return trailing 12-month WWI sales rows from SalesOrderHeader joined to SalesTerritory.
+   For [customer], return trailing 12-month sales rows from SalesOrderHeader joined to SalesTerritory.
    Include territory, product category, order date, total revenue, and quantity.
    ```
 
@@ -28,7 +28,7 @@ artifacts, not only inline markdown.
 
 4. **Generate artifacts**: Call `quota-estimator.generate_quota_estimation_report` with:
    - `customer_name`
-   - `sales_rows` from `wwi-sales-data`
+   - `sales_rows` from `sales-data`
    - `research_data` from `researcher-agent`
    - `workiq_activity` from WorkIQ/mock activity
    - `scenario`: one of `conservative`, `base` (default), or `aggressive`. Infer it from the user's

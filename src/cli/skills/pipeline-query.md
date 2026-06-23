@@ -1,7 +1,7 @@
 ---
 name: Query Sales Pipeline
 description: >
-  Query the Wide World Importers sales pipeline via Fabric Data Agent.
+  Query the sales sales pipeline via Fabric Data Agent.
   Supports questions about customers, revenue, orders, pipeline coverage,
   quota attainment, and more.
 ---
@@ -11,8 +11,8 @@ description: >
 ## What this skill does
 
 Sends a natural-language question to the **Fabric Data Agent**
-(`wwi-sales-data` MCP server) and returns the answer. The Data Agent
-translates your question into a SQL query against the Wide World Importers
+(`sales-data` MCP server) and returns the answer. The Data Agent
+translates your question into a SQL query against the sales
 lakehouse and returns structured results.
 
 ## Data sources available
@@ -62,5 +62,5 @@ What is the gross margin on USB novelty items?
 
 ## Prerequisites
 
-- `wwi-sales-data` MCP server configured with a valid Fabric Data Agent URL
+- `sales-data` MCP server configured with a valid Fabric Data Agent URL
   (see `src/cli/mcp-config.json`)

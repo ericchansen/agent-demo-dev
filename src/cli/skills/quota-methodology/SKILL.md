@@ -2,13 +2,13 @@
 name: quota-methodology
 version: 1.0.0
 description: >-
-  Versioned quota-estimation methodology for Wide World Importers customers. Encodes the exact,
+  Versioned quota-estimation methodology for sales customers. Encodes the exact,
   deterministic growth-rate model the quota estimator implements so the same logic can be reused
   across the Copilot CLI, a Foundry agent system prompt, or a Databricks Supervisor tool.
 owner: agent-demo-dev
 last_reviewed: 2026-06-15
 tools:
-  - wwi-sales-data            # Fabric Data Agent MCP (or Databricks Genie equivalent)
+  - sales-data            # Fabric Data Agent MCP (or Databricks Genie equivalent)
   - researcher-agent          # market-context research tool
   - workiq                    # engagement-signal tool (optional, mockable)
   - quota-estimator           # generate_quota_estimation_report
@@ -16,7 +16,7 @@ tools:
 
 # Quota Estimation Methodology (v1.0.0)
 
-This is a **versioned skill**: a single source of truth for *how* a Wide World Importers (WWI) quota is
+This is a **versioned skill**: a single source of truth for *how* a sales (sales) quota is
 estimated. The CLI skill, the Foundry agent prompt, and the Databricks Supervisor `uc_function` should all
 produce the **same numbers** because they all follow the formula below. Bump `version` whenever the formula,
 bounds, or scenario adjustments change, and update `last_reviewed`.
@@ -63,7 +63,7 @@ The `0.04` base, the `0.5` trend weight, every clamp bound, and the scenario/eng
 
 ## Steps
 
-1. **Query sales** via `wwi-sales-data` (Fabric Data Agent MCP) — or the Databricks Genie equivalent when the
+1. **Query sales** via `sales-data` (Fabric Data Agent MCP) — or the Databricks Genie equivalent when the
    customer is on the Databricks path. Return at least territory, category, order date, revenue, quantity.
 2. **Gather market context** via `researcher-agent.research_company`. If live search is unavailable, accept the
    mock response and say so.

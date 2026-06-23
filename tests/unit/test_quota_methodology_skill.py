@@ -39,5 +39,5 @@ def test_skill_documents_core_formula_constants(skill_text: str) -> None:
 
 
 def test_skill_lists_required_tools(skill_text: str) -> None:
-    for tool in ("wwi-sales-data", "researcher-agent", "workiq", "quota-estimator"):
+    for tool in ("sales-data", "researcher-agent", "workiq", "quota-estimator"):
         assert tool in skill_text

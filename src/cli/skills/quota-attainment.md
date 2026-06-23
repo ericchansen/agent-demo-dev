@@ -5,11 +5,11 @@ description: Calculate YTD and quarterly quota attainment by salesperson with bu
 
 # Quota Attainment Report
 
-You are generating a quota attainment report for Wide World Importers, showing actual sales vs. quota targets.
+You are generating a quota attainment report for sales, showing actual sales vs. quota targets.
 
 ## Steps
 
-1. **Query YTD actuals**: Use the `wwi-sales-data` MCP server to get actual invoiced revenue from `fact_Sale` for the fiscal year, grouped by salesperson. Example:
+1. **Query YTD actuals**: Use the `sales-data` MCP server to get actual invoiced revenue from `fact_Sale` for the fiscal year, grouped by salesperson. Example:
    ```
    What are the total invoiced sales by salesperson for fiscal year 2016? Break down by fiscal quarter using the dimension_Date table.
    ```

@@ -5,11 +5,11 @@ description: Analyze sales pipeline coverage by salesperson and territory, flagg
 
 # Pipeline Coverage Analysis
 
-You are analyzing the sales pipeline coverage for Wide World Importers, comparing open orders against quota targets.
+You are analyzing the sales pipeline coverage for sales, comparing open orders against quota targets.
 
 ## Steps
 
-1. **Query open pipeline**: Use the `wwi-sales-data` MCP server to get open (unfulfilled) orders from `fact_Order` where `Picked Date Key` IS NULL, grouped by salesperson. Example query:
+1. **Query open pipeline**: Use the `sales-data` MCP server to get open (unfulfilled) orders from `fact_Order` where `Picked Date Key` IS NULL, grouped by salesperson. Example query:
    ```
    What is the total open pipeline value by salesperson? Show only unfulfilled orders (where Picked Date Key is null), with the number of open orders and total value for each salesperson.
    ```
@@ -30,7 +30,7 @@ You are analyzing the sales pipeline coverage for Wide World Importers, comparin
 
 5. **Add risk analysis**:
    - Flag any salesperson with <2x coverage as **Critical** with recommended actions
-   - Note any backordered items (WWI Backorder ID IS NOT NULL) that may slip
+   - Note any backordered items (sales Backorder ID IS NOT NULL) that may slip
    - Include total team pipeline coverage vs. total team quota
 
 6. **Summary**: 2-3 sentence executive summary with the team's overall coverage health and top risks.

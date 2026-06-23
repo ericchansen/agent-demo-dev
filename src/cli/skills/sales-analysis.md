@@ -6,7 +6,7 @@ description: |
   Use when user asks for "full analysis", "deep dive", "sales review",
   "quota projection with research", or "account plan with data".
 allowed-tools:
-  - wwi-sales-data
+  - sales-data
   - report-generator
   - web_search
 ---
@@ -22,7 +22,7 @@ and engagement signals from M365 (WorkIQ) into a cited, artifact-ready output.
 ## § 0 — Prerequisites
 
 **Required MCP servers:**
-- `wwi-sales-data` — Fabric Data Agent for structured sales queries
+- `sales-data` — Fabric Data Agent for structured sales queries
 
 **Optional (enhance analysis if available):**
 - `report-generator` — DOCX/PPTX artifact generation
@@ -54,7 +54,7 @@ Execute these data-gathering steps in parallel where possible:
 
 ### 2a — Revenue History (Fabric)
 ```
-Ask wwi-sales-data:
+Ask sales-data:
 "Show monthly revenue (Total Including Tax) for [target] over the last 12 months,
 grouped by month. Include row count per month."
 ```
@@ -62,7 +62,7 @@ grouped by month. Include row count per month."
 
 ### 2b — Revenue by Category (Fabric)
 ```
-Ask wwi-sales-data:
+Ask sales-data:
 "What are [target]'s total sales by product category (Stock Item dimension)
 for the current fiscal year? Show category, revenue, quantity, and percentage of total."
 ```
@@ -70,7 +70,7 @@ for the current fiscal year? Show category, revenue, quantity, and percentage of
 
 ### 2c — Top Customers (Fabric)
 ```
-Ask wwi-sales-data:
+Ask sales-data:
 "Who are the top 10 customers by revenue for [target/territory] in the current year?
 Show customer name, revenue, quantity, and buying group."
 ```
@@ -78,7 +78,7 @@ Show customer name, revenue, quantity, and buying group."
 
 ### 2d — Territory Breakdown (Fabric)
 ```
-Ask wwi-sales-data:
+Ask sales-data:
 "Show revenue by sales territory for the current year and prior year.
 Include year-over-year growth percentage."
 ```

@@ -25,7 +25,7 @@ pip install -e ".[dev]"
 
 ### 2. Configure the Fabric Data Agent URL
 
-Open `src/cli/mcp-config.json` and replace the placeholder in `wwi-sales-data`:
+Open `src/cli/mcp-config.json` and replace the placeholder in `sales-data`:
 
 ```json
 "url": "<PASTE_YOUR_FABRIC_DATA_AGENT_MCP_URL_HERE>"
@@ -89,9 +89,9 @@ Skills are natural-language prompts that Copilot CLI recognizes. Place the
 | Skill | File | Description |
 |-------|------|-------------|
 | **Generate Account Plan** | `account-plan.md` | Full workflow — pipeline + research + SharePoint → DOCX report |
-| **Query Sales Pipeline** | `pipeline-query.md` | Ask natural-language questions about WWI sales data |
+| **Query Sales Pipeline** | `pipeline-query.md` | Ask natural-language questions about sales data |
 | **Research Customer** | `customer-research.md` | Web research on a customer — news, earnings, strategy |
-| **Quota Forecast** | `quota-forecast.md` | WWI sales + research + WorkIQ context → XLSX/HTML/PDF quota artifacts |
+| **Quota Forecast** | `quota-forecast.md` | sales + research + WorkIQ context → XLSX/HTML/PDF quota artifacts |
 
 ### Example usage
 
@@ -118,7 +118,7 @@ deterministic growth delta and is recorded in every generated artifact.
 
 | Server | Type | Description |
 |--------|------|-------------|
-| `wwi-sales-data` | HTTP | Fabric Data Agent — queries the WWI lakehouse |
+| `sales-data` | HTTP | Fabric Data Agent — queries the lakehouse |
 | `researcher-agent` | stdio | Local Python process — web search for company intelligence |
 | `sharepoint-agent` | stdio | Local Python process — SharePoint document retrieval |
 | `quota-estimator` | stdio | Local Python process — quota estimation artifacts in XLSX, HTML, and PDF |
@@ -129,5 +129,5 @@ deterministic growth delta and is recorded in every generated artifact.
 |---------|----------|
 | `researcher-agent` fails to start | Ensure `pip install -e .` was run and `src/agents/researcher/mcp_server.py` exists |
 | `sharepoint-agent` returns empty results | Check `SHAREPOINT_MODE` — set to `mock` for demo data |
-| `wwi-sales-data` connection refused | Verify the Fabric Data Agent MCP URL and that the agent is running |
+| `sales-data` connection refused | Verify the Fabric Data Agent MCP URL and that the agent is running |
 | MCP servers not visible in Copilot | Ensure `mcp-config.json` entries are merged into the correct config file |

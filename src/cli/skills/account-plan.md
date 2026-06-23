@@ -1,7 +1,7 @@
 ---
 name: Generate Account Plan
 description: >
-  Generate a comprehensive account plan for a Wide World Importers customer,
+  Generate a comprehensive account plan for a sales customer,
   combining pipeline data from Fabric, web research, and internal SharePoint
   documents into a DOCX report with full citations.
 ---
@@ -13,7 +13,7 @@ description: >
 Produces a ready-to-share **account plan document** (DOCX) for a given customer
 by orchestrating three data sources and the report generator:
 
-1. **Pipeline data** — query the Fabric Data Agent (`wwi-sales-data` MCP) for
+1. **Pipeline data** — query the Fabric Data Agent (`sales-data` MCP) for
    the customer's open deals, values, stages, expected close dates, and
    territory breakdown.
 2. **Web research** — call the Researcher Agent (`researcher-agent` MCP) to
@@ -33,10 +33,10 @@ by orchestrating three data sources and the report generator:
 
 ### Step 1 — Query the sales pipeline
 
-Use the `wwi-sales-data` MCP server to retrieve pipeline data:
+Use the `sales-data` MCP server to retrieve pipeline data:
 
 ```
-Ask wwi-sales-data:
+Ask sales-data:
   "Show all open deals for <customer>, including deal name, value, stage,
    expected close date, and assigned territory."
 ```
@@ -97,7 +97,7 @@ Create an account plan for Contoso Ltd — focus on their APAC expansion
 
 ## Prerequisites
 
-- `wwi-sales-data` MCP server configured with a valid Fabric Data Agent URL
+- `sales-data` MCP server configured with a valid Fabric Data Agent URL
 - `researcher-agent` MCP server available (requires `SEARCH_PROVIDER` env var)
 - `sharepoint-agent` MCP server available (set `SHAREPOINT_MODE=mock` for demo)
 - Python 3.11+ with project dependencies installed
