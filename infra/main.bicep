@@ -40,15 +40,15 @@ param cogServicesName string
 @description('Name of the Application Insights resource for Foundry agent tracing.')
 param appInsightsName string = ''
 
-@description('Public network access for demo-facing resources. Keep Disabled for production; dev can override to Enabled for portal access.')
+@description('Public network access for resources. Enabled by default for demo accessibility.')
 @allowed(['Enabled', 'Disabled'])
-param publicNetworkAccess string = 'Disabled'
+param publicNetworkAccess string = 'Enabled'
 
-@description('Whether to create RBAC role assignments. Requires Owner or User Access Administrator; dev CI uses false because the OIDC principal is Contributor-scoped.')
-param enableRoleAssignments bool = true
+@description('Whether to create RBAC role assignments. Disabled by default for demo simplicity (avoids needing Owner role).')
+param enableRoleAssignments bool = false
 
-@description('Whether to create resource-group Azure Policy assignments. Requires Owner or Resource Policy Contributor; dev CI uses false because the OIDC principal is Contributor-scoped.')
-param enablePolicyAssignments bool = true
+@description('Whether to create Azure Policy assignments. Disabled by default for demo simplicity.')
+param enablePolicyAssignments bool = false
 
 @description('Resource tags applied to every resource.')
 param tags object = {}
