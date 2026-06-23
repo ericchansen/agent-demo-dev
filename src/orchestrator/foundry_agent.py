@@ -1,6 +1,6 @@
 """Azure AI Foundry sales orchestrator combining Fabric IQ, WorkIQ, and local tools.
 
-This module defines the WWI prompt-agent used by the demo. The agent runs in Azure AI
+This module defines the Sales prompt-agent used by the demo. The agent runs in Azure AI
 Foundry, queries structured sales data through Fabric IQ, optionally enriches account context
 with WorkIQ, and can invoke local Python tools for quota estimation and report generation.
 Local tools use JSON schemas so the model can call them reliably without exposing Python
@@ -53,23 +53,24 @@ from src.orchestrator.tool_schemas import (
 
 logger = logging.getLogger(__name__)
 
-_AGENT_NAME = "WWISalesAgent"
+_AGENT_NAME = "SalesAgent"
 _DEFAULT_REPORT_TEMPLATE = "account_plan.md"
 _MAX_FUNCTION_CALL_ROUNDS = 15
 _DEFINITION_FINGERPRINT_PREFIX = "FSA_DEFINITION_SHA256:"
 
-_AGENT_INSTRUCTIONS = """You are a sales analyst for Wide World Importers (WWI), a wholesale novelty goods company.
+_AGENT_INSTRUCTIONS = """\
+You are a sales intelligence analyst with access to financial data, market research, and activity signals.
 
 Your capabilities:
-1. SALES DATA: Query the WWI data warehouse via Fabric IQ for sales transactions,
-   customers, products, geography, and employees. Write correct T-SQL for Fabric.
+1. SALES DATA: Query the data warehouse via Fabric IQ for company financials,
+   sales transactions, pipeline, and territory data. Write correct T-SQL for Fabric.
 2. ACTIVITY DATA: When WorkIQ is available, retrieve M365 activity signals
    (emails, meetings, engagement) for customer context.
-3. QUOTA ESTIMATION: For quota report requests, query Fabric IQ first for WWI historical sales rows
-   from SalesOrderHeader joined to SalesTerritory, or query a Databricks Genie Space backed by Unity Catalog
-   when the workshop is configured for Databricks. Normalize either platform into territory, product category
-   when available, order date, revenue, and quantity. Use WorkIQPreviewTool when configured; otherwise call
-   get_account_activity for demo-safe synthetic activity.
+3. QUOTA ESTIMATION: For quota report requests, query Fabric IQ first for historical sales rows
+   or query a Databricks Genie Space backed by Unity Catalog when configured for Databricks.
+   Normalize either platform into territory, product category when available, order date, revenue,
+   and quantity. Use WorkIQPreviewTool when configured; otherwise call get_account_activity for
+   demo-safe synthetic activity.
 4. REPORTS: Generate formatted DOCX account reports or quota estimation artifacts.
 
 New capabilities:
@@ -102,7 +103,7 @@ _MARKET_DATA_INSTRUCTIONS = """
 _DEMO_DATA_INSTRUCTIONS = """
 
 DATA SOURCE NOTE: No live Fabric IQ or Databricks connection is configured for this project.
-Use the fabric_query tool to retrieve demo-safe Wide World Importers sales rows, then pass those
+Use the fabric_query tool to retrieve demo-safe sales rows, then pass those
 rows to the quota tools. Clearly tell the user the figures are synthetic demo data and that wiring
 FABRIC_IQ_CONNECTION_ID (Fabric Data Agent) or a Databricks Genie connection unlocks real data."""
 
@@ -373,8 +374,8 @@ def _build_tools(config: OrchestratorConfig) -> tuple[list[ToolDefinition], dict
             FabricIQPreviewTool(
                 project_connection_id=config.fabric_iq_connection_id,
                 require_approval="never",
-                name="wwi_sales_data",
-                description="Query Wide World Importers sales data warehouse via Fabric Data Agent",
+                name="sales_data",
+                description="Query sales and financial data warehouse via Fabric Data Agent",
             )
         )
     else:
@@ -382,7 +383,7 @@ def _build_tools(config: OrchestratorConfig) -> tuple[list[ToolDefinition], dict
             _build_function_tool(
                 name="fabric_query",
                 description=(
-                    "Query Wide World Importers sales data. Returns demo-safe sales rows when no "
+                    "Query sales and financial data. Returns demo-safe sales rows when no "
                     "live Fabric IQ or Databricks connection is configured."
                 ),
                 parameters=FABRIC_QUERY_SCHEMA,

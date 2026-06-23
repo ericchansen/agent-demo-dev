@@ -420,7 +420,7 @@ def test_build_tools_with_fabric_connection_uses_platform_tool() -> None:
     tools, handlers = module._build_tools(config)
     tool_names = {getattr(tool, "name", None) for tool in tools if getattr(tool, "name", None)}
 
-    assert "wwi_sales_data" in tool_names
+    assert "sales_data" in tool_names
     assert "fabric_query" not in tool_names
     assert "fabric_query" not in handlers
 
@@ -439,7 +439,7 @@ def test_build_tools_without_fabric_connection_uses_demo_fallback() -> None:
     tools, handlers = module._build_tools(config)
     tool_names = {getattr(tool, "name", None) for tool in tools if getattr(tool, "name", None)}
 
-    assert "wwi_sales_data" not in tool_names
+    assert "sales_data" not in tool_names
     assert "fabric_query" in tool_names
     assert "fabric_query" in handlers
 
@@ -606,7 +606,7 @@ def test_run_query_uses_mocked_clients() -> None:
     credential_cm.__exit__.return_value = None
 
     agent = SimpleNamespace(
-        name="WWISalesAgent",
+        name="SalesAgent",
         _local_function_handlers={"forecast_quota": lambda args: {"customer": args["customer_name"]}},
     )
     config = SimpleNamespace(foundry_project_endpoint="https://test.ai.azure.com/")
@@ -640,7 +640,7 @@ def test_get_or_create_agent_reuses_matching_fingerprint() -> None:
     tools, _ = module._build_tools(config)
     fingerprint = module._definition_fingerprint(config, tools)
     existing = SimpleNamespace(
-        name="WWISalesAgent",
+        name="SalesAgent",
         definition=SimpleNamespace(instructions=module._build_agent_instructions(config, fingerprint)),
     )
     project_client = MagicMock()
@@ -650,7 +650,7 @@ def test_get_or_create_agent_reuses_matching_fingerprint() -> None:
 
     assert agent is existing
     assert hasattr(agent, "_local_function_handlers")
-    project_client.agents.list_versions.assert_called_once_with(agent_name="WWISalesAgent")
+    project_client.agents.list_versions.assert_called_once_with(agent_name="SalesAgent")
     project_client.agents.create_version.assert_not_called()
 
 
@@ -664,10 +664,10 @@ def test_get_or_create_agent_creates_when_definition_changes() -> None:
         model_deployment_name="gpt-4o",
         fabric_iq_connection_id=None,
     )
-    created = SimpleNamespace(name="WWISalesAgent")
+    created = SimpleNamespace(name="SalesAgent")
     project_client = MagicMock()
     project_client.agents.list_versions.return_value = [
-        SimpleNamespace(name="WWISalesAgent", definition=SimpleNamespace(instructions="old definition"))
+        SimpleNamespace(name="SalesAgent", definition=SimpleNamespace(instructions="old definition"))
     ]
     project_client.agents.create_version.return_value = created
 
@@ -675,7 +675,7 @@ def test_get_or_create_agent_creates_when_definition_changes() -> None:
 
     assert agent is created
     create_kwargs = project_client.agents.create_version.call_args.kwargs
-    assert create_kwargs["agent_name"] == "WWISalesAgent"
+    assert create_kwargs["agent_name"] == "SalesAgent"
     instructions = create_kwargs["definition"].instructions
     assert module._DEFINITION_FINGERPRINT_PREFIX in instructions
 
@@ -700,9 +700,9 @@ def test_find_matching_agent_ignores_summaries_without_instructions() -> None:
     fingerprint = module._definition_fingerprint(config, tools)
 
     # Summary returned by list() — no definition/instructions, exactly like the live SDK.
-    summary_only = SimpleNamespace(name="WWISalesAgent")
+    summary_only = SimpleNamespace(name="SalesAgent")
     matching_version = SimpleNamespace(
-        name="WWISalesAgent",
+        name="SalesAgent",
         definition=SimpleNamespace(instructions=module._build_agent_instructions(config, fingerprint)),
     )
 
@@ -716,7 +716,7 @@ def test_find_matching_agent_ignores_summaries_without_instructions() -> None:
     agent = module._get_or_create_agent(project_client, config)
 
     assert agent is matching_version
-    project_client.agents.list_versions.assert_called_once_with(agent_name="WWISalesAgent")
+    project_client.agents.list_versions.assert_called_once_with(agent_name="SalesAgent")
     project_client.agents.create_version.assert_not_called()
 
 

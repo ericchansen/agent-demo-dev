@@ -236,7 +236,7 @@ def build_quota_supervisor_request(
     if genie_space_id:
         tools.append(
             SupervisorToolSpec.genie_space(
-                name="WWI sales Genie",
+                name="Sales Genie",
                 space_id=genie_space_id,
                 description="Answers governed sales questions over Unity Catalog using Genie SQL.",
             )

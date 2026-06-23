@@ -30,7 +30,7 @@ FABRIC_QUERY_SCHEMA: dict[str, Any] = {
     "properties": {
         "question": {
             "type": "string",
-            "description": "Natural language question about WWI sales data.",
+            "description": "Natural language question about sales data.",
         }
     },
     "required": ["question"],

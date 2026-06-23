@@ -68,7 +68,7 @@ class WorkIQInput(TypedDict, total=False):
 
 @dataclass(frozen=True)
 class HistoricalSalesRow:
-    """Normalized sales row from WWI historical sales data."""
+    """Normalized sales row from historical sales data."""
 
     territory: str
     category: str

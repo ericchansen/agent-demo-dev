@@ -1,6 +1,6 @@
 """Recorded (offline) backend sales sources for end-to-end proof.
 
-These adapters replay non-secret, backend-shaped Wide World Importers fixtures
+These adapters replay non-secret, backend-shaped sales fixtures
 through the SAME normalization, quota-calculation, and report-generation code
 path that the live Fabric and Databricks backends feed. They prove the
 ``rows -> normalize -> quota -> XLSX/HTML/PDF`` path end to end WITHOUT any

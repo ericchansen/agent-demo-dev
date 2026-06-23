@@ -8,7 +8,7 @@
     "  Copilot CLI:    ~/.copilot/mcp-config.json",
     "",
     "For the Fabric Data Agent URL, create a Data Agent in Microsoft Fabric,",
-    "enable its MCP endpoint, and paste the URL into 'wwi-sales-data.url'.",
+    "enable its MCP endpoint, and paste the URL into 'sales-data.url'.",
     "",
     "See src/cli/README.md for full setup instructions."
   ],
@@ -19,10 +19,10 @@
       "url": "https://api.fabric.microsoft.com/v1/mcp/core",
       "description": "Microsoft Fabric core MCP server for workspace and item operations"
     },
-    "wwi-sales-data": {
+    "sales-data": {
       "type": "http",
       "url": "https://api.fabric.microsoft.com/v1/mcp/workspaces/<WORKSPACE_ID>/dataagents/<DATA_AGENT_ID>/agent",
-      "description": "Wide World Importers sales data via Fabric Data Agent"
+      "description": "Sales and financial data via Fabric Data Agent"
     },
     "market-data": {
       "type": "http",

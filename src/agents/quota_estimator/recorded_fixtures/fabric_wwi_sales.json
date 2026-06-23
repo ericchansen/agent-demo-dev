@@ -1,6 +1,6 @@
 {
   "platform": "fabric",
-  "description": "Recorded (offline) Fabric Data Agent result over Wide World Importers SalesOrderHeader joined to SalesTerritory. Non-secret fixture used to prove the quota pipeline end to end without a live Fabric round trip.",
+  "description": "Recorded (offline) Fabric Data Agent result over SalesOrderHeader joined to SalesTerritory. Non-secret fixture used to prove the quota pipeline end to end without a live Fabric round trip.",
   "query_surface": "Fabric Data Agent",
   "source_query": "SELECT st.SalesTerritory, p.ProductCategory, soh.OrderDate, soh.TotalDue, sod.Quantity FROM SalesOrderHeader soh JOIN SalesTerritory st ON soh.TerritoryID = st.TerritoryID JOIN SalesOrderDetail sod ON soh.SalesOrderID = sod.SalesOrderID JOIN Product p ON sod.ProductID = p.ProductID WHERE soh.OrderDate >= DATEADD(month, -12, GETDATE())",
   "columns": ["SalesTerritory", "ProductCategory", "OrderDate", "TotalDue", "Quantity"],

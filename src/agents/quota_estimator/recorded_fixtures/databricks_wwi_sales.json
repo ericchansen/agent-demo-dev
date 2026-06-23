@@ -1,6 +1,6 @@
 {
   "platform": "databricks",
-  "description": "Recorded (offline) Databricks Genie / Unity Catalog result over Wide World Importers sales tables. Non-secret fixture used to prove the quota pipeline end to end without a live Databricks Genie round trip.",
+  "description": "Recorded (offline) Databricks Genie / Unity Catalog result over sales tables. Non-secret fixture used to prove the quota pipeline end to end without a live Databricks Genie round trip.",
   "query_surface": "Databricks Genie Space backed by Unity Catalog",
   "source_query": "SELECT sales_territory, product_category, order_timestamp, net_sales_amount, units_sold FROM wwi.sales.fact_sales_order WHERE order_timestamp >= date_sub(current_date(), 365)",
   "columns": ["sales_territory", "product_category", "order_timestamp", "net_sales_amount", "units_sold"],

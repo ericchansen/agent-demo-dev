@@ -53,7 +53,7 @@ ToolHandler = Callable[[dict[str, Any]], dict[str, Any]]
 
 
 def demo_fabric_query_func(arguments: dict[str, Any]) -> dict[str, Any]:
-    """Return demo-safe WWI sales rows for environments without a live Fabric connection.
+    """Return demo-safe sales rows for environments without a live Fabric connection.
 
     The Foundry ``FabricIQPreviewTool`` and the hosted ``fabric_query`` MCP path both
     require a provisioned Fabric Data Agent. This fallback lets the agent answer sales-data
@@ -70,7 +70,7 @@ def demo_fabric_query_func(arguments: dict[str, Any]) -> dict[str, Any]:
         "rows": rows,
         "row_count": len(rows),
         "note": (
-            "Synthetic Wide World Importers sales rows. Configure FABRIC_IQ_CONNECTION_ID "
+            "Synthetic sales rows. Configure FABRIC_IQ_CONNECTION_ID "
             "(Fabric Data Agent) or a Databricks Genie connection to query real data."
         ),
     }

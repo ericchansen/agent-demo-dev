@@ -25,7 +25,7 @@ _DATA_SOURCES: dict[DataPlatform, SalesDataSource] = {
         display_name="Microsoft Fabric",
         query_surface="Fabric Data Agent",
         citation=(
-            "Microsoft Fabric Data Agent query over Wide World Importers SalesOrderHeader joined to SalesTerritory."
+            "Microsoft Fabric Data Agent query over sales data (SalesOrderHeader joined to SalesTerritory)."
         ),
     ),
     "databricks": SalesDataSource(

@@ -16,7 +16,7 @@ _MCP_CONFIG_PATHS = [
 ]
 _EXPECTED_SERVERS = {
     "fabric-core",
-    "wwi-sales-data",
+    "sales-data",
     "market-data",
     "researcher-agent",
     "sharepoint-agent",

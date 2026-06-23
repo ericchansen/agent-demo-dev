@@ -523,7 +523,7 @@ def _clamp(value: float, minimum: float, maximum: float) -> float:
 
 
 def demo_sales_rows(as_of: date | None = None) -> list[dict[str, object]]:
-    """Return deterministic WWI-shaped sample rows for local demos and compatibility wrappers.
+    """Return deterministic sample sales rows for local demos and compatibility wrappers.
 
     Order dates are generated relative to ``as_of`` (defaults to today) so demos always show a
     recent trailing window. Pass a fixed ``as_of`` in tests to keep output deterministic.
@@ -592,7 +592,7 @@ def demo_research_data(customer_name: str) -> dict[str, object]:
             {
                 "title": f"{customer_name} retail expansion signal",
                 "source": "Synthetic market research",
-                "url": "https://example.com/wwi-quota-research",
+                "url": "https://example.com/quota-research",
                 "summary": "Demo market context used when SEARCH_PROVIDER is mock or unavailable.",
             }
         ],
