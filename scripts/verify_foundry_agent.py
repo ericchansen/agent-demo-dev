@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Verify the WWI Foundry agent registers and responds against a live project.
+"""Verify the Foundry agent registers and responds against a live project.
 
 This is a thin, dependency-light harness used to prove that the SDK path in
 ``src/orchestrator/foundry_agent.py`` actually:
 
-1. registers the ``WWISalesAgent`` prompt agent in the configured Foundry
+1. registers the ``SalesAgent`` prompt agent in the configured Foundry
    project (so it becomes visible in the ai.azure.com portal under Agents), and
 2. responds to a question through the Responses API (the same call the portal
    Playground makes), exercising a *local* function tool so the check does not
