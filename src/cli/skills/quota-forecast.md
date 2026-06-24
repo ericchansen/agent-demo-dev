@@ -19,8 +19,11 @@ artifacts, not only inline markdown.
    Include territory, product category, order date, total revenue, and quantity.
    ```
 
-2. **Gather market context**: Use `researcher-agent.research_company` for market trends. If live search is not
-   configured, accept the mock response and state that mock market context was used.
+2. **Gather market context**: Use the external market-research agent (deployed separately from
+   `ericchansen/market-research`) for a company financial forecast, or Copilot's own research. Pass its
+   output through `quota_estimator.market_research_adapter.market_research_to_research_data` to get the
+   `research_data` shape. If no research source is configured, accept a mock response and state that mock
+   market context was used.
 
 3. **Gather WorkIQ context**: Use the configured WorkIQ tool if present. If real WorkIQ credentials are not
    configured, use synthetic or mock activity with realistic recent emails/meetings and an engagement score.
@@ -29,7 +32,7 @@ artifacts, not only inline markdown.
 4. **Generate artifacts**: Call `quota-estimator.generate_quota_estimation_report` with:
    - `customer_name`
    - `sales_rows` from `sales-data`
-   - `research_data` from `researcher-agent`
+   - `research_data` adapted from the market-research agent (or mock context)
    - `workiq_activity` from WorkIQ/mock activity
    - `scenario`: one of `conservative`, `base` (default), or `aggressive`. Infer it from the user's
      request (for example "stretch" or "upside" maps to `aggressive`, "downside" or "floor" maps to
