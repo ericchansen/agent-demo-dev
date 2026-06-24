@@ -27,15 +27,12 @@ class StepResult:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run all pre-demo checks.")
     parser.add_argument("--azure", action="store_true", help="Include live Azure checks in scripts/demo_check.py.")
-    parser.add_argument("--docker", action="store_true", help="Include Docker hosted-agent smoke checks.")
     args = parser.parse_args()
 
     python = sys.executable
     demo_check = [python, "scripts\\demo_check.py"]
     if args.azure:
         demo_check.append("--azure")
-    if args.docker:
-        demo_check.append("--docker")
 
     steps: list[tuple[str, list[str], Path]] = [
         ("Sync dependencies", ["uv", "sync", "--extra", "dev"], ROOT),
