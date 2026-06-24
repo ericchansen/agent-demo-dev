@@ -10,7 +10,7 @@ in non-interactive mode (`copilot -p`), the following overrides apply:
 - **Do NOT ask for confirmation** -- make decisions autonomously
 - **Commit frequently** with conventional commit messages
 - **Run CI checks locally** before pushing (ruff, mypy, pytest, website build)
-- **Use `az CLI`** freely to inspect and update Azure resources in rg-sales-agent-demo
+- **Use `az CLI`** freely to inspect and update Azure resources in rg-sales-agent
 - **Use `gh CLI`** to push, check workflows, etc.
 - **Fix issues immediately** -- if tests fail, fix them before moving on
 - **Never rewrite published git history** -- no force-push
@@ -20,8 +20,8 @@ in non-interactive mode (`copilot -p`), the following overrides apply:
 The workshop must show agents running INSIDE Azure AI Foundry, not just as local code:
 
 - **Foundry Project (modern, account-based)**:
-  * `sales-agent-demo-project` under AI Services account `salesagentdemoais`.
-    Endpoint: `https://salesagentdemoais.services.ai.azure.com/api/projects/sales-agent-demo-project`.
+  * `sales-agent-project` under AI Services account `salesagentais`.
+    Endpoint: `https://salesagentais.services.ai.azure.com/api/projects/sales-agent-project`.
     Create with `az cognitiveservices account project create` (needs `allowProjectManagement=true`).
     This is what `FOUNDRY_PROJECT_ENDPOINT` must point to.
 - **Agent Registration**: Use the Azure AI Foundry SDK (`azure-ai-projects`) to register

@@ -12,8 +12,8 @@ End-to-end walkthrough showing multi-source sales analysis across surfaces.
 ```bash
 # 1. Resume Fabric capacity (auto-pauses at midnight)
 az fabric capacity resume \
-  --capacity-name salesagentdemo \
-  --resource-group rg-sales-agent-demo \
+  --capacity-name salesagent \
+  --resource-group rg-sales-agent \
   --subscription "$AZURE_SUBSCRIPTION_ID"
 
 # 2. Verify Fabric Data Agent is responding
@@ -137,7 +137,7 @@ computation, report generation) extend beyond what Fabric alone provides.
 ```bash
 # Pause Fabric capacity to avoid charges (~$270/month for F2)
 az fabric capacity suspend \
-  --capacity-name salesagentdemo \
-  --resource-group rg-sales-agent-demo \
+  --capacity-name salesagent \
+  --resource-group rg-sales-agent \
   --subscription "$AZURE_SUBSCRIPTION_ID"
 ```

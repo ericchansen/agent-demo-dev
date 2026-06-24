@@ -33,8 +33,8 @@ EXPECTED_FOUNDRY_HANDLERS = {
     "compute_quota_attainment",
     "get_account_activity",
 }
-DEFAULT_RESOURCE_GROUP = "rg-sales-agent-demo"
-DEFAULT_COG_SERVICES_NAME = "salesagentdemoais"
+DEFAULT_RESOURCE_GROUP = "rg-sales-agent"
+DEFAULT_COG_SERVICES_NAME = "salesagentais"
 
 
 def _resource_group() -> str:

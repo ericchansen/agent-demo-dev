@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "12290151287559151715"
+      "templateHash": "3051682336008034661"
     }
   },
   "parameters": {
@@ -88,27 +88,27 @@
     },
     "publicNetworkAccess": {
       "type": "string",
-      "defaultValue": "Disabled",
+      "defaultValue": "Enabled",
       "allowedValues": [
         "Enabled",
         "Disabled"
       ],
       "metadata": {
-        "description": "Public network access for demo-facing resources. Keep Disabled for production; dev can override to Enabled for portal access."
+        "description": "Public network access for resources. Enabled by default for demo accessibility."
       }
     },
     "enableRoleAssignments": {
       "type": "bool",
-      "defaultValue": true,
+      "defaultValue": false,
       "metadata": {
-        "description": "Whether to create RBAC role assignments. Requires Owner or User Access Administrator; dev CI uses false because the OIDC principal is Contributor-scoped."
+        "description": "Whether to create RBAC role assignments. Disabled by default for demo simplicity (avoids needing Owner role)."
       }
     },
     "enablePolicyAssignments": {
       "type": "bool",
-      "defaultValue": true,
+      "defaultValue": false,
       "metadata": {
-        "description": "Whether to create resource-group Azure Policy assignments. Requires Owner or Resource Policy Contributor; dev CI uses false because the OIDC principal is Contributor-scoped."
+        "description": "Whether to create Azure Policy assignments. Disabled by default for demo simplicity."
       }
     },
     "tags": {

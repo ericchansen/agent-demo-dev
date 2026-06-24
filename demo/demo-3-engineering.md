@@ -90,7 +90,7 @@ Open `infra/main.bicep`:
 
 `ash
 az deployment group create \
-  --resource-group rg-sales-agent-demo \
+  --resource-group rg-sales-agent \
   --template-file infra/main.bicep \
   --parameters infra/parameters/dev.bicepparam
 `

@@ -48,11 +48,11 @@ az login
 az account set --subscription "<subscription-id>"
 
 # 2. Create a resource group (if it doesn't exist)
-az group create --name rg-sales-agent-demo --location eastus
+az group create --name rg-sales-agent --location eastus
 
 # 3. Deploy with the dev parameter file
 az deployment group create \
-  --resource-group rg-sales-agent-demo \
+  --resource-group rg-sales-agent \
   --template-file infra/main.bicep \
   --parameters infra/parameters/dev.bicepparam \
   --parameters fabricAdminUpn='admin@contoso.com'
@@ -66,7 +66,7 @@ Run a what-if before changing a shared demo environment:
 
 ```bash
 az deployment group what-if \
-  --resource-group rg-sales-agent-demo \
+  --resource-group rg-sales-agent \
   --template-file infra/main.bicep \
   --parameters infra/parameters/dev.bicepparam \
   --result-format FullResourcePayloads
@@ -84,7 +84,7 @@ Enable the budget during manual deploys:
 
 ```bash
 az deployment group create \
-  --resource-group rg-sales-agent-demo \
+  --resource-group rg-sales-agent \
   --template-file infra/main.bicep \
   --parameters infra/parameters/dev.bicepparam \
   --parameters budgetAlertEmails='["facilitator@example.com"]'
@@ -104,16 +104,16 @@ Fabric capacity bills continuously while it's running. To avoid unnecessary char
 ```bash
 # Option 1 — Pause the capacity (preserves config, stops billing)
 az fabric capacity suspend \
-  --resource-group rg-sales-agent-demo \
-  --capacity-name salesagentdemo
+  --resource-group rg-sales-agent \
+  --capacity-name salesagent
 
 # Option 2 — Resume when you need it again
 az fabric capacity resume \
-  --resource-group rg-sales-agent-demo \
-  --capacity-name salesagentdemo
+  --resource-group rg-sales-agent \
+  --capacity-name salesagent
 
 # Option 3 — Delete the entire resource group (irreversible)
-az group delete --name rg-sales-agent-demo --yes --no-wait
+az group delete --name rg-sales-agent --yes --no-wait
 ```
 
 ## File Structure

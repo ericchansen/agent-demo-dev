@@ -6,7 +6,7 @@
     "fabricCapacitySku": { "value": "${FABRIC_CAPACITY_SKU=F2}" },
     "fabricCapacityName": { "value": "${FABRIC_CAPACITY_NAME}" },
     "keyVaultName": { "value": "${KEY_VAULT_NAME}" },
-    "entraAppName": { "value": "${ENTRA_APP_NAME=sales-agent-demo-app}" },
+    "entraAppName": { "value": "${ENTRA_APP_NAME=sales-agent-app}" },
     "fabricAdminUpn": { "value": "${FABRIC_ADMIN_UPN=}" },
     "storageAccountName": { "value": "${STORAGE_ACCOUNT_NAME}" },
     "containerRegistryName": { "value": "${CONTAINER_REGISTRY_NAME}" },
