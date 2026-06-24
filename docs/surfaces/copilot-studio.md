@@ -39,7 +39,7 @@ User → M365 Copilot Chat / Teams
 
 1. Open [Copilot Studio](https://copilotstudio.microsoft.com/).
 2. Click **+ Create** → **New agent**.
-3. Name the agent (e.g., `WWI Sales Assistant`) and provide a description.
+3. Name the agent (e.g., `Sales Agent`) and provide a description.
 
 ### 2. Add Fabric Data Agent as a Connected Agent
 

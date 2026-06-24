@@ -59,63 +59,29 @@ The primary production path (`src/orchestrator/foundry_agent.py`). Registers too
 4. **Attainment function** — computes quota attainment from Fabric data
 5. **Report generator function** — produces DOCX/PPTX, uploads to OneDrive, returns download link
 
-### Hosted Agent (bring-your-own-code)
-A containerized agent (`src/orchestrator/hosted_agent/`) with full control over tool orchestration. It exposes a `HostedChatAdapter` chat surface plus a deterministic local demo flow, and it wires the same production tool set: Fabric MCP queries, quota forecasting, quota estimation artifacts, report generation, web research, quota attainment, and account activity fallback.
+### Multi-agent workflow
 
-### Multi-agent pipeline (advanced)
+The same `SalesAgent` is already a multi-step workflow: a single prompt agent that pulls **internal** data
+(Fabric sales) and **external** data (SEC EDGAR financials for real US public companies, plus web research),
+adds WorkIQ activity context, and calls quota + report functions to produce the deliverable. One agent,
+many tools, one complex task — that is the pipeline.
 
-The advanced lab registers separate Foundry-facing agent responsibilities:
-
-| Agent | Responsibility | Local proof-of-concept equivalent |
-|---|---|---|
-| Planner | Decide which specialist agents are needed. | `MultiAgentPipeline.run(...)` |
-| Data | Query Fabric Data Agent or Databricks Genie. | `_demo_data_agent(...)` |
-| Research | Gather market and competitive context. | `web_research_func(...)` |
-| Work Context | Add WorkIQ or synthetic M365 activity. | `mock_workiq_func(...)` |
-| Conversational | Synthesize and interact with the user. | `MultiAgentPipelineResult.response` |
-| Report | Generate XLSX/HTML/PDF quota artifacts. | `generate_quota_estimation_report_func(...)` |
-
-Run it locally before registering agents in Foundry:
+Run it locally:
 
 ```powershell
-uv run python -m src.orchestrator.multi_agent "Generate a quota report for Tailspin Toys" --customer "Tailspin Toys" --data-source databricks
+uv run python -m src.orchestrator "Generate a quota report for Tailspin Toys"
 ```
 
-:::note[Which runtime actually runs?]
+When you need genuinely **separate sub-agents** with their own ownership and traces, two paths exist:
 
-The `WWI_MULTI_AGENT_RUNTIME` switch (or `--runtime`) selects how the pipeline executes:
-
-| Runtime | Default? | What it is |
+| Path | What it is | Where it lives |
 |---|---|---|
-| `deterministic` | ✅ Yes | A fully **offline** pipeline that mirrors the single-agent quota flow with fixed routing — **no model call, no Azure credentials**. It produces identical artifacts every run, which is what CI and offline demos exercise. |
-| `agent-framework` | No | The **live** Microsoft Agent Framework path (`agent-framework` extra). Requires a Foundry project endpoint, a model deployment, and `DefaultAzureCredential`; this is the only mode that actually invokes a model. |
+| Databricks Supervisor Agent | A supervisor that fans out to specialist sub-agents over Unity Catalog data. | `src/orchestrator/databricks_supervisor.py` (configured in the Databricks UI / API). |
+| Market Research agent | A separately deployed external research agent the workflow calls for deep market/competitive analysis. | [`ericchansen/market-research`](https://github.com/ericchansen/market-research) — its own repo and IaC. |
 
-The deterministic default is intentional for reproducible demos — do not read a green
-CI run as proof that the live Agent Framework orchestration ran. Set
-`WWI_MULTI_AGENT_RUNTIME=agent-framework` with Azure configured to exercise the real path.
-:::
+Both keep the orchestrating Sales Agent thin while pushing specialized work to a dedicated agent.
 
-#### Adapter modes
-
-`process_invocation()` resolves a chat adapter through `build_adapter()`, selected by the `HOSTED_AGENT_ADAPTER` environment variable:
-
-| Mode | Adapter | When to use |
-|---|---|---|
-| `auto` (default) | Azure if configured, else local runtime | Safe default — uses the model only when `MODEL_ENDPOINT` and `MODEL_DEPLOYMENT` are set, otherwise the deterministic local runtime |
-| `local` | `LocalDeterministicAdapter` | Offline demos and tests — routes each prompt to one tool and drives the real tool-calling loop with no credentials |
-| `azure` | `AzureManagedIdentityChatAdapter` | Production — authenticates with `DefaultAzureCredential` (the container's managed identity) and calls the Foundry project's chat-completions deployment |
-
-#### Configuration
-
-Configure hosted containers with `FABRIC_MCP_URL`, `FABRIC_MCP_TOOL_NAME`, `MODEL_ENDPOINT` (Foundry project endpoint), and `MODEL_DEPLOYMENT` (model deployment name). Set `HOSTED_AGENT_ADAPTER` to pick the adapter mode and `HOSTED_AGENT_OUTPUT_DIR` when you want quota artifacts written outside the default `output/hosted-agent` path. The `azure` adapter raises a clear `HostedAgentConfigurationError` listing any missing variables.
-
-Each tool call emits a structured, content-free log line (`tool=… status=… duration_ms=… artifacts=…`) so tool routing, latency, and failures are observable without leaking customer data or generated report content.
-
-#### Validation status
-
-The deterministic local adapter, factory selection, and tool routing are covered by offline unit tests and the `python scripts/demo_check.py --docker` smoke check. The `azure` adapter is unit-tested against a mocked model client; live model validation is **not** exercised in CI and requires a real `MODEL_ENDPOINT` and managed-identity credentials.
-
-The live Fabric Data Agent path **has** been validated out-of-band against the dev workspace. A manual MCP smoke test (`initialize` → `tools/list` → `tools/call`) against the `DataAgent_WWI_Sales_Agent` tool returned real sales results — for example, "top 3 customers by total sales" resolved to Wingtip Toys (~$712M) and Tailspin Toys (~$605M) over the sales warehouse. This confirms token acquisition for `api.fabric.microsoft.com`, the MCP endpoint, and natural-language query execution all work end to end; it is exercised manually because CI has no Fabric credentials.
+The live Fabric Data Agent path **has** been validated out-of-band against the dev workspace. A manual MCP smoke test (`initialize` → `tools/list` → `tools/call`) against the live Sales Data Agent tool returned real rows from the sample sales warehouse, confirming token acquisition for `api.fabric.microsoft.com`, the MCP endpoint, and natural-language query execution all work end to end; it is exercised manually because CI has no Fabric credentials.
 
 The agent's system prompt encodes the orchestration logic — when to call which tool, how to combine results, and how to format output.
 

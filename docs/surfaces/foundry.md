@@ -167,32 +167,30 @@ response = openai_client.responses.create(
 
 ## Reference Implementation
 
-This repo provides working Foundry agents at two tiers:
+This repo provides a working Foundry agent:
 
 ### Prompt Agent (Declarative)
 - [`foundry_agent.py`](../../src/orchestrator/foundry_agent.py) — Agent creation, tool registration, and run loop
 - [`config.py`](../../src/orchestrator/config.py) — Environment-based configuration
 - Tools: `FabricIQPreviewTool`, `web_research`, `compute_quota_attainment`, `forecast_quota`, `generate_report`, `get_account_activity`
 
-### Hosted Agent (Copilot SDK-compatible runtime)
-- [`hosted_agent/__init__.py`](../../src/orchestrator/hosted_agent/__init__.py) — Hosted runtime with injectable chat adapter, local demo flow, tool definitions, and handlers
-- [`hosted_agent/server.py`](../../src/orchestrator/hosted_agent/server.py) — HTTP invocation server for Foundry managed runtime
-- [`hosted_agent/Dockerfile`](../../src/orchestrator/hosted_agent/Dockerfile) — Container definition
+The single `SalesAgent` registration carries the stable endpoint, Entra agent identity, version, and agent card.
+Run it against a live project with `python -m src.orchestrator "<question>"` and verify the registration with
+`python scripts/verify_foundry_agent.py`.
 
-The Hosted Agent is a bring-your-own-code container. It exposes an injectable chat adapter for Copilot SDK integration and a deterministic local demo runtime, so the same container can be smoke-tested without live model credentials. It wires the full tool set: `fabric_query`, `forecast_quota`, `generate_quota_estimation_report`, `generate_report`, `web_research`, `compute_quota_attainment`, and `get_account_activity`.
+### Publishing to Microsoft 365 and Teams
 
-Hosted runtime configuration:
+In the current Foundry Agent object model there is no separate hosted application resource — the stable endpoint,
+identity, version, and agent card all live on the Agent itself. "Publishing" means exposing the registered
+`SalesAgent` through M365 Copilot and Teams channels via its agent card from the Foundry portal. See
+[Migrate to the new Foundry Agent Service](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/migrate).
 
-| Variable | Purpose |
-|---|---|
-| `FABRIC_MCP_URL` | Fabric Data Agent MCP endpoint used by `fabric_query` |
-| `FABRIC_MCP_TOOL_NAME` | MCP tool name to call, for example the Fabric Data Agent query tool exposed by the endpoint |
-| `MODEL_ENDPOINT` | Optional model/Copilot SDK endpoint used by an injected hosted chat adapter |
-| `MODEL_DEPLOYMENT` | Model deployment name, defaulting to `gpt-4o` |
-| `HOSTED_AGENT_OUTPUT_DIR` | Local artifact directory for hosted quota reports, defaulting to `output/hosted-agent` |
-| `COPILOT_HOME` | Optional credential/cache location if the selected Copilot SDK adapter requires it |
+### Separate sub-agent path
 
-Any additional Copilot SDK auth/runtime variables are adapter-specific and should be supplied through the Foundry container environment, not committed to source.
+When a genuine separate agent is required, the [Databricks Supervisor](../../src/orchestrator/databricks_supervisor.py)
+coordinates specialist agents through the Databricks UI/API, and the external
+[`ericchansen/market-research`](https://github.com/ericchansen/market-research) repo deploys its own market-research
+agent with its own IaC.
 
 ### Scale-Up Path: Microsoft Agent Framework (MAF)
 

@@ -51,7 +51,6 @@ const sidebars: SidebarsConfig = {
         'workshop/facilitator-guide',
         'workshop/setup',
         'workshop/demo-script',
-        'workshop/hosted-agent-deploy',
         'workshop/enable-live-smoke',
         'workshop/evaluation',
         'workshop/foundry-local-devui',

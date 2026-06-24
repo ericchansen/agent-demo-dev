@@ -107,8 +107,8 @@ computation, report generation) extend beyond what Fabric alone provides.
 
 ## Talking Points
 
-- **One data source, five surfaces** — same Fabric Data Agent powers CLI,
-  M365, Foundry Prompt Agent, Hosted Agent, and future Cowork
+- **One data source, every surface** — the same Fabric Data Agent powers the CLI,
+  M365/Teams, and the Foundry SalesAgent
 - **No framework needed for CLI** — the LLM follows SKILL.md instructions
   to orchestrate tools, just like a developer would
 - **JSON intermediate format** — all generators consume the same schema,

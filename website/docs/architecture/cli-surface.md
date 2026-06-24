@@ -64,10 +64,10 @@ flowchart LR
 
 ```powershell
 uv sync --extra dev
-uv run python -m src.orchestrator.multi_agent "Generate a quota report for Tailspin Toys" --customer "Tailspin Toys"
+uv run python -m src.orchestrator "Generate a quota report for Tailspin Toys"
 ```
 
-That command runs the same quota report path without Azure credentials, which makes it a safe Day 1 smoke test
+That command runs the single `SalesAgent` workflow through its quota/report tools, which makes it a safe Day 1 smoke test
 before you connect either Fabric or Databricks.
 
 > 📖 [Add MCP servers to GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers) · [Add custom instructions to Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions)

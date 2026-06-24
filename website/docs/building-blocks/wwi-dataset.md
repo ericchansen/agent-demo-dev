@@ -7,11 +7,14 @@ title: Sample Datasets
 
 This accelerator ships with **two data paths**, each backed by its own Fabric Data Agent and Lakehouse. Together they demonstrate how an agent can combine internal business data with external market intelligence.
 
-## sales (WWI)
+## Internal sales (Wide World Importers)
 
-The [sales (WWI)](https://learn.microsoft.com/sql/samples/wide-world-importers-what-is) dataset is a Microsoft-maintained sample simulating a wholesale novelty goods company. It's the primary demo data for sales queries, forecasts, and reports throughout this workshop.
+The [Wide World Importers](https://learn.microsoft.com/sql/samples/wide-world-importers-what-is) sample is a
+Microsoft-maintained dataset simulating a wholesale company. It stands in for your **internal operational sales
+data** — the trailing revenue, territories, and pipeline an agent reasons over for quota work. It is the primary
+demo data for sales queries, forecasts, and reports throughout this workshop.
 
-## Why WWI?
+## Why this internal sample?
 
 - **No customer data** — it's entirely synthetic, safe for demos and public repos
 - **Rich enough for real queries** — customers, orders, products, salespeople, territories
@@ -65,9 +68,12 @@ The sales dataset works well for sales demos. If you want to use your own data:
 
 The rest of the accelerator (MCP servers, skills, report generator) works the same — only the underlying data changes.
 
-## Market Data (SEC EDGAR)
+## Market Data (SEC EDGAR — real companies)
 
-The second data path provides external financial data from SEC EDGAR filings, enabling competitive intelligence and market research scenarios.
+The second data path provides external financial data from **real US public companies** via their SEC EDGAR
+filings, enabling competitive intelligence and market research scenarios. This is the same public-company data the
+separately-deployed [`ericchansen/market-research`](https://github.com/ericchansen/market-research) agent works
+with, so the internal WWI sales story pairs naturally with real market intelligence.
 
 | Table | Description | Key columns |
 |---|---|---|

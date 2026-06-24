@@ -81,7 +81,7 @@ In the CLI, a skill is an explicit workflow template. In Azure AI Foundry, the s
 Concretely, for the quota methodology:
 
 1. **Instructions** — paste the `## Methodology (the formula)` and `## Output contract` sections into the agent's system prompt verbatim. The formula constants are the contract; do not paraphrase them.
-2. **Tools** — register `generate_quota_estimation_report` as a Foundry `FunctionTool` (or the hosted-agent tool), and wire the data backend through a Foundry **connection** (Fabric/Databricks connections are preview, created via code/Bicep and referenced by name).
+2. **Tools** — register `generate_quota_estimation_report` as a Foundry `FunctionTool`, and wire the data backend through a Foundry **connection** (Fabric/Databricks connections are preview, created via code/Bicep and referenced by name).
 3. **Versioning** — keep the `version` from `SKILL.md` in the agent description (e.g. `quota-methodology v1.0.0`) so you can tell which methodology a deployed agent encodes.
 
 The same `SKILL.md` also maps onto the [Databricks Supervisor](databricks-supervisor) path: the methodology becomes a Unity Catalog `uc_function`, and the `tools` list becomes Supervisor tool specs.

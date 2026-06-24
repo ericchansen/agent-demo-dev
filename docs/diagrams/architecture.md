@@ -71,7 +71,7 @@ The **workflow** is constant: gather internal data → gather external research 
 
 The **surface** determines the deployment topology:
 - CLI = one process with tool calls
-- Foundry/M365/Teams = hosted agent with platform tools
+- Foundry/M365/Teams = one registered SalesAgent with platform tools
 - Copilot Studio = visual topic flows calling the same backends
 
 "Multi-agent" isn't an architecture choice — it's a description of the workflow complexity.

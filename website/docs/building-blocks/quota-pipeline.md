@@ -43,7 +43,6 @@ only the surface and phrasing differ. Use these as a known-good script when rehe
 | Copilot CLI | `Generate an aggressive quota forecast report for Wingtip Toys and summarize the upside vs. the base case` | Scenario comparison in one turn. |
 | Foundry / M365 | `@SalesAgent Build a quota estimation report for Tailspin Toys using our trailing sales and current market trends` | Fabric query → research → function tool. |
 | Foundry / M365 | `@SalesAgent Give me conservative, base, and aggressive quota targets for Contoso Ltd with the assumptions behind each` | All three scenarios + methodology. |
-| Hosted agent (HTTP) | `POST /invoke {"input": "Generate a quota report for Tailspin Toys"}` | Container runtime returns artifact summary JSON. |
 
 > **Tip:** The word the model keys on for scenarios is `conservative`, `base`, or `aggressive`. Omitting it
 > defaults to `base`. Naming a customer that exists in the sales dataset (Tailspin Toys, Wingtip Toys, Contoso Ltd)
@@ -268,7 +267,7 @@ are written under `output/`, which is ignored by git. The same end-to-end path i
 The Foundry-hosted path (and the `ai.azure.com` portal you use to publish the agent) is only reachable when the
 underlying Azure resources allow public network access. The Bicep modules default `publicNetworkAccess` to
 `'Disabled'` — safe for production behind Private Link — but that default blocks the portal from loading and the
-hosted agent container from being managed during a demo.
+Foundry agent from being managed during a demo.
 
 For the dev environment, `infra/parameters/dev.bicepparam` overrides this:
 
@@ -279,9 +278,9 @@ param publicNetworkAccess = 'Enabled'
 This single parameter flows through `infra/main.bicep` to the AI Services account
 (`infra/modules/cognitive-services.bicep`) and storage
 (`infra/modules/storage.bicep`). When `Enabled`, each module also sets its `networkAcls.defaultAction` to `Allow`
-so the portal, Foundry runtime, and hosted container all stay reachable.
+so the portal and Foundry runtime stay reachable.
 
-| Environment | `publicNetworkAccess` | Portal / hosted agent reachable | Use |
+| Environment | `publicNetworkAccess` | Portal / Foundry reachable | Use |
 |---|---|---|---|
 | Production (default) | `Disabled` | No — Private Link only | Locked-down deployments |
 | Dev (`dev.bicepparam`) | `Enabled` | Yes | Demos and rapid prototyping |

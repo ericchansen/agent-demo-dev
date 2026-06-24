@@ -6,7 +6,7 @@ title: Databricks Supervisor Agent
 # Databricks Supervisor Agent
 
 Databricks Supervisor Agent is the Databricks-native multi-agent option for customers who want orchestration to stay
-inside Azure Databricks and Unity Catalog. It sits beside the Foundry single-agent and Python multi-agent patterns in
+inside Azure Databricks and Unity Catalog. It sits beside the Foundry `SalesAgent` path in
 this workshop; it is not required for the main path.
 
 ## Where it fits
@@ -135,13 +135,13 @@ errors offline:
 uv run pytest tests/unit/test_databricks_genie_client.py tests/unit/test_databricks_supervisor.py
 ```
 
-## Comparison with Foundry multi-agent
+## Comparison with Foundry SalesAgent
 
-| Question | Databricks Supervisor | Foundry / Python multi-agent |
+| Question | Databricks Supervisor | Foundry SalesAgent |
 |---|---|---|
-| Where do tools live? | Databricks Genie, UC functions, tables, search, dashboards, model endpoints, MCP servers. | Foundry tools, Python functions, Fabric/Databricks adapters, hosted-agent container. |
+| Where do tools live? | Databricks Genie, UC functions, tables, search, dashboards, model endpoints, MCP servers. | Foundry tools, Python functions, and Fabric/Databricks adapters inside the single `SalesAgent`. |
 | Who governs data? | Unity Catalog. | Fabric workspace/OneLake, Foundry connections, Databricks UC when using Genie. |
-| How do you publish to M365? | Not the primary path; bridge through a Foundry/hosted surface if needed. | Native workshop path through Foundry and Microsoft 365 publishing. |
+| How do you publish to M365? | Not the primary path; bridge through the Foundry `SalesAgent` if needed. | Native workshop path through Foundry and Microsoft 365 publishing. |
 | How do you evaluate? | Databricks traces/feedback and MLflow/AI Gateway observability. | Foundry traces plus `azd ai agent eval` lab. |
 | Best workshop role | Advanced Databricks-native comparison. | Main two-day path. |
 

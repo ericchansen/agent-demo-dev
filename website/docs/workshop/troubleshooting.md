@@ -7,7 +7,7 @@ title: Troubleshooting
 
 Use this page when something in the workshop does not behave as the guide describes. It is organized by
 the part of the stack that fails: **Foundry**, **OIDC / Live Smoke**, **Fabric**, **Databricks Genie**,
-**Microsoft 365 publishing**, **hosted agent**, and the **website build**. Each entry lists the symptom, the
+**Microsoft 365 publishing**, and the **website build**. Each entry lists the symptom, the
 most common cause, and the exact command or setting that fixes it.
 
 :::tip[Read the error category first]
@@ -171,26 +171,11 @@ The principal needs `CAN RUN` on the Genie space and `SELECT` on the underlying 
 
 - The publishing user needs the right Microsoft 365 role (typically **Teams administrator** or delegated app
   management) and the tenant must allow custom agents.
-- A prompt agent registered by `verify_foundry_agent.py` has `identity=None` and **cannot** be published
-  directly. The production M365/Teams path is the **hosted agent** (`WWISalesHostedAgent`), which receives a
-  dedicated Entra agent identity when deployed. See [Deploy the Hosted Agent](hosted-agent-deploy).
+- A prompt agent registered by `verify_foundry_agent.py` is a local smoke-test registration. For the
+  production M365/Teams path, publish the verified **SalesAgent** from the Foundry portal — the published
+  agent receives its own dedicated Entra agent identity and agent card. See
+  [Ship It → Publish to Microsoft 365](../journey/ship-it#2-publish-to-microsoft-365).
 - Reference: [Publish agents to Microsoft 365 Copilot and Teams](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot).
-
-## Hosted agent
-
-### Container builds but hosted invoke returns `session_not_ready`
-
-The Foundry Hosted Agent platform expects the container to listen on port `8088` and return HTTP 200 from
-`/readiness`. The local server also keeps `/readyz` for humans and CI. If `/readyz` reports `adapter unavailable`,
-the model environment variables are missing. Set `FOUNDRY_PROJECT_ENDPOINT` / `AZURE_AI_MODEL_DEPLOYMENT_NAME`
-(or local aliases `MODEL_ENDPOINT` / `MODEL_DEPLOYMENT`), or run with the local runtime adapter, which is always
-available. Full build/deploy/test steps are on
-[Deploy the Hosted Agent](hosted-agent-deploy).
-
-### `POST /responses` returns `415 unsupported_media_type`
-
-Send `Content-Type: application/json`. The Responses route accepts the `stream` flag used by `azd ai agent invoke`,
-but still returns a completed JSON payload rather than server-sent events.
 
 ## Website build and links
 

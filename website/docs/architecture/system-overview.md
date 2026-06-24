@@ -14,86 +14,82 @@ flowchart TB
     subgraph User["User Surfaces"]
         CLI["GitHub Copilot CLI\n(developer prototype)"]
         M365["M365 Copilot Chat / Teams\n(business users)"]
-        Cowork["Cowork\n(M365 plugin)"]
+        Studio["Copilot Studio\n(low-code, documented)"]
     end
 
     subgraph Orchestration["Orchestration Layer"]
         CopilotEngine["Copilot CLI Engine\n(built-in orchestrator)"]
-        FoundryPrompt["Foundry Prompt Agent\n(declarative)"]
-        FoundryHosted["Foundry Hosted Agent\n(bring-your-own-code)"]
+        FoundryPrompt["Foundry SalesAgent\n(prompt agent + tools)"]
+        DbxSup["Databricks Supervisor\n(optional multi-sub-agent)"]
     end
 
     subgraph Tools["Tool Layer"]
-        FDA["Fabric Data Agent\n(MCP)"]
+        FDA["Fabric Data Agent\n(sales-data / fabric-core MCP)"]
+        MKT["Market Data\n(market-data MCP)"]
         GENIE["Databricks Genie\n(API or MCP adapter)"]
-        WIQ["WorkIQ\n(MCP)"]
-        Researcher["Researcher Agent\n(web search MCP)"]
-        SharePoint["SharePoint Agent\n(Graph MCP)"]
-        Skills["Skills\n(prompt templates)"]
+        Skills["Skills + report/quota\n(MCP servers)"]
         FIQ["FabricIQPreviewTool"]
-        DBXTool["Databricks data function"]
         WIQT["WorkIQPreviewTool"]
+        Research["Web research function"]
         ReportFunc["Report generator\n(function tool)"]
     end
 
+    subgraph External["External Agents"]
+        MR["Market Research agent\n(ericchansen/market-research,\nseparate repo + IaC)"]
+    end
+
     subgraph Backend["Shared Backend Services"]
-        DA_WWI["Fabric Data Agent\n(sales lakehouse)"]
+        DA_SALES["Fabric Data Agent\n(internal sales lakehouse)"]
         DBX["Databricks Genie Space\n(Unity Catalog sales tables)"]
-        DA_MKT["Fabric Data Agent\n(Market Data Lakehouse)"]
-        Graph["M365 Graph\n(WorkIQ + SharePoint)"]
+        DA_MKT["Market Data Lakehouse\n(SEC EDGAR real public companies)"]
+        Graph["M365 Graph\n(WorkIQ activity)"]
         OD["OneDrive\n(report storage)"]
     end
 
     CLI --> CopilotEngine
     M365 --> FoundryPrompt
-    M365 --> FoundryHosted
-    Cowork --> CopilotEngine
+    Studio --> FoundryPrompt
+    FoundryPrompt -.->|optional| DbxSup
 
     CopilotEngine --> FDA
+    CopilotEngine --> MKT
     CopilotEngine --> GENIE
-    CopilotEngine --> WIQ
-    CopilotEngine --> Researcher
-    CopilotEngine --> SharePoint
     CopilotEngine --> Skills
 
     FoundryPrompt --> FIQ
-    FoundryPrompt --> DBXTool
     FoundryPrompt --> WIQT
+    FoundryPrompt --> Research
     FoundryPrompt --> ReportFunc
+    FoundryPrompt -.->|deep research| MR
 
-    FoundryHosted --> FIQ
-    FoundryHosted --> ReportFunc
-
-    FDA --> DA_WWI
+    FDA --> DA_SALES
+    MKT --> DA_MKT
     GENIE --> DBX
-    FDA --> DA_MKT
-    FIQ --> DA_WWI
-    DBXTool --> DBX
-
-    WIQ --> Graph
+    FIQ --> DA_SALES
     WIQT --> Graph
-    SharePoint --> Graph
-    Researcher -.->|web search| Web["External APIs"]
-
+    Research -.->|web search| Web["External APIs"]
+    MR -.->|market + web| Web
     ReportFunc --> OD
 
     style CLI fill:#e8f4fd,stroke:#0078d4,stroke-width:2px
     style M365 fill:#f3e8fd,stroke:#5B4B8A,stroke-width:2px
-    style Cowork fill:#f3e8fd,stroke:#5B4B8A,stroke-width:2px
-    style DA_WWI fill:#fff3e0,stroke:#F57C00
+    style Studio fill:#f3e8fd,stroke:#5B4B8A,stroke-width:2px
+    style DA_SALES fill:#fff3e0,stroke:#F57C00
     style DA_MKT fill:#fff3e0,stroke:#F57C00
+    style MR fill:#e8fdf0,stroke:#107C10,stroke-width:2px
 ```
 
 ## Data flow
 
-1. **User asks a question** in any surface (CLI, M365 Copilot, or Cowork)
-2. **Orchestrator selects tools** based on user intent — Copilot CLI engine, Foundry Prompt Agent, or Foundry Hosted Agent
+1. **User asks a question** in any surface (CLI, M365 Copilot / Teams, or Copilot Studio)
+2. **Orchestrator selects tools** based on user intent — the Copilot CLI engine, or the Foundry SalesAgent prompt agent
 3. **Chosen data backend** translates natural language to a governed query: Fabric Data Agent for Lakehouse data
    or Databricks Genie for Unity Catalog tables.
 4. **Normalized sales rows** flow into the shared quota estimator. Fabric and Databricks can use different
    physical column names as long as they provide territory, category, order date, revenue, and quantity.
 5. **WorkIQ** retrieves M365 activity signals via OBO auth or uses demo-safe synthetic activity.
-6. **Researcher Agent** performs web research with configurable search providers (Bing, Tavily, or mock).
+6. **Web research** runs through the agent's research function; deep market and competitive analysis can route to the
+   external Market Research agent ([`ericchansen/market-research`](https://github.com/ericchansen/market-research)).
 7. **Report generator** produces XLSX, HTML, PDF, and DOCX artifacts depending on the surface.
 8. **Response returned** to user with data, context, citations, and deliverables.
 
@@ -113,8 +109,8 @@ The repository demonstrates three ways to reach the same quota-report outcome:
 | Pattern | Where to look | Trade-off |
 |---|---|---|
 | Copilot CLI prototype | `.github/mcp.json`, `src/cli/`, `src/agents/` | Fastest iteration; developer-facing. |
-| Single Foundry agent with tools | `src/orchestrator/foundry_agent.py` and hosted-agent runtime | Simpler production path; one agent owns tool selection. |
-| Multi-agent pipeline | `src/orchestrator/multi_agent/` | More observable and composable; planner, data, research, context, conversation, and report responsibilities are visible independently. |
+| Single Foundry SalesAgent with tools | `src/orchestrator/foundry_agent.py` | Simpler production path; one agent pulls internal + external data and owns tool selection. |
+| Separate sub-agents | `src/orchestrator/databricks_supervisor.py`; external [`ericchansen/market-research`](https://github.com/ericchansen/market-research) | More observable and composable; data and research responsibilities are owned by dedicated agents. |
 
 ## Key design decisions
 

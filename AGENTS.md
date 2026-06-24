@@ -38,30 +38,29 @@ The workshop must show agents running INSIDE Azure AI Foundry, not just as local
     on the Agent itself — there is no separate legacy application resource. Publishing
     now means exposing the agent through M365/Teams channels via its agent card. See
     [Migrate to the new Foundry Agent Service](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/migrate).
-- **Multi-agent pipelines**: Build a WORKING proof-of-concept. The exact architecture is
-  aspirational -- use /research to discover what Foundry's SDK actually supports today for
-  agent-to-agent communication, then build the best PoC that's actually achievable. Push
-  back on this spec if the SDK doesn't support something -- adapt the design to reality.
-  Starting point (adjust based on research):
-  * Create `src/orchestrator/multi_agent/` with specialized agents:
-    - Data Agent: queries Fabric Data Agent OR Databricks Genie for sales/business data
-    - Research Agent: uses /research or web search for market trends, competitive intel
-    - (Work Context Agent: WorkIQ for M365 activity -- mocked for now, real when available)
-    - Conversational Agent: the "brain" that a user talks to. It has access to the data
-      agent and research agent outputs. It can answer questions, provide analysis, and
-      when the user asks for a report, it delegates to the Report Agent.
-    - Report Agent: takes the combined context (data + research + work activity) and
-      generates XLSX/HTML/PDF artifacts
-  * Each agent should ideally be a separate Foundry agent registration (if SDK supports it)
-  * Add tests that verify the pipeline end-to-end with mocked agent responses
-  * The multi-agent pipeline should aim to produce the same outputs as the other surfaces
-    (quota reports, sales analysis) -- showing THREE ways to achieve the same outcome:
-    1. Copilot CLI (prototype, developer-facing)
-    2. Single Foundry agent with tools (simple production path)
-    3. Multi-agent pipeline (advanced, more observable, more composable)
-    Workshop attendees should be able to compare all three side by side.
-- **The hosted agent** in `src/orchestrator/hosted_agent/` should be deployable to the project
-  as a managed compute endpoint, not just a local Docker container.
+- **Multi-agent pipelines (the workflow story)**: The "multi-agent" framing describes a
+  complex workflow that pulls **internal + external data** across many tasks — it is not a
+  mandate to build a bespoke orchestration module. Three concrete patterns deliver the same
+  outcome, and the repo implements them:
+  1. **Copilot CLI** (prototype, developer-facing) — the LLM follows `SKILL.md` to call MCP tools.
+  2. **Single Foundry `SalesAgent` with tools** (the proven production path) — one agent in
+     `src/orchestrator/foundry_agent.py` wires FabricIQ (internal sales), market data
+     (SEC EDGAR real public companies), web research, WorkIQ (mocked), and quota/report
+     FunctionTools. This single multi-tool agent IS the "complex workflow pulling internal +
+     external data." Run it with `python -m src.orchestrator "<question>"`.
+  3. **Separate sub-agents** (advanced, more observable) — the Databricks Supervisor
+     (`src/orchestrator/databricks_supervisor.py`, configured in the Databricks UI/API) and the
+     separately-deployed external [`ericchansen/market-research`](https://github.com/ericchansen/market-research)
+     agent (its own repo + IaC) coordinate as genuine separate agents.
+  Workshop attendees should be able to compare all three side by side.
+  For a code-first option, Microsoft Agent Framework (`uv sync --extra agent-framework`,
+  `SequentialBuilder`/`HandoffBuilder`) composes participants — document it as conceptual
+  guidance, not as an implemented repo module. There is **no** `src/orchestrator/multi_agent/`
+  package and **no** `src/orchestrator/hosted_agent/` container; do not recreate them.
+- **Publishing instead of a hosted container**: The current Foundry Agent object carries the
+  stable endpoint, Entra identity, version, and agent card — there is no separate hosted
+  application resource or bring-your-own-code container to deploy. "Deploying" the agent means
+  registering `SalesAgent` and exposing it through M365/Teams channels via its agent card.
 - **Never rewrite published git history** — no force-push on shared branches
 
 ## Workshop Experience Requirements

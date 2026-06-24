@@ -154,16 +154,20 @@ flowchart LR
 Use the multi-agent pattern when you need independent observability, separate ownership, or agent-specific
 evaluation. Use the single-agent pattern when speed, fewer registrations, and simpler publishing matter more.
 
-> **Scope honesty.** The multi-agent pipeline shipped in this repo is a **local, deterministic proof of
-> concept** (`src/orchestrator/multi_agent/pipeline.py`). It runs the planner → data → research → context →
-> report stages in-process to mirror the single-agent output, so you can demo and unit-test the decomposition
-> without provisioning Foundry agents. It is **not** live Foundry agent-to-agent chaining: the stage names map
-> to the `foundry_agent_name` slots that *would* be registered, but no inter-agent Foundry calls are made.
+> **Scope honesty.** This repo does **not** ship a separate Foundry agent per box above. The single
+> `SalesAgent` (`src/orchestrator/foundry_agent.py`) already performs every stage in-process by calling its
+> tools, which is what you demo and unit-test. The diagram shows how the *same* outcome decomposes if you
+> promote each stage to its own agent — see the promotion options below.
+
+Run the real single-agent workflow that produces the same outcome:
 
 ```powershell
-uv run python -m src.orchestrator.multi_agent "Generate a quota report for Tailspin Toys" --customer "Tailspin Toys" --data-source fabric
-uv run python -m src.orchestrator.multi_agent "Generate a quota report for Tailspin Toys" --customer "Tailspin Toys" --data-source databricks
+uv run python -m src.orchestrator "Generate a quota report for Tailspin Toys"
 ```
+
+For genuinely separate sub-agents today, use the **Databricks Supervisor Agent**
+(`src/orchestrator/databricks_supervisor.py`) or call the separately deployed
+[`ericchansen/market-research`](https://github.com/ericchansen/market-research) agent.
 
 ### Promotion path to real Foundry multi-agent (verified against the SDK)
 
@@ -178,35 +182,28 @@ threads/runs API and its agents cannot be referenced from prompt agents. The new
 | **Microsoft Agent Framework** | Pure-Python orchestration (`SequentialBuilder`, `HandoffBuilder`) over `FoundryChatClient`, runs against the same Responses API. | `pip install agent-framework agent-framework-foundry`; no portal A2A setup. | Recommended code path |
 | **Foundry Local** | On-device model runtime with an OpenAI-compatible local endpoint. | Install the Foundry Local CLI and download a compatible model. | Local model runtime, not portal agent chaining |
 
-`src/orchestrator/multi_agent/agent_framework_runtime.py` is the runnable optional bridge for Microsoft Agent
-Framework. The deterministic local pipeline remains the default, but you can opt into the live framework path when
-the package and Foundry credentials are available:
+**Microsoft Agent Framework** is the recommended code path when you want real, separately-orchestrated agents
+over the same Responses API. Install the extra and point it at your Foundry project; you compose planner →
+data → research → work-context → report participants with `SequentialBuilder` (or `HandoffBuilder` for routing):
 
 ```powershell
 uv sync --extra agent-framework
 $env:FOUNDRY_PROJECT_ENDPOINT = "https://<ai-services-account>.services.ai.azure.com/api/projects/<project-name>"
 $env:FOUNDRY_MODEL = "gpt-4o"  # MODEL_DEPLOYMENT_NAME is also accepted
-uv run python -m src.orchestrator.multi_agent "Generate a quota report for Tailspin Toys" --customer "Tailspin Toys" --data-source fabric --runtime agent-framework
 ```
 
-The adapter builds a `SequentialBuilder` workflow with planner → data → research → work-context → analysis → report
-participants, and a matching `HandoffBuilder` topology for routing-oriented labs. Offline unit tests mock the framework
-classes so the handoff shape and sequential output collection stay validated without Azure credentials.
+See the [Agent Framework sequential orchestration](https://learn.microsoft.com/en-us/agent-framework/workflows/orchestrations/sequential) guide for the builder API.
 
 For cloud-blocked workshops, [Foundry Local and DevUI](../workshop/foundry-local-devui) shows the offline path:
-run the deterministic multi-agent pipeline as a JSON trace, optionally install Foundry Local for local model prompt
-experiments, then promote to Agent Framework or portal traces only when a live project is available. Treat local proof
-as a tool-contract and artifact-generation check, not as evidence that the Foundry portal, publishing, or eval loop is
-working.
+validate the tool contracts with the unit + contract test suite and, optionally, install Foundry Local for on-device
+model experiments. Treat local proof as a tool-contract and artifact-generation check, not as evidence that the
+Foundry portal, publishing, or eval loop is working.
 
-`src/orchestrator/multi_agent/foundry_promotion.py` is the **import-validated bridge** for portal A2A/workflow promotion:
-it builds genuine
-`PromptAgentDefinition` (with one `A2APreviewTool` per sub-agent connection) and `WorkflowAgentDefinition` objects
-from the installed SDK, and is unit-tested offline in `tests/unit/test_foundry_promotion.py`. It does not make
-live calls — registering A2A connections / workflows requires the portal setup noted above — so wire it into a
-live project once those connections exist. Use the **single-agent pattern** when speed, fewer registrations, and
-simpler publishing matter more; use a **multi-agent** option when you need independent observability, separate
-ownership, or agent-specific evaluation.
+Promoting to A2A connections or Foundry Workflows requires the portal setup noted above — create the A2A
+connections (or author the workflow YAML) in the Foundry portal, then reference them by name from a
+`PromptAgentDefinition` or `WorkflowAgentDefinition`. Use the **single-agent pattern** when speed, fewer
+registrations, and simpler publishing matter more; use a **multi-agent** option when you need independent
+observability, separate ownership, or agent-specific evaluation.
 
 References (verified 2026):
 
@@ -232,47 +229,21 @@ References (verified 2026):
 | Component | Location | Purpose |
 |---|---|---|
 | Agent orchestrator | `src/orchestrator/` | Foundry agent configuration and tool wiring |
-| Hosted agent runtime | `src/orchestrator/hosted_agent/` | Bring-your-own-code container with Fabric MCP, quota, research, attainment, activity, and report tools |
+| Databricks Supervisor | `src/orchestrator/databricks_supervisor.py` | Optional multi-sub-agent path over Unity Catalog data, configured in the Databricks UI / API |
 | Report generator | `src/agents/report_generator/` | DOCX generation + OneDrive upload |
 | Infra (Bicep) | `infra/` | AI Services account (modern Foundry), storage, Key Vault, Fabric capacity. Agents and projects are registered out-of-band (SDK / CLI / portal). |
 
-## Hosted runtime configuration
+## Publishing to Microsoft 365 and Teams
 
-The hosted agent ships a deployment manifest at
-[`src/orchestrator/hosted_agent/agent.yaml`](https://github.com/ericchansen/agent-demo-dev/blob/main/src/orchestrator/hosted_agent/agent.yaml).
-Azure AI Foundry Hosted Agents must declare supported container **protocols**. Current
-Foundry docs recommend **Responses** for conversational agents; when published to
-Microsoft 365 Copilot or Teams, Foundry bridges Responses to the **Activity** protocol
-for channel delivery. The manifest therefore declares both `responses` and
-`invocations`: `POST /responses` is the hosted conversational surface, while
-`POST /invoke` stays available for non-conversational automation and custom callers.
-`/healthz`, `/readyz`, and the Foundry `/readiness` alias remain the liveness/readiness probes. A unit test
-(`tests/unit/test_hosted_agent_manifest.py`) keeps the manifest and server contract in sync.
+`scripts/verify_foundry_agent.py` verifies the prompt-agent registration and a Playground-style Responses API
+query. To reach business users, **Publish** the verified `SalesAgent` from the Foundry portal to Microsoft 365
+Copilot and Teams.
 
-| Manifest field | Value | Served by |
-|---|---|---|
-| `protocols[].protocol` | `responses` | `POST /responses` (OpenAI-compatible non-streaming response) |
-| `protocols[].protocol` | `invocations` | `POST /invoke` (and `/`) |
-| Server route | `/healthz` | `GET /healthz` |
-| Server route | `/readyz` | `GET /readyz` |
-| Server route | `/readiness` | `GET /readiness` |
-
-Set these environment variables on the hosted container:
-
-| Variable | Purpose |
-|---|---|
-| `FABRIC_MCP_URL` | Fabric Data Agent MCP endpoint |
-| `FABRIC_MCP_TOOL_NAME` | MCP tool name to invoke for natural-language Fabric questions |
-| `FOUNDRY_PROJECT_ENDPOINT` | Foundry project endpoint injected by the hosted platform |
-| `AZURE_AI_MODEL_DEPLOYMENT_NAME` | Model deployment name, defaulting to `gpt-4o` |
-| `MODEL_ENDPOINT` / `MODEL_DEPLOYMENT` | Local aliases accepted by the adapter |
-| `HOSTED_AGENT_OUTPUT_DIR` | Output directory for generated quota artifacts |
-| `COPILOT_HOME` | Optional credential/cache path if your Copilot SDK adapter requires it |
-
-> **Publish note.** `scripts/verify_foundry_agent.py` verifies the prompt-agent registration and Playground-style
-> Responses API query. That prompt agent is useful for Day 2 teaching, but the production M365/Teams hosted path
-> is `WWISalesHostedAgent` with the Responses protocol declared above; Hosted Agents receive their dedicated Entra
-> agent identity when deployed to Foundry managed hosting.
+In the current Foundry Agent object model, the stable endpoint, Entra agent identity, version, and agent card
+live on the **agent itself** — there is no separate hosted application resource to build or deploy. Publishing
+means exposing the registered agent through M365/Teams channels via its agent card. See
+[Migrate to the new Foundry Agent Service](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/migrate)
+and [Publish agents to Microsoft 365 Copilot and Teams](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/publish-copilot).
 
 ## When to use the Foundry surface
 

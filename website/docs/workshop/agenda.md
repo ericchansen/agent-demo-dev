@@ -29,7 +29,7 @@ This workshop is a hands-on path from a local Copilot CLI prototype to a product
 | 11:00-12:00 | Publish to Microsoft 365 | Use the current Foundry **Publish** flow to make the registered agent available in Microsoft 365 Copilot and Teams with the right Entra/RBAC assignments. |
 | 13:00-14:00 | Customize for your data | Swap WWI sample assumptions for the participant's Fabric warehouse, Databricks Genie Space, or enterprise data contract. |
 | 14:00-15:00 | Add reusable skills | Extend the quota workflow with one custom analysis or report-generation skill and add an offline test. |
-| 15:00-16:00 | Hosted agent runtime | Build the hosted-agent container, probe `/healthz` and `/readyz`, and understand when bring-your-own-code hosting is preferable. |
+| 15:00-16:00 | M365/Teams publish path | Register the Foundry `SalesAgent`, verify it with `scripts/verify_foundry_agent.py`, and publish it to Microsoft 365 Copilot and Teams via its agent card. |
 | 16:00-16:45 | Evaluate and monitor | Run Foundry evals, review live-smoke readiness output, and map traces to new regression tests. |
 | 16:45-17:00 | Graduation checkpoint | Present a credible path from local prototype to governed Foundry deployment, including cost and readiness guardrails. |
 
@@ -45,7 +45,7 @@ Before each delivery, confirm:
 
 | Check | Command or surface | Expected result |
 |---|---|---|
-| Offline readiness | `python scripts/predemo.py --docker` | Unit/eval/docs checks pass and the hosted container probes return HTTP 200. |
+| Offline readiness | `python scripts/predemo.py` | Unit/eval/docs checks pass and readiness reports configured backends as live or clearly blocked. |
 | Website | `cd website && npm run build` | Docusaurus builds without broken routes or anchors. |
 | Links | `python scripts/validate_links.py --timeout 20 website/docs README.md` plus the Link Check workflow | Public links resolve and lychee validates fragments. |
 | Live services | `.github/workflows/live-smoke.yml` | Configured backends run; unconfigured backends are reported as blocked, not silently treated as proof. |

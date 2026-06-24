@@ -71,13 +71,13 @@ to managed MCP when your Databricks workspace and governance model are ready for
 
 | Path | How it works | Use it when |
 |---|---|---|
-| SDK Conversation API | `src/orchestrator/databricks_genie.py` uses the Databricks SDK `WorkspaceClient.genie` adapter and normalizes query results. | You want the simplest live smoke and a Python function tool in Foundry/hosted agent. |
+| SDK Conversation API | `src/orchestrator/databricks_genie.py` uses the Databricks SDK `WorkspaceClient.genie` adapter and normalizes query results. | You want the simplest live smoke and a Python function tool in the Foundry `SalesAgent`. |
 | Managed MCP | `src/orchestrator/databricks_genie.py` selects `DatabricksGenieMcpClient` when `DATABRICKS_GENIE_MCP_URL` is set, calling the Databricks-hosted Genie MCP server (Unity Catalog permissions enforced server-side). | You want a platform-managed MCP surface for agents instead of custom adapter code. |
-| Offline fallback | The multi-agent PoC emits deterministic Databricks-shaped rows. | You need to teach the architecture without a live workspace or DBU spend. |
+| Offline fallback | The Genie adapter emits deterministic Databricks-shaped rows. | You need to teach the architecture without a live workspace or DBU spend. |
 
 The SDK path uses the Genie Spaces API from a thin data-agent adapter. This repo includes that adapter in
-`src/orchestrator/databricks_genie.py` and exposes it as the `databricks_query` tool in the Foundry and hosted
-agent surfaces.
+`src/orchestrator/databricks_genie.py` and exposes it as the `databricks_query` tool in the Foundry
+`SalesAgent` surface.
 
 1. Start or continue a conversation for the user request.
 2. Poll until the answer is complete.
@@ -100,7 +100,7 @@ DATABRICKS_CLIENT_SECRET=<service-principal-secret>
 DATABRICKS_TOKEN=<personal-access-token>
 ```
 
-Then ask the hosted or Foundry agent for a Databricks-backed sales question:
+Then ask the Foundry `SalesAgent` for a Databricks-backed sales question:
 
 ```powershell
 uv run python -m src.orchestrator "Use Databricks Genie to show sales by territory for Tailspin Toys"
@@ -112,8 +112,8 @@ calls the SDK adapter and prints JSON. A configured run returns `status: "ok"`, 
 `generate_quota_estimation_report` without changing the estimator. With env unset, it exits with
 `status: "configuration_error"` and lists the required variables.
 
-The multi-agent proof of concept in `src/orchestrator/multi_agent/` demonstrates this boundary with deterministic
-Databricks-shaped rows when a live workspace is not configured.
+The single Foundry `SalesAgent` in `src/orchestrator/foundry_agent.py` and the Databricks Supervisor in
+`src/orchestrator/databricks_supervisor.py` demonstrate this boundary with deterministic Databricks-shaped rows when a live workspace is not configured.
 
 ## Managed MCP transport (DATABRICKS_GENIE_MCP_URL)
 
@@ -158,7 +158,7 @@ pick the mode that matches where the agent runs:
 | **PAT** (personal access token) | Quick local testing for a single user. | `DATABRICKS_HOST` + `DATABRICKS_TOKEN`. |
 | **U2M** (user-to-machine OAuth) | Interactive development; actions run as you. | `databricks auth login --host https://<workspace-hostname>`, then reference the CLI profile. |
 | **M2M** (machine-to-machine OAuth) | Unattended agents / CI service principals. | Service principal `DATABRICKS_CLIENT_ID` + `DATABRICKS_CLIENT_SECRET` (+ `DATABRICKS_HOST`). |
-| **OBO** (on-behalf-of-user) | Hosted agents that must act as the calling user so UC permissions are evaluated per user. | Provide the user token to the MCP client per request; include the Genie OAuth scope for the server. |
+| **OBO** (on-behalf-of-user) | Agents that must act as the calling user so UC permissions are evaluated per user. | Provide the user token to the MCP client per request; include the Genie OAuth scope for the server. |
 
 For unattended workshop CI, prefer **M2M** with a service principal that has `SELECT` on the Genie Space tables.
 For published Foundry/M365 agents where each user should only see their own governed data, use **OBO** so Unity
@@ -173,7 +173,7 @@ alongside `DATABRICKS_GENIE_MCP_URL` for managed MCP, or set `DATABRICKS_WORKSPA
 
 A **live** Genie call is optional and only runs when you point the adapter at a real workspace. Treat it as
 env-gated: without these variables, the Genie adapter returns a clear configuration error and the live Genie
-checkpoint is **blocked**, not equivalent to a Fabric-backed run. The unit tests and multi-agent proof of concept
+checkpoint is **blocked**, not equivalent to a Fabric-backed run. The unit tests and offline adapter fallback
 still use deterministic Databricks-shaped rows so the workshop can be completed offline.
 
 **Prerequisites for a live run:**
@@ -198,8 +198,8 @@ uv run python -m src.orchestrator "Use Databricks Genie to show sales by territo
 ```
 
 A successful run returns normalized rows plus the `conversation_id` / `message_id` that prove the Conversation
-API round-trip worked. If the variables are unset, record live Genie as blocked and use the multi-agent PoC
-command below for the deterministic offline checkpoint.
+API round-trip worked. If the variables are unset, record live Genie as blocked and use the offline adapter
+fallback for the deterministic offline checkpoint.
 
 :::caution[Genie Agent Mode billing — know this before you demo live]
 
