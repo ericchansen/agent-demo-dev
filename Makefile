@@ -9,7 +9,7 @@ CATEGORY ?=
 
 .PHONY: lint format format-check typecheck test test-integration test-eval recorded-proof predemo \
         infra-validate infra-deploy infra-teardown load-data load-market-data \
-        configure-market-agent serve-researcher serve-sharepoint demo diagrams clean
+        configure-market-agent demo diagrams clean
 
 lint:
 	ruff check src/ tests/
@@ -55,26 +55,22 @@ infra-teardown:
 	@echo "  az fabric capacity suspend --capacity-name $(CAPACITY_NAME) --resource-group $(RG)"
 
 load-data:
-	python demo/load-wwi-data.py
+	python demo/load-sample-data.py
 
+# Pull real SEC EDGAR financials for ~50 US public companies into data/sec-edgar/*.csv.
+# Requires a descriptive SEC User-Agent (or set SEC_USER_AGENT).
 load-market-data:
-	python demo/load-market-data.py
+	python scripts/load_sec_edgar.py --user-agent "$(SEC_USER_AGENT)"
 
 configure-market-agent:
 	@echo "Usage: python demo/configure_market_agent.py --workspace-id <GUID> --agent-id <GUID> --lakehouse-id <GUID>"
 
-serve-researcher:
-	python -m src.agents.researcher.mcp_server
-
-serve-sharepoint:
-	python -m src.agents.sharepoint.mcp_server
-
 demo:
-	@echo "=== Fabric Sales Agent Accelerator — Full Demo ==="
+	@echo "=== Sales Agent Demo — Full Demo ==="
 	@echo ""
-	@echo "1. Load sample data:        make load-data"
-	@echo "2. Start researcher agent:   make serve-researcher  (in terminal 1)"
-	@echo "3. Start SharePoint agent:   make serve-sharepoint  (in terminal 2)"
+	@echo "1. Load sales sample data:   make load-data"
+	@echo "2. Load real market data:    make load-market-data SEC_USER_AGENT='Your Name you@example.com'"
+	@echo "3. Upload the CSVs to your Fabric Lakehouse and build the Data Agent (docs/setup-guide.md)."
 	@echo "4. Open the Fabric Data Agent in your browser and start chatting."
 	@echo ""
 	@echo "Prerequisites:"

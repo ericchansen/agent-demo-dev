@@ -1,21 +1,23 @@
-"""Unit tests for the SEC EDGAR market data loader."""
+"""Unit tests for the SEC EDGAR market data loader (scripts/load_sec_edgar.py).
+
+These tests exercise the loader's pure functions against synthetic ``companyfacts``
+JSON — no network access and no third-party dependencies.
+"""
 
 from __future__ import annotations
 
 import importlib.util
-import io
-import zipfile
 from pathlib import Path
-from unittest.mock import patch
+from typing import Any
 
 import pytest
 
-_LOADER_PATH = Path(__file__).resolve().parents[2] / "demo" / "load-market-data.py"
+_LOADER_PATH = Path(__file__).resolve().parents[2] / "scripts" / "load_sec_edgar.py"
 
 
-def _import_loader():
+def _import_loader() -> Any:
     """Import the loader module from its file path."""
-    spec = importlib.util.spec_from_file_location("load_market_data", _LOADER_PATH)
+    spec = importlib.util.spec_from_file_location("load_sec_edgar", _LOADER_PATH)
     assert spec is not None and spec.loader is not None
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -23,208 +25,195 @@ def _import_loader():
 
 
 @pytest.fixture(scope="module")
-def loader():
-    """Load the market data loader module once per test module."""
-    pytest.importorskip("pandas")
+def loader() -> Any:
+    """Load the SEC EDGAR loader module once per test module."""
     return _import_loader()
 
 
-# ---------------------------------------------------------------------------
-# GAAP tag normalization
-# ---------------------------------------------------------------------------
+def _usd(facts: list[dict[str, Any]]) -> dict[str, Any]:
+    return {"units": {"USD": facts}}
 
 
-class TestGAAPTagNormalization:
-    """Test that GAAP tags are correctly mapped to normalized columns."""
-
-    def test_revenue_tags_mapped(self, loader):
-        """All revenue tag variants should map to 'revenue' column."""
-        for tag in loader._GAAP_TAG_MAP["revenue"]:
-            col, _pri = loader._TAG_PRIORITY[tag]
-            assert col == "revenue", f"{tag} should map to 'revenue', got '{col}'"
-
-    def test_net_income_tags_mapped(self, loader):
-        """All net income tag variants should map to 'net_income' column."""
-        for tag in loader._GAAP_TAG_MAP["net_income"]:
-            col, _pri = loader._TAG_PRIORITY[tag]
-            assert col == "net_income", f"{tag} should map to 'net_income', got '{col}'"
-
-    def test_total_assets_tags_mapped(self, loader):
-        """All total assets tag variants should map to 'total_assets' column."""
-        for tag in loader._GAAP_TAG_MAP["total_assets"]:
-            col, _pri = loader._TAG_PRIORITY[tag]
-            assert col == "total_assets", f"{tag} should map to 'total_assets', got '{col}'"
-
-    def test_priority_ordering(self, loader):
-        """Earlier tags in each list should have lower priority numbers (= higher precedence)."""
-        for col_name, tags in loader._GAAP_TAG_MAP.items():
-            for i, tag in enumerate(tags):
-                _, pri = loader._TAG_PRIORITY[tag]
-                assert pri == i, f"{tag} should have priority {i}, got {pri}"
-
-    def test_all_tags_in_frozen_set(self, loader):
-        """Every tag in the map should be in _ALL_TAGS."""
-        for tags in loader._GAAP_TAG_MAP.values():
-            for tag in tags:
-                assert tag in loader._ALL_TAGS
-
-
-# ---------------------------------------------------------------------------
-# Company list loading
-# ---------------------------------------------------------------------------
-
-
-class TestCompanyListLoading:
-    """Test the company CSV loading function."""
-
-    def test_load_from_repo_csv(self, loader, tmp_path):
-        """Load the actual repo companies.csv."""
-        csv_path = Path(__file__).resolve().parents[2] / "demo" / "market-data" / "companies.csv"
-        if not csv_path.exists():
-            pytest.skip("companies.csv not found")
-
-        company_map = loader._load_company_list(csv_path)
-        assert len(company_map) >= 40, f"Expected 40+ companies, got {len(company_map)}"
-
-        # Check a well-known company.
-        msft_cik = 789019
-        if msft_cik in company_map:
-            assert company_map[msft_cik]["ticker"] == "MSFT"
-            assert "Microsoft" in company_map[msft_cik]["company_name"]
-
-    def test_load_custom_csv(self, loader, tmp_path):
-        """Load a minimal custom CSV."""
-        csv_path = tmp_path / "test_companies.csv"
-        csv_path.write_text(
-            "cik,ticker,company_name,sic_code,industry\n12345,TEST,Test Corp,7372,Software & Services\n"
-        )
-        company_map = loader._load_company_list(csv_path)
-        assert 12345 in company_map
-        assert company_map[12345]["ticker"] == "TEST"
-
-
-# ---------------------------------------------------------------------------
-# SEC URL construction
-# ---------------------------------------------------------------------------
-
-
-class TestSECURLConstruction:
-    """Test that SEC EDGAR URLs are constructed correctly."""
-
-    def test_url_format(self, loader):
-        """URL should follow SEC EDGAR quarterly data set pattern."""
-        url = f"{loader._EDGAR_BASE}/2024q4.zip"
-        assert url == "https://www.sec.gov/files/dera/data/financial-statement-data-sets/2024q4.zip"
-
-    def test_user_agent_set(self, loader):
-        """SEC requires a descriptive User-Agent header with contact email."""
-        assert "FabricSalesAgentAccelerator" in loader._USER_AGENT
-        assert "@" in loader._USER_AGENT  # SEC fair access requires email
-
-
-# ---------------------------------------------------------------------------
-# Parse and normalize (with synthetic data)
-# ---------------------------------------------------------------------------
-
-
-class TestParseAndNormalize:
-    """Test the parse-and-normalize pipeline with synthetic EDGAR data."""
-
-    def _make_test_zip(self) -> bytes:
-        """Create a minimal EDGAR-format ZIP with sub.txt and num.txt."""
-        sub_data = (
-            "adsh\tcik\tname\tform\tfy\tfp\tfiled\n"
-            "0001-24-000001\t789019\tMICROSOFT CORP\t10-K\t2024\tFY\t20240730\n"
-            "0001-24-000002\t320193\tAPPLE INC\t10-K\t2024\tFY\t20241101\n"
-            "0001-24-000003\t99999\tUNKNOWN CORP\t10-K\t2024\tFY\t20241201\n"
-        )
-        num_data = (
-            "adsh\ttag\tversion\tddate\tqtrs\tuom\tvalue\n"
-            "0001-24-000001\tRevenues\tus-gaap/2024\t20240630\t4\tUSD\t245122000000\n"
-            "0001-24-000001\tNetIncomeLoss\tus-gaap/2024\t20240630\t4\tUSD\t88136000000\n"
-            "0001-24-000001\tAssets\tus-gaap/2024\t20240630\t0\tUSD\t512163000000\n"
-            "0001-24-000002\tRevenueFromContractWithCustomerExcludingAssessedTax\tus-gaap/2024\t20240928\t4\tUSD\t391035000000\n"
-            "0001-24-000002\tNetIncomeLoss\tus-gaap/2024\t20240928\t4\tUSD\t93736000000\n"
-            "0001-24-000003\tRevenues\tus-gaap/2024\t20241231\t4\tUSD\t1000000\n"
-        )
-
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, "w") as zf:
-            zf.writestr("sub.txt", sub_data)
-            zf.writestr("num.txt", num_data)
-        return buf.getvalue()
-
-    def test_filters_to_known_companies(self, loader):
-        """Only companies in the company_map should appear in output."""
-        company_map = {
-            789019: {"ticker": "MSFT", "company_name": "Microsoft", "sic_code": "7372", "industry": "Software"},
-            320193: {"ticker": "AAPL", "company_name": "Apple", "sic_code": "3571", "industry": "Hardware"},
+@pytest.fixture
+def microsoft_facts() -> dict[str, Any]:
+    """Synthetic companyfacts: one annual + one quarter + one unframed revenue point."""
+    return {
+        "facts": {
+            "us-gaap": {
+                "Revenues": _usd(
+                    [
+                        {"frame": "CY2023", "end": "2023-12-31", "filed": "2024-01-30", "val": 211915000000},
+                        {"frame": "CY2023Q3", "end": "2023-09-30", "filed": "2023-10-24", "val": 56517000000},
+                        # No frame -> must be ignored (not a canonical period).
+                        {"end": "2023-06-30", "filed": "2023-07-25", "val": 99999},
+                    ]
+                ),
+                "NetIncomeLoss": _usd(
+                    [
+                        {"frame": "CY2023", "end": "2023-12-31", "filed": "2024-01-30", "val": 72361000000},
+                    ]
+                ),
+                "Assets": _usd(
+                    [
+                        {"frame": "CY2023Q4I", "end": "2023-12-31", "filed": "2024-01-30", "val": 411976000000},
+                    ]
+                ),
+            }
         }
+    }
 
-        df = loader._parse_and_normalize(self._make_test_zip(), company_map)
-        ciks_in_result = set(df["cik"].unique())
 
-        # CIK 99999 (UNKNOWN CORP) should be filtered out.
-        assert 99999 not in ciks_in_result
-        assert 789019 in ciks_in_result
-        assert 320193 in ciks_in_result
+# --- Frame regexes -----------------------------------------------------------
 
-    def test_gaap_normalization_output_columns(self, loader):
-        """Output should have normalized revenue, net_income, total_assets columns."""
-        company_map = {
-            789019: {"ticker": "MSFT", "company_name": "Microsoft", "sic_code": "7372", "industry": "Software"},
-            320193: {"ticker": "AAPL", "company_name": "Apple", "sic_code": "3571", "industry": "Hardware"},
+
+def test_annual_frame_matches_calendar_year(loader: Any) -> None:
+    m = loader.ANNUAL_FRAME.match("CY2024")
+    assert m is not None and m.group(1) == "2024"
+    assert loader.ANNUAL_FRAME.match("CY2024Q3") is None
+    assert loader.ANNUAL_FRAME.match("CY2024Q4I") is None
+
+
+def test_quarter_frame_matches_calendar_quarter(loader: Any) -> None:
+    m = loader.QUARTER_FRAME.match("CY2024Q3")
+    assert m is not None and m.group(1) == "2024" and m.group(2) == "3"
+    assert loader.QUARTER_FRAME.match("CY2024") is None
+    # Instant (assets) frames carry a trailing I and must not match a duration quarter.
+    assert loader.QUARTER_FRAME.match("CY2024Q3I") is None
+
+
+# --- Formatting helpers ------------------------------------------------------
+
+
+def test_fmt_int(loader: Any) -> None:
+    assert loader._fmt_int({"val": 211915000000}) == "211915000000"
+    assert loader._fmt_int({"val": 1234.0}) == "1234"
+    assert loader._fmt_int(None) == ""
+
+
+def test_fmt_date(loader: Any) -> None:
+    assert loader._fmt_date("2023-12-31") == "20231231"
+    assert loader._fmt_date(None) == ""
+    assert loader._fmt_date("") == ""
+
+
+# --- Framed fact extraction --------------------------------------------------
+
+
+def test_framed_usd_facts_only_returns_framed(loader: Any, microsoft_facts: dict[str, Any]) -> None:
+    framed = loader._framed_usd_facts(microsoft_facts, loader.REVENUE_TAGS)
+    assert set(framed) == {"CY2023", "CY2023Q3"}  # unframed point dropped
+    assert framed["CY2023"]["val"] == 211915000000
+
+
+def test_framed_usd_facts_earlier_tag_wins(loader: Any) -> None:
+    """When two revenue tags supply the same frame, the earlier tag in the list wins."""
+    facts = {
+        "facts": {
+            "us-gaap": {
+                "RevenueFromContractWithCustomerExcludingAssessedTax": _usd(
+                    [{"frame": "CY2023", "end": "2023-12-31", "filed": "2024-01-30", "val": 100}]
+                ),
+                "Revenues": _usd([{"frame": "CY2023", "end": "2023-12-31", "filed": "2024-01-30", "val": 999}]),
+            }
         }
+    }
+    framed = loader._framed_usd_facts(facts, loader.REVENUE_TAGS)
+    assert framed["CY2023"]["val"] == 100
 
-        df = loader._parse_and_normalize(self._make_test_zip(), company_map)
-        assert "revenue" in df.columns
-        assert "net_income" in df.columns
-        assert "total_assets" in df.columns
 
-    def test_company_metadata_enriched(self, loader):
-        """Output rows should include ticker, company_name from the company map."""
-        company_map = {
-            789019: {"ticker": "MSFT", "company_name": "Microsoft", "sic_code": "7372", "industry": "Software"},
+def test_framed_usd_facts_missing_tag(loader: Any) -> None:
+    assert loader._framed_usd_facts({"facts": {"us-gaap": {}}}, loader.REVENUE_TAGS) == {}
+
+
+# --- Row building ------------------------------------------------------------
+
+
+def test_build_company_rows_annual_and_quarter(loader: Any, microsoft_facts: dict[str, Any]) -> None:
+    rows = loader.build_company_rows(
+        cik=789019,
+        ticker="MSFT",
+        name="Microsoft Corp",
+        sic="7372",
+        industry="Software & Services",
+        facts=microsoft_facts,
+    )
+    by_period = {(r["form"], r["fiscal_period"]): r for r in rows}
+    assert set(by_period) == {("10-K", "FY"), ("10-Q", "Q3")}
+
+    annual = by_period[("10-K", "FY")]
+    assert annual["fiscal_year"] == "2023"
+    assert annual["period_end_date"] == "20231231"
+    assert annual["revenue"] == "211915000000"
+    assert annual["net_income"] == "72361000000"
+    # Total assets matched to the period end date.
+    assert annual["total_assets"] == "411976000000"
+    # Carries through identity columns.
+    assert annual["cik"] == 789019
+    assert annual["ticker"] == "MSFT"
+    assert annual["industry"] == "Software & Services"
+
+    quarter = by_period[("10-Q", "Q3")]
+    assert quarter["revenue"] == "56517000000"
+    assert quarter["net_income"] == ""  # no CY2023Q3 net income supplied
+    assert quarter["total_assets"] == ""  # no assets at the Q3 end date
+
+
+def test_build_company_rows_bank_net_income_only(loader: Any) -> None:
+    """Banks that omit a standard revenue tag still produce rows driven by net income."""
+    facts = {
+        "facts": {
+            "us-gaap": {
+                "NetIncomeLoss": _usd(
+                    [{"frame": "CY2023", "end": "2023-12-31", "filed": "2024-02-20", "val": 49552000000}]
+                ),
+            }
         }
+    }
+    rows = loader.build_company_rows(
+        cik=19617, ticker="JPM", name="JPMorgan Chase", sic="6021", industry="Commercial Banking", facts=facts
+    )
+    assert len(rows) == 1
+    assert rows[0]["form"] == "10-K"
+    assert rows[0]["revenue"] == ""
+    assert rows[0]["net_income"] == "49552000000"
 
-        df = loader._parse_and_normalize(self._make_test_zip(), company_map)
-        msft_rows = df[df["cik"] == 789019]
-        assert len(msft_rows) > 0
-        assert msft_rows.iloc[0]["ticker"] == "MSFT"
-        assert msft_rows.iloc[0]["company_name"] == "Microsoft"
 
-    def test_revenue_value_correct(self, loader):
-        """Microsoft's revenue should match the synthetic test data."""
-        company_map = {
-            789019: {"ticker": "MSFT", "company_name": "Microsoft", "sic_code": "7372", "industry": "Software"},
+def test_build_company_rows_sorted(loader: Any) -> None:
+    facts = {
+        "facts": {
+            "us-gaap": {
+                "Revenues": _usd(
+                    [
+                        {"frame": "CY2024", "end": "2024-12-31", "filed": "2025-01-30", "val": 2},
+                        {"frame": "CY2023", "end": "2023-12-31", "filed": "2024-01-30", "val": 1},
+                        {"frame": "CY2023Q1", "end": "2023-03-31", "filed": "2023-04-25", "val": 3},
+                    ]
+                ),
+            }
         }
-
-        df = loader._parse_and_normalize(self._make_test_zip(), company_map)
-        msft = df[df["cik"] == 789019].iloc[0]
-        assert msft["revenue"] == 245122000000.0
-
-
-# ---------------------------------------------------------------------------
-# Error handling
-# ---------------------------------------------------------------------------
+    }
+    rows = loader.build_company_rows(cik=1, ticker="X", name="X", sic="0", industry="i", facts=facts)
+    keys = [(r["form"], r["fiscal_year"], r["fiscal_period"]) for r in rows]
+    assert keys == sorted(keys)
+    # 10-K rows sort before 10-Q rows.
+    assert keys[0][0] == "10-K"
 
 
-class TestErrorHandling:
-    """Test error handling in the download function."""
+def test_build_company_rows_empty(loader: Any) -> None:
+    assert loader.build_company_rows(1, "X", "X", "0", "i", {"facts": {"us-gaap": {}}}) == []
 
-    def test_404_raises_clear_error(self, loader):
-        """404 from SEC should raise RuntimeError with helpful message."""
-        import urllib.error
 
-        def fake_urlopen(*args, **kwargs):
-            raise urllib.error.HTTPError(
-                url="https://sec.gov/fake.zip",
-                code=404,
-                msg="Not Found",
-                hdrs=None,  # type: ignore[arg-type]
-                fp=None,
-            )
+# --- Curated universe + tag sets ---------------------------------------------
 
-        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
-            with pytest.raises(RuntimeError, match="not found"):
-                loader._download_edgar_zip("9999q9")
+
+def test_curated_universe_is_unique_and_nonempty(loader: Any) -> None:
+    tickers = [t for t, _ in loader.CURATED]
+    assert len(tickers) >= 50
+    assert len(tickers) == len(set(tickers))  # no duplicate tickers
+
+
+def test_tag_sets(loader: Any) -> None:
+    # Bank revenue concept must be covered so financials produce revenue rows.
+    assert "RevenuesNetOfInterestExpense" in loader.REVENUE_TAGS
+    assert loader.NET_INCOME_TAGS == ["NetIncomeLoss"]
+    assert loader.ASSET_TAGS == ["Assets"]

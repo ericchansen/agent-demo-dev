@@ -52,18 +52,21 @@ This script downloads WWI Parquet files from a public Azure Blob Storage contain
 
 ### Step 2b: Load Market Data (Optional)
 
-To enable the **real-world market data path** alongside WWI, load SEC EDGAR financial data for ~50 major US public companies:
+To enable the **real-world market data path** alongside the sales data, load SEC EDGAR financial data for ~50 major US public companies:
 
 ```bash
-make load-market-data
+make load-market-data SEC_USER_AGENT="Your Name you@example.com"
 ```
 
-This downloads a recent SEC EDGAR quarterly data set, filters to a curated company list (`demo/market-data/companies.csv`), normalizes US GAAP tags into simple columns (revenue, net_income, total_assets), and outputs Parquet + CSV files.
+SEC requires a descriptive User-Agent (name + email). The loader pulls each company's
+`companyfacts` from `https://data.sec.gov`, extracts annual (10-K) and quarterly (10-Q)
+revenue, net income, and total assets, and writes two CSVs to `data/sec-edgar/`:
+`company_financials.csv` and `companies.csv`. It uses only the Python standard library.
 
 Then upload to a **separate** Fabric Lakehouse:
 
 1. Create a new Lakehouse (e.g., `MarketDataLH`) in your workspace.
-2. Upload `company_financials.parquet` and `companies.csv` from `demo/market-data/output/`.
+2. Upload `company_financials.csv` and `companies.csv` from `data/sec-edgar/`.
 3. Right-click each file → **Load to table**.
 
 See [Data Paths](data-paths.md) for the full comparison of both data paths.
@@ -99,16 +102,16 @@ After publishing the Data Agent:
 
 ## Step 5: Configure CLI
 
-Merge the Fabric MCP server config with the sub-agent configs for your VS Code / CLI environment.
+Merge the Fabric MCP server config with the local stdio MCP server configs for your VS Code / CLI environment.
 
-1. Open `src/cli/mcp-config.json` — this contains the Researcher and SharePoint MCP server definitions.
+1. Open `src/cli/mcp-config.json` — this registers the local stdio MCP servers (`report-generator`, `quota-estimator`) alongside the Fabric Data Agent HTTP servers (`fabric-core`, `sales-data`, `market-data`).
 2. Add the Fabric Data Agent MCP entry (from the `mcp.json` you downloaded in Step 4) to your VS Code MCP config:
    - **VS Code**: Settings → search "MCP" → edit `mcp.json`
    - **GitHub Copilot CLI**: `~/.copilot/mcp-config.json`
-3. Set the required environment variables:
+3. Set the optional environment variables:
 
 ```bash
-# Search provider for the Researcher Agent (bing, tavily, or mock)
+# Search provider for live web research (bing, tavily, or mock)
 export SEARCH_PROVIDER=mock
 
 # SharePoint mode (live or mock)
@@ -122,19 +125,11 @@ For a real deployment, set `SEARCH_PROVIDER=bing` (with a Bing Search API key) o
 
 ---
 
-## Step 6: Start Sub-Agents
+## Step 6: Run the CLI
 
-Start the Researcher and SharePoint MCP servers. Each runs in its own terminal.
+The local stdio MCP servers (`report-generator`, `quota-estimator`) are launched **automatically on demand** by your MCP client (VS Code, Copilot CLI) using the commands in `src/cli/mcp-config.json` — there is no separate server process to start.
 
-```bash
-# Terminal 1 — Researcher Agent
-make serve-researcher
-
-# Terminal 2 — SharePoint Agent
-make serve-sharepoint
-```
-
-Both servers start on stdio transport by default and will be discovered by your MCP client (VS Code, CLI).
+Open the Copilot CLI (or VS Code) in the repo root and ask a question; the client spawns the stdio servers over stdio transport as needed and discovers the Fabric Data Agent HTTP servers from your `mcp.json`.
 
 ---
 

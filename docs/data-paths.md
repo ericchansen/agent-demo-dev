@@ -141,22 +141,17 @@ The orchestrator registers both tools automatically and generates dynamic instru
 
 ### Adding More Companies
 
-Edit `demo/market-data/companies.csv` with additional CIK numbers from SEC EDGAR Company Search. Then re-run the loader:
+The curated company list lives in the `CURATED` table near the top of
+`scripts/load_sec_edgar.py` (one `(ticker, industry)` pair per company). Add tickers
+there, then re-run the loader:
 
 ```bash
-python demo/load-market-data.py --quarter 2024q4
+python scripts/load_sec_edgar.py --user-agent "Your Name you@example.com"
 ```
 
-### Loading Multiple Quarters
-
-Run the loader once per quarter to build a richer time series:
-
-```bash
-python demo/load-market-data.py --quarter 2024q3
-python demo/load-market-data.py --quarter 2024q4
-```
-
-Merge the outputs manually (or extend the loader script).
+The loader resolves each ticker to its SEC CIK automatically and pulls the full
+available history (annual 10-K and quarterly 10-Q periods) in a single run, so there
+is no per-quarter step to repeat.
 
 ### People Data Labs (Advanced)
 
