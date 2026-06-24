@@ -22,9 +22,7 @@ def test_should_validate_skips_non_public_examples() -> None:
     assert not should_validate("http://127.0.0.1:8080/healthz")
     assert not should_validate("https://example.com/research")
     assert not should_validate("https://your-endpoint.openai.azure.com/")
-    assert not should_validate(
-        "https://salesagentais.services.ai.azure.com/api/projects/sales-agent-project"
-    )
+    assert not should_validate("https://salesagentais.services.ai.azure.com/api/projects/sales-agent-project")
 
 
 def test_should_validate_public_docs_links() -> None:

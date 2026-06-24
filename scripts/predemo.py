@@ -42,7 +42,7 @@ def main() -> int:
         ("Unit tests", [python, "-m", "pytest", "tests\\unit\\"], ROOT),
         ("Golden QA eval", [python, "tests\\eval\\run_eval.py", "--mock", "--pass-rate", "100"], ROOT),
         ("Demo readiness", demo_check, ROOT),
-        ("Workshop visuals", [python, "scripts\\check_workshop_visuals.py"], ROOT),
+        ("Recorded backend E2E", [python, "scripts\\recorded_live_proof.py"], ROOT),
         ("Docs link validation", [python, "scripts\\validate_links.py"], ROOT),
         ("Website build", [_tool("npm"), "run", "build"], WEBSITE),
     ]

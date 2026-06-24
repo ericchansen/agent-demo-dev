@@ -84,8 +84,7 @@ platform_json = {
         "type": "DataAgent",
         "displayName": "Sales Agent",
         "description": (
-            "AI assistant for sales. Queries sales pipeline, "
-            "customer data, product catalog, and territory information."
+            "AI assistant for sales. Queries sales pipeline, customer data, product catalog, and territory information."
         ),
     },
     "config": {"version": "2.0", "logicalId": "00000000-0000-0000-0000-000000000000"},

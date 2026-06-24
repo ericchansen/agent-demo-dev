@@ -13,9 +13,9 @@ This demo shows the same workflow in two surfaces.
 
 ![Copilot CLI report flow](/img/workshop/cli-report-flow.svg)
 
-*Local proof visual. Validate it before delivery with `uv run python scripts/check_workshop_visuals.py`; the script
-regenerates the Tailspin Toys quota artifacts and writes `output/workshop-visual-proof.json` with artifact paths and
-file sizes.*
+*Local proof visual. Validate the report pipeline before delivery with `uv run python scripts/recorded_live_proof.py`;
+the script replays backend-shaped Tailspin Toys fixtures through the real normalize → quota → report path and
+produces non-empty XLSX/HTML/PDF artifacts with source-specific citations.*
 
 ## Act 1 — CLI (Developer Audience)
 
@@ -137,4 +137,4 @@ Between Act 1 and Act 2, explain the translation:
 - [ ] Published agent identity has RBAC to Fabric/Databricks/storage/Graph resources
 - [ ] M365 Copilot can see the agent (@mention works)
 - [ ] Pre-generated XLSX/HTML/PDF artifacts available as fallback
-- [ ] `uv run python scripts/check_workshop_visuals.py` wrote `output/workshop-visual-proof.json`
+- [ ] `uv run python scripts/recorded_live_proof.py` produced non-empty XLSX/HTML/PDF artifacts
