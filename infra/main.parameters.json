@@ -9,7 +9,6 @@
     "entraAppName": { "value": "${ENTRA_APP_NAME=sales-agent-app}" },
     "fabricAdminUpn": { "value": "${FABRIC_ADMIN_UPN=}" },
     "storageAccountName": { "value": "${STORAGE_ACCOUNT_NAME}" },
-    "containerRegistryName": { "value": "${CONTAINER_REGISTRY_NAME}" },
     "cogServicesName": { "value": "${COG_SERVICES_NAME}" },
     "publicNetworkAccess": { "value": "${PUBLIC_NETWORK_ACCESS=Enabled}" },
     "enableRoleAssignments": { "value": "${ENABLE_ROLE_ASSIGNMENTS=false}" },

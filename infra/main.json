@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "3051682336008034661"
+      "templateHash": "3389401584101304268"
     }
   },
   "parameters": {
@@ -65,12 +65,6 @@
       "type": "string",
       "metadata": {
         "description": "Name of the Azure Storage account for agent artifacts and reports."
-      }
-    },
-    "containerRegistryName": {
-      "type": "string",
-      "metadata": {
-        "description": "Name of the Azure Container Registry used for Foundry Hosted Agent images."
       }
     },
     "cogServicesName": {
@@ -478,132 +472,6 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
-      "name": "containerRegistry",
-      "properties": {
-        "expressionEvaluationOptions": {
-          "scope": "inner"
-        },
-        "mode": "Incremental",
-        "parameters": {
-          "name": {
-            "value": "[parameters('containerRegistryName')]"
-          },
-          "location": {
-            "value": "[parameters('location')]"
-          },
-          "publicNetworkAccess": {
-            "value": "[parameters('publicNetworkAccess')]"
-          },
-          "tags": {
-            "value": "[parameters('tags')]"
-          }
-        },
-        "template": {
-          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-          "contentVersion": "1.0.0.0",
-          "metadata": {
-            "_generator": {
-              "name": "bicep",
-              "version": "0.41.2.15936",
-              "templateHash": "10412508760296864582"
-            }
-          },
-          "parameters": {
-            "name": {
-              "type": "string",
-              "metadata": {
-                "description": "Name of the Azure Container Registry."
-              }
-            },
-            "location": {
-              "type": "string",
-              "metadata": {
-                "description": "Azure region."
-              }
-            },
-            "skuName": {
-              "type": "string",
-              "defaultValue": "Premium",
-              "allowedValues": [
-                "Basic",
-                "Standard",
-                "Premium"
-              ],
-              "metadata": {
-                "description": "Container Registry SKU."
-              }
-            },
-            "publicNetworkAccess": {
-              "type": "string",
-              "defaultValue": "Disabled",
-              "allowedValues": [
-                "Enabled",
-                "Disabled"
-              ],
-              "metadata": {
-                "description": "Public network access for the registry. Hosted Agents require public ACR pull access during preview."
-              }
-            },
-            "tags": {
-              "type": "object",
-              "defaultValue": {},
-              "metadata": {
-                "description": "Resource tags."
-              }
-            }
-          },
-          "resources": [
-            {
-              "type": "Microsoft.ContainerRegistry/registries",
-              "apiVersion": "2023-07-01",
-              "name": "[parameters('name')]",
-              "location": "[parameters('location')]",
-              "tags": "[parameters('tags')]",
-              "sku": {
-                "name": "[parameters('skuName')]"
-              },
-              "properties": {
-                "adminUserEnabled": false,
-                "publicNetworkAccess": "[parameters('publicNetworkAccess')]",
-                "networkRuleBypassOptions": "AzureServices",
-                "policies": {
-                  "quarantinePolicy": {
-                    "status": "disabled"
-                  },
-                  "trustPolicy": {
-                    "type": "Notary",
-                    "status": "disabled"
-                  },
-                  "retentionPolicy": {
-                    "days": 7,
-                    "status": "enabled"
-                  }
-                }
-              }
-            }
-          ],
-          "outputs": {
-            "registryId": {
-              "type": "string",
-              "metadata": {
-                "description": "Resource ID of the Container Registry."
-              },
-              "value": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('name'))]"
-            },
-            "loginServer": {
-              "type": "string",
-              "metadata": {
-                "description": "Login server for docker push/pull."
-              },
-              "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('name')), '2023-07-01').loginServer]"
-            }
-          }
-        }
-      }
-    },
-    {
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2025-04-01",
       "name": "cogServices",
       "properties": {
         "expressionEvaluationOptions": {
@@ -634,7 +502,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.41.2.15936",
-              "templateHash": "7029321386326845302"
+              "templateHash": "5925153525060520538"
             }
           },
           "parameters": {
@@ -700,7 +568,7 @@
           "resources": [
             {
               "type": "Microsoft.CognitiveServices/accounts",
-              "apiVersion": "2023-05-01",
+              "apiVersion": "2025-04-01-preview",
               "name": "[parameters('name')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
@@ -712,6 +580,7 @@
                 "type": "SystemAssigned"
               },
               "properties": {
+                "allowProjectManagement": true,
                 "disableLocalAuth": true,
                 "publicNetworkAccess": "[parameters('publicNetworkAccess')]",
                 "customSubDomainName": "[if(empty(parameters('customSubDomainName')), null(), parameters('customSubDomainName'))]",
@@ -736,7 +605,7 @@
               "metadata": {
                 "description": "Principal ID of the system-assigned managed identity."
               },
-              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('name')), '2023-05-01', 'full').identity.principalId]"
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('name')), '2025-04-01-preview', 'full').identity.principalId]"
             }
           }
         }
@@ -1148,13 +1017,6 @@
         "description": "Resource ID of the Storage account."
       },
       "value": "[reference(resourceId('Microsoft.Resources/deployments', 'storage'), '2025-04-01').outputs.storageAccountId.value]"
-    },
-    "containerRegistryEndpoint": {
-      "type": "string",
-      "metadata": {
-        "description": "Login server for the Container Registry used by hosted-agent deployments."
-      },
-      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'containerRegistry'), '2025-04-01').outputs.loginServer.value]"
     },
     "cogServicesId": {
       "type": "string",

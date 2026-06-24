@@ -37,7 +37,7 @@ param tags object = {}
 @allowed(['Enabled', 'Disabled'])
 param publicNetworkAccess string = 'Disabled'
 
-resource cogAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
+resource cogAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' = {
   name: name
   location: location
   tags: tags
@@ -49,6 +49,9 @@ resource cogAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
     type: 'SystemAssigned'
   }
   properties: {
+    // Required for the modern account-based Foundry project model
+    // (Microsoft.CognitiveServices/accounts/projects child resources).
+    allowProjectManagement: true
     // Block API-key (local) auth; callers must present an Entra token.
     disableLocalAuth: true
     publicNetworkAccess: publicNetworkAccess

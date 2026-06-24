@@ -31,9 +31,6 @@ param fabricAdminUpn string = ''
 @description('Name of the Azure Storage account for agent artifacts and reports.')
 param storageAccountName string
 
-@description('Name of the Azure Container Registry used for Foundry Hosted Agent images.')
-param containerRegistryName string
-
 @description('Name of the AI Services account (Microsoft.CognitiveServices/accounts, kind=AIServices). This is the modern Foundry resource that hosts the agent SDK endpoint.')
 param cogServicesName string
 
@@ -98,16 +95,6 @@ module storage './modules/storage.bicep' = {
   }
 }
 
-module containerRegistry './modules/container-registry.bicep' = {
-  name: 'containerRegistry'
-  params: {
-    name: containerRegistryName
-    location: location
-    publicNetworkAccess: publicNetworkAccess
-    tags: tags
-  }
-}
-
 module cogServices './modules/cognitive-services.bicep' = {
   name: 'cogServices'
   params: {
@@ -165,9 +152,6 @@ output keyVaultUri string = keyVault.outputs.vaultUri
 
 @description('Resource ID of the Storage account.')
 output storageAccountId string = storage.outputs.storageAccountId
-
-@description('Login server for the Container Registry used by hosted-agent deployments.')
-output containerRegistryEndpoint string = containerRegistry.outputs.loginServer
 
 @description('Resource ID of the AI Services account (modern Foundry). The Foundry project is a child resource created via SDK or Azure portal.')
 output cogServicesId string = cogServices.outputs.accountId
