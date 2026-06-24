@@ -1,18 +1,18 @@
 using '../main.bicep'
 
-param fabricCapacityName = 'fabricagentdemodev'
-param keyVaultName = 'fsa-agent-kv-dev-2026'
-param entraAppName = 'FSA-WorkIQ-Agent-Dev'
+param fabricCapacityName = 'salesagentdemo'
+param keyVaultName = 'kv-sales-agent-demo'
+param entraAppName = 'sales-agent-demo-app'
 param fabricCapacitySku = 'F2'
 param fabricAdminUpn = 'admin@MngEnvMCAP529863.onmicrosoft.com'
-param storageAccountName = 'fsaagentstorage2026d'
-param containerRegistryName = 'fsaagentacr2026d'
-param cogServicesName = 'fabricagentaidev2026'
-param appInsightsName = 'fsa-agent-insights-dev'
+param storageAccountName = 'salesagentdemostg'
+param containerRegistryName = 'salesagentdemoacr'
+param cogServicesName = 'salesagentdemoais'
+param appInsightsName = 'sales-agent-demo-insights'
 param publicNetworkAccess = 'Enabled'
 param enableRoleAssignments = false
 param enablePolicyAssignments = false
-param budgetName = 'fsa-dev-monthly-budget'
+param budgetName = 'sales-agent-demo-budget'
 param budgetAmount = 350
 // Set at deploy time to activate budget alerts without storing recipient
 // addresses in source, for example:

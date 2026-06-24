@@ -10,7 +10,7 @@ def test_extract_public_urls_ignores_code_fences_and_templates() -> None:
 Public: [Docs](https://learn.microsoft.com/en-us/azure/foundry/)
 
 ```dotenv
-FOUNDRY_PROJECT_ENDPOINT=https://fabricagentaidev2026.services.ai.azure.com/api/projects/fsa-foundry-project-dev
+FOUNDRY_PROJECT_ENDPOINT=https://salesagentdemoais.services.ai.azure.com/api/projects/sales-agent-demo-project
 FABRIC_MCP_URL=https://api.fabric.microsoft.com/v1/mcp/workspaces/{workspace-id}
 ```
 """
@@ -23,7 +23,7 @@ def test_should_validate_skips_non_public_examples() -> None:
     assert not should_validate("https://example.com/research")
     assert not should_validate("https://your-endpoint.openai.azure.com/")
     assert not should_validate(
-        "https://fabricagentaidev2026.services.ai.azure.com/api/projects/fsa-foundry-project-dev"
+        "https://salesagentdemoais.services.ai.azure.com/api/projects/sales-agent-demo-project"
     )
 
 

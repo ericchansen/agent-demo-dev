@@ -32,7 +32,7 @@ jobs:
         continue-on-error: true
         run: |
           az deployment group what-if \
-            --resource-group rg-fabric-agent-dev \
+            --resource-group rg-sales-agent-demo \
             --template-file infra/main.bicep \
             --parameters infra/parameters/dev.bicepparam \
             --result-format FullResourcePayloads
@@ -42,7 +42,7 @@ jobs:
       # again in the final step so the run nets back to the cost-safe paused state.
       - name: Resume Fabric capacity
         run: |
-          capacity_id="/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-fabric-agent-dev/providers/Microsoft.Fabric/capacities/fabricagentdemodev"
+          capacity_id="/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-sales-agent-demo/providers/Microsoft.Fabric/capacities/salesagentdemo"
           for attempt in $(seq 1 30); do
             state="$(az resource show --ids "$capacity_id" --api-version 2023-11-01 --query properties.state -o tsv || true)"
             if [ "$state" = "Active" ]; then
@@ -64,14 +64,14 @@ jobs:
       - name: Deploy Bicep
         run: |
           az deployment group create \
-            --resource-group rg-fabric-agent-dev \
+            --resource-group rg-sales-agent-demo \
             --template-file infra/main.bicep \
             --parameters infra/parameters/dev.bicepparam
 
       - name: Suspend Fabric capacity
         if: always()
         run: |
-          capacity_id="/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-fabric-agent-dev/providers/Microsoft.Fabric/capacities/fabricagentdemodev"
+          capacity_id="/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/rg-sales-agent-demo/providers/Microsoft.Fabric/capacities/salesagentdemo"
           for attempt in 1 2 3 4 5; do
             state="$(az resource show --ids "$capacity_id" --api-version 2023-11-01 --query properties.state -o tsv || true)"
             if [ "$state" = "Paused" ]; then

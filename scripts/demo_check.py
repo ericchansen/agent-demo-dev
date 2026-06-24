@@ -36,8 +36,8 @@ EXPECTED_FOUNDRY_HANDLERS = {
     "get_account_activity",
 }
 EXPECTED_HOSTED_TOOLS = EXPECTED_FOUNDRY_HANDLERS | {"fabric_query"}
-DEFAULT_RESOURCE_GROUP = "rg-fabric-agent-dev"
-DEFAULT_COG_SERVICES_NAME = "fabricagentaidev2026"
+DEFAULT_RESOURCE_GROUP = "rg-sales-agent-demo"
+DEFAULT_COG_SERVICES_NAME = "salesagentdemoais"
 
 
 def _resource_group() -> str:

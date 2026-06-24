@@ -92,7 +92,7 @@ Open `infra/main.bicep`:
 az deployment group create \
   --resource-group rg-sales-agent-demo \
   --template-file infra/main.bicep \
-  --parameters env=dev
+  --parameters infra/parameters/dev.bicepparam
 `
 
 ---

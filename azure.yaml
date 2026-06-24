@@ -6,31 +6,10 @@ requiredVersions:
 name: agent-demo-dev
 metadata:
     template: agent-demo-dev@0.1.0
-services:
-    wwi-sales-hosted:
-        project: ./src/orchestrator/hosted_agent
-        host: azure.ai.agent
-        language: docker
-        docker:
-            path: ./Dockerfile
-            context: ../../..
-            registry: ${AZURE_CONTAINER_REGISTRY_ENDPOINT}
-            remoteBuild: false
-        config:
-            container:
-                resources:
-                    cpu: "1"
-                    memory: 2Gi
-            deployments:
-                - model:
-                    format: OpenAI
-                    name: gpt-4o
-                    version: "2024-11-20"
-                  name: gpt-4o
-                  sku:
-                    capacity: 10
-                    name: GlobalStandard
-            startupCommand: python -m src.orchestrator.hosted_agent.server
+# No deployable app service lives in this repo. The hosted agent runtime was
+# removed during simplification; the market-research agent is deployed from its
+# own repo (github.com/ericchansen/market-research). azd is used here for
+# infrastructure provisioning only (azd provision / az deployment group create).
 infra:
     provider: bicep
     path: infra
