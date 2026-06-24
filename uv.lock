@@ -842,66 +842,6 @@ wheels = [
 ]
 
 [[package]]
-name = "fabric-sales-agent-accelerator"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "aiohttp" },
-    { name = "azure-ai-projects" },
-    { name = "azure-identity" },
-    { name = "databricks-sdk" },
-    { name = "matplotlib" },
-    { name = "mcp" },
-    { name = "openai" },
-    { name = "openpyxl" },
-    { name = "pandas" },
-    { name = "pyarrow" },
-    { name = "python-docx" },
-    { name = "python-dotenv" },
-    { name = "python-pptx" },
-]
-
-[package.optional-dependencies]
-agent-framework = [
-    { name = "agent-framework-foundry" },
-]
-databricks-mcp = [
-    { name = "databricks-mcp" },
-]
-dev = [
-    { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pyyaml" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "agent-framework-foundry", marker = "extra == 'agent-framework'", specifier = ">=1.0" },
-    { name = "aiohttp", specifier = ">=3.9" },
-    { name = "azure-ai-projects", specifier = ">=2.2.0" },
-    { name = "azure-identity", specifier = ">=1.17" },
-    { name = "databricks-mcp", marker = "extra == 'databricks-mcp'", specifier = ">=0.2" },
-    { name = "databricks-sdk", specifier = ">=0.59" },
-    { name = "matplotlib", specifier = ">=3.8" },
-    { name = "mcp", specifier = ">=1.0" },
-    { name = "mypy", marker = "extra == 'dev'" },
-    { name = "openai", specifier = ">=1.40" },
-    { name = "openpyxl", specifier = ">=3.1" },
-    { name = "pandas", specifier = ">=2.0" },
-    { name = "pyarrow", specifier = ">=14.0" },
-    { name = "pytest", marker = "extra == 'dev'" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'" },
-    { name = "python-docx", specifier = ">=1.1" },
-    { name = "python-dotenv", specifier = ">=1.0" },
-    { name = "python-pptx", specifier = ">=1.0" },
-    { name = "pyyaml", marker = "extra == 'dev'" },
-    { name = "ruff", marker = "extra == 'dev'" },
-]
-provides-extras = ["dev", "databricks-mcp", "agent-framework"]
-
-[[package]]
 name = "fastapi"
 version = "0.137.1"
 source = { registry = "https://pypi.org/simple" }
@@ -3416,6 +3356,66 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/8b/9e/02e845ef151b1dee585e55c4739f8e1734ae1d9f1221dff65761c162208b/ruff-0.15.16-py3-none-win_amd64.whl", hash = "sha256:408256017284eddf98fff77b29aa4fb30f586042d535b2d9befc6512f400aaec", size = 11843403, upload-time = "2026-06-04T16:32:39.76Z" },
     { url = "https://files.pythonhosted.org/packages/15/19/016553f86f207450aebebc2b2b5088d086b901cc8186c02ac4284db3bd88/ruff-0.15.16-py3-none-win_arm64.whl", hash = "sha256:8cd61783afb39638a7133ef0d2dfb1e91277593962f81b5a8423eb0b888a6121", size = 11134555, upload-time = "2026-06-04T16:33:00.136Z" },
 ]
+
+[[package]]
+name = "sales-agent-demo"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "azure-ai-projects" },
+    { name = "azure-identity" },
+    { name = "databricks-sdk" },
+    { name = "matplotlib" },
+    { name = "mcp" },
+    { name = "openai" },
+    { name = "openpyxl" },
+    { name = "pandas" },
+    { name = "pyarrow" },
+    { name = "python-docx" },
+    { name = "python-dotenv" },
+    { name = "python-pptx" },
+]
+
+[package.optional-dependencies]
+agent-framework = [
+    { name = "agent-framework-foundry" },
+]
+databricks-mcp = [
+    { name = "databricks-mcp" },
+]
+dev = [
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pyyaml" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "agent-framework-foundry", marker = "extra == 'agent-framework'", specifier = ">=1.0" },
+    { name = "aiohttp", specifier = ">=3.9" },
+    { name = "azure-ai-projects", specifier = ">=2.2.0" },
+    { name = "azure-identity", specifier = ">=1.17" },
+    { name = "databricks-mcp", marker = "extra == 'databricks-mcp'", specifier = ">=0.2" },
+    { name = "databricks-sdk", specifier = ">=0.59" },
+    { name = "matplotlib", specifier = ">=3.8" },
+    { name = "mcp", specifier = ">=1.0" },
+    { name = "mypy", marker = "extra == 'dev'" },
+    { name = "openai", specifier = ">=1.40" },
+    { name = "openpyxl", specifier = ">=3.1" },
+    { name = "pandas", specifier = ">=2.0" },
+    { name = "pyarrow", specifier = ">=14.0" },
+    { name = "pytest", marker = "extra == 'dev'" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'" },
+    { name = "python-docx", specifier = ">=1.1" },
+    { name = "python-dotenv", specifier = ">=1.0" },
+    { name = "python-pptx", specifier = ">=1.0" },
+    { name = "pyyaml", marker = "extra == 'dev'" },
+    { name = "ruff", marker = "extra == 'dev'" },
+]
+provides-extras = ["dev", "databricks-mcp", "agent-framework"]
 
 [[package]]
 name = "scikit-learn"

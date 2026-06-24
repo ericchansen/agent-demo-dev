@@ -15,18 +15,6 @@
       "url": "https://api.fabric.microsoft.com/v1/mcp/workspaces/<WORKSPACE_ID>/dataagents/<MARKET_DATA_AGENT_ID>/agent",
       "description": "SEC EDGAR financial data for real US public companies via Fabric Data Agent"
     },
-    "researcher-agent": {
-      "type": "stdio",
-      "command": "python",
-      "args": ["-m", "src.agents.researcher.mcp_server"],
-      "description": "Research companies on the web - news, earnings, strategy"
-    },
-    "sharepoint-agent": {
-      "type": "stdio",
-      "command": "python",
-      "args": ["-m", "src.agents.sharepoint.mcp_server"],
-      "description": "Search and retrieve internal SharePoint documents"
-    },
     "report-generator": {
       "type": "stdio",
       "command": "python",

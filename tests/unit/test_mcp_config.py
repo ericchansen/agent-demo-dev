@@ -18,8 +18,6 @@ _EXPECTED_SERVERS = {
     "fabric-core",
     "sales-data",
     "market-data",
-    "researcher-agent",
-    "sharepoint-agent",
     "report-generator",
     "quota-estimator",
 }

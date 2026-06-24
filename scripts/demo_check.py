@@ -21,8 +21,6 @@ EXPECTED_MCP_SERVERS = {
     "fabric-core",
     "sales-data",
     "market-data",
-    "researcher-agent",
-    "sharepoint-agent",
     "report-generator",
     "quota-estimator",
 }
@@ -35,7 +33,6 @@ EXPECTED_FOUNDRY_HANDLERS = {
     "compute_quota_attainment",
     "get_account_activity",
 }
-EXPECTED_HOSTED_TOOLS = EXPECTED_FOUNDRY_HANDLERS | {"fabric_query"}
 DEFAULT_RESOURCE_GROUP = "rg-sales-agent-demo"
 DEFAULT_COG_SERVICES_NAME = "salesagentdemoais"
 
@@ -171,19 +168,15 @@ def print_backend_readiness(rows: list[BackendReadiness]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run demo-readiness checks.")
     parser.add_argument("--azure", action="store_true", help="Check live dev Azure public network access.")
-    parser.add_argument("--docker", action="store_true", help="Build and smoke-test the hosted-agent Docker image.")
     args = parser.parse_args()
 
     checks: list[tuple[str, Callable[[], str]]] = [
         ("MCP config", check_mcp_configs),
         ("Foundry tools", check_foundry_tools),
         ("Quota artifacts", check_quota_artifacts),
-        ("Hosted runtime", check_hosted_runtime),
     ]
     if args.azure:
         checks.append(("Azure PNA", check_azure_public_network_access))
-    if args.docker:
-        checks.append(("Docker hosted smoke", check_docker_smoke))
 
     results: list[CheckResult] = []
     for name, check in checks:
@@ -296,38 +289,6 @@ def check_quota_artifacts() -> str:
     return "XLSX, HTML, and PDF artifacts generated"
 
 
-def check_hosted_runtime() -> str:
-    from src.orchestrator import hosted_agent
-
-    tool_names = {tool["function"]["name"] for tool in hosted_agent.TOOLS}
-    missing = EXPECTED_HOSTED_TOOLS - tool_names
-    if missing:
-        raise ValueError(f"Hosted tools missing: {sorted(missing)}")
-
-    with tempfile.TemporaryDirectory() as tmp:
-        previous = os.environ.get("HOSTED_AGENT_OUTPUT_DIR")
-        os.environ["HOSTED_AGENT_OUTPUT_DIR"] = tmp
-        try:
-            response = hosted_agent.process_invocation("Generate a quota report for Tailspin Toys")
-        finally:
-            if previous is None:
-                os.environ.pop("HOSTED_AGENT_OUTPUT_DIR", None)
-            else:
-                os.environ["HOSTED_AGENT_OUTPUT_DIR"] = previous
-        if "Generated a quota estimation report" not in response:
-            raise ValueError(f"Unexpected hosted response: {response[:200]}")
-        expected = {
-            "tailspin_toys_base_quota_estimate.xlsx",
-            "tailspin_toys_base_quota_estimate.html",
-            "tailspin_toys_base_quota_estimate.pdf",
-        }
-        produced = {path.name for path in Path(tmp).iterdir()}
-        missing_artifacts = expected - produced
-        if missing_artifacts:
-            raise ValueError(f"Hosted runtime missing artifacts: {sorted(missing_artifacts)}")
-    return f"{len(tool_names)} hosted tools wired"
-
-
 def check_azure_public_network_access() -> str:
     if _az_command() is None:
         raise RuntimeError("Azure CLI is not available on PATH.")
@@ -394,28 +355,6 @@ def check_azure_public_network_access() -> str:
         if resource.get("defaultAction") not in (None, "Allow"):
             raise ValueError(f"{resource.get('name')} defaultAction is {resource.get('defaultAction')!r}.")
     return f"{len(cognitive)} cognitive and {len(storage)} storage resources are reachable"
-
-
-def check_docker_smoke() -> str:
-    if shutil.which("docker") is None:
-        raise RuntimeError("Docker is not available on PATH.")
-    image = "agent-demo-hosted:demo-check"
-    _run(["docker", "build", "-f", "src/orchestrator/hosted_agent/Dockerfile", "-t", image, "."], timeout=300)
-    output = _run(
-        [
-            "docker",
-            "run",
-            "--rm",
-            image,
-            "python",
-            "-c",
-            "import src.orchestrator.hosted_agent as h; print(h.process_invocation('status')[:120])",
-        ],
-        timeout=120,
-    )
-    if "Hosted Sales Agent is ready" not in output:
-        raise ValueError(f"Unexpected Docker smoke output: {output[:200]}")
-    return f"{image} built and imported"
 
 
 def _load_json_without_duplicate_keys(path: Path) -> dict[str, Any]:
