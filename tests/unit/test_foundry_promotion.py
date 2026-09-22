@@ -30,9 +30,10 @@ def test_build_a2a_orchestrator_definition_has_one_tool_per_sub_agent() -> None:
     assert definition.kind == "prompt"
     assert len(definition.tools) == len(A2A_SUB_AGENT_SLOTS)
     tool_dicts = [tool.as_dict() for tool in definition.tools]
-    assert {tool["type"] for tool in tool_dicts} == {"a2a_preview"}
-    assert {tool["name"] for tool in tool_dicts} == set(A2A_SUB_AGENT_SLOTS)
-    assert {tool["project_connection_id"] for tool in tool_dicts} == set(connection_ids.values())
+    assert tool_dicts == [
+        {"type": "a2a_preview", "project_connection_id": connection_id} for connection_id in connection_ids.values()
+    ]
+    assert definition.as_dict()["tools"] == tool_dicts
 
 
 def test_build_a2a_orchestrator_definition_rejects_empty_inputs() -> None:

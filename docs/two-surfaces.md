@@ -105,8 +105,7 @@ with (
 
     response = openai_client.responses.create(
         input=(
-            "Find WWI accounts with high pipeline value but low recent activity, "
-            "then create a quota forecast report."
+            "Find WWI accounts with high pipeline value but low recent activity, then create a quota forecast report."
         ),
         extra_body={"agent_reference": {"name": agent.name, "type": "agent_reference"}},
     )
