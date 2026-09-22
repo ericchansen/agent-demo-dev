@@ -42,9 +42,7 @@ def _row(rows: list, name: str):
 
 
 @pytest.mark.parametrize("field,value", [("command", "node"), ("args", ["-m", "missing_server"])])
-def test_mcp_readiness_rejects_drifted_entrypoint(
-    monkeypatch: pytest.MonkeyPatch, field: str, value: object
-) -> None:
+def test_mcp_readiness_rejects_drifted_entrypoint(monkeypatch: pytest.MonkeyPatch, field: str, value: object) -> None:
     load_json = demo_check._load_json_without_duplicate_keys
 
     def drifted_config(path: Path):
