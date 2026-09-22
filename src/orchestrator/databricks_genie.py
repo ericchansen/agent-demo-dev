@@ -202,7 +202,8 @@ class DatabricksGenieMcpClient:
             from databricks_mcp import DatabricksMCPClient
         except ModuleNotFoundError as exc:  # pragma: no cover - dependency installed in normal environments.
             raise DatabricksGenieConfigurationError(
-                "databricks-mcp is not installed. Run 'uv sync --extra dev' before using the managed MCP path."
+                "databricks-mcp is not installed. Run 'uv sync --extra databricks-mcp' "
+                "before using the managed MCP path."
             ) from exc
 
         if workspace_client is None:

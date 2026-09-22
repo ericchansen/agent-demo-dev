@@ -6,16 +6,14 @@ import asyncio
 import json
 from typing import Any
 
-from mcp.server import Server
+from mcp.server import Server, ServerRequestContext
 from mcp.server.stdio import stdio_server
-from mcp.types import TextContent, Tool
+from mcp.types import CallToolRequestParams, CallToolResult, ListToolsResult, PaginatedRequestParams, TextContent, Tool
 
+from src.agents.mcp_validation import tool_error, validate_tool_call
 from src.agents.quota_estimator.pipeline import generate_quota_estimation_report
 
-server = Server("quota-estimator")
 
-
-@server.list_tools()  # type: ignore[no-untyped-call, untyped-decorator]
 async def list_tools() -> list[Tool]:
     """Advertise quota estimation report generation."""
     return [
@@ -26,7 +24,7 @@ async def list_tools() -> list[Tool]:
                 "market research context, and WorkIQ activity signals. Returns XLSX, HTML, "
                 "and PDF file paths by default."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "customer_name": {"type": "string", "description": "Customer account name."},
@@ -78,7 +76,6 @@ async def list_tools() -> list[Tool]:
     ]
 
 
-@server.call_tool()  # type: ignore[untyped-decorator]
 async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     """Dispatch quota estimator MCP tool calls."""
     if name != "generate_quota_estimation_report":
@@ -120,6 +117,23 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         formats=[str(item) for item in formats_raw] if formats_raw is not None else None,
     )
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
+
+
+async def handle_list_tools(ctx: ServerRequestContext, params: PaginatedRequestParams | None) -> ListToolsResult:
+    return ListToolsResult(tools=await list_tools())
+
+
+async def handle_call_tool(ctx: ServerRequestContext, params: CallToolRequestParams) -> CallToolResult:
+    arguments = validate_tool_call(params, await list_tools())
+    if isinstance(arguments, CallToolResult):
+        return arguments
+    try:
+        return CallToolResult(content=[*await call_tool(params.name, arguments)])
+    except (ValueError, OSError) as exc:
+        return tool_error(str(exc))
+
+
+server = Server("quota-estimator", on_list_tools=handle_list_tools, on_call_tool=handle_call_tool)
 
 
 async def main() -> None:
