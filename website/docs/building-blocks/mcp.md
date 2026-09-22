@@ -71,6 +71,7 @@ from mcp.types import Tool, TextContent
 
 server = Server("my-tool")
 
+
 @server.list_tools()
 async def list_tools():
     return [
@@ -79,13 +80,12 @@ async def list_tools():
             description="Look up customer information by name",
             inputSchema={
                 "type": "object",
-                "properties": {
-                    "name": {"type": "string", "description": "Customer name"}
-                },
-                "required": ["name"]
-            }
+                "properties": {"name": {"type": "string", "description": "Customer name"}},
+                "required": ["name"],
+            },
         )
     ]
+
 
 @server.call_tool()
 async def call_tool(name: str, arguments: dict):
