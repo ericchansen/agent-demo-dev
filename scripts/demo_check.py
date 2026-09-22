@@ -244,11 +244,7 @@ def check_mcp_configs() -> str:
                 raise ValueError(f"{path}:{server_name} has unsupported type {server_type!r}.")
             if server_name in LOCAL_MCP_SERVERS:
                 module, _ = LOCAL_MCP_SERVERS[server_name]
-                if (
-                    server_type != "stdio"
-                    or server.get("command") != "python"
-                    or server.get("args") != ["-m", module]
-                ):
+                if server_type != "stdio" or server.get("command") != "python" or server.get("args") != ["-m", module]:
                     raise ValueError(f"{path}:{server_name} must launch python -m {module}.")
 
         server_sets[str(path.relative_to(ROOT))] = names
@@ -288,9 +284,7 @@ async def _check_local_mcp_servers() -> str:
                 result = await client.list_tools()
                 names = {tool.name for tool in result.tools}
                 if names != expected_tools:
-                    raise ValueError(
-                        f"{name} tool discovery mismatch: expected {sorted(expected_tools)}, got {names}."
-                    )
+                    raise ValueError(f"{name} tool discovery mismatch: expected {sorted(expected_tools)}, got {names}.")
                 if any(tool.input_schema.get("type") != "object" for tool in result.tools):
                     raise ValueError(f"{name} advertised a non-object input schema.")
                 tool_count += len(result.tools)
