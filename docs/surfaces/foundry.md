@@ -196,13 +196,13 @@ Any additional Copilot SDK auth/runtime variables are adapter-specific and shoul
 
 ### Scale-Up Path: Microsoft Agent Framework (MAF)
 
-For scenarios requiring **multi-agent orchestration** (e.g., separate agents for data gathering, analysis, and report generation that coordinate via a supervisor), consider [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) (`pip install microsoft-agent-framework`). MAF provides:
+For scenarios requiring **multi-agent orchestration** (e.g., separate agents for data gathering, analysis, and report generation that coordinate via a supervisor), install this repository's optional [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) runtime with `uv sync --extra agent-framework` or `pip install -e ".[agent-framework]"`. The extra includes both the Foundry client and the separately distributed `agent-framework-orchestrations` package that supplies `SequentialBuilder` and `HandoffBuilder`. MAF provides:
 
 - **Multi-agent patterns**: Supervisor, sequential, parallel agent topologies
 - **Stateful conversations**: Agent memory and context management
 - **Built-in tool protocols**: MCP and OpenAPI tool integration
 - **Observability**: Tracing and debugging across agent boundaries
 
-MAF is the right choice when a single agent with tools becomes unwieldy — typically when you need 3+ specialized agents that hand off work. For this accelerator's current scope (one agent with multiple tools), the Copilot SDK approach is simpler and sufficient.
+The optional runtime in `src/orchestrator/multi_agent/agent_framework_runtime.py` builds sequential and handoff workflows; the deterministic pipeline remains the default. To check the installed client and both workflow builders without Azure credentials, run `uv run --extra dev --extra agent-framework pytest tests/optional/agent_framework_smoke.py`. This explicit test target fails if required packages are absent or incompatible, and forbids network access and token acquisition during construction. It does not execute a workflow or prove that a live Foundry model, deployment, or agent is working.
 
 See the root [README](../../README.md) for setup instructions.

@@ -10,6 +10,8 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+from mcp.server import ServerRequestContext
+from mcp.types import CallToolRequestParams
 
 
 def _load_module(module_name: str) -> Any:
@@ -406,21 +408,41 @@ def test_build_tools_without_workiq() -> None:
     assert "get_account_activity" in tool_names or "get_account_activity" in handlers
 
 
-def test_build_tools_with_fabric_connection_uses_platform_tool() -> None:
+@pytest.mark.parametrize("market_connection_id", [None, "/subscriptions/x/connections/market"])
+def test_build_tools_with_fabric_connection_uses_platform_tool(market_connection_id: str | None) -> None:
     """A configured Fabric IQ connection registers the platform tool, not the fallback."""
-    module = _load_module("src.orchestrator.foundry_agent")
-    orchestrator_config = _load_attr("src.orchestrator.config", "OrchestratorConfig")
+    from src.orchestrator import foundry_agent
+    from src.orchestrator.config import OrchestratorConfig
 
-    config = orchestrator_config(
+    config = OrchestratorConfig(
         foundry_project_endpoint="https://test.ai.azure.com/",
         model_deployment_name="gpt-4o",
         fabric_iq_connection_id="/subscriptions/x/connections/fabric",
+        market_data_connection_id=market_connection_id,
     )
 
-    tools, handlers = module._build_tools(config)
+    tools, handlers = foundry_agent._build_tools(config)
     tool_names = {getattr(tool, "name", None) for tool in tools if getattr(tool, "name", None)}
 
-    assert "wwi_sales_data" in tool_names
+    fabric_tools = [tool.as_dict() for tool in tools if tool.type == "fabric_iq_preview"]
+    expected_fabric_tools = [
+        {
+            "type": "fabric_iq_preview",
+            "project_connection_id": config.fabric_iq_connection_id,
+            "server_label": "wwi_sales_data",
+            "require_approval": "never",
+        }
+    ]
+    if market_connection_id:
+        expected_fabric_tools.append(
+            {
+                "type": "fabric_iq_preview",
+                "project_connection_id": market_connection_id,
+                "server_label": "real_world_market_data",
+                "require_approval": "never",
+            }
+        )
+    assert fabric_tools == expected_fabric_tools
     assert "fabric_query" not in tool_names
     assert "fabric_query" not in handlers
 
@@ -439,7 +461,7 @@ def test_build_tools_without_fabric_connection_uses_demo_fallback() -> None:
     tools, handlers = module._build_tools(config)
     tool_names = {getattr(tool, "name", None) for tool in tools if getattr(tool, "name", None)}
 
-    assert "wwi_sales_data" not in tool_names
+    assert all(tool.type != "fabric_iq_preview" for tool in tools)
     assert "fabric_query" in tool_names
     assert "fabric_query" in handlers
 
@@ -627,6 +649,23 @@ def test_run_query_uses_mocked_clients() -> None:
     assert json.loads(second_call.kwargs["input"][0]["output"])["customer"] == "Tailspin Toys"
 
 
+def test_tool_fingerprint_tracks_fabric_server_labels() -> None:
+    from azure.ai.projects.models import FabricIQPreviewTool
+
+    from src.orchestrator.foundry_agent import _tool_fingerprint
+
+    sales = FabricIQPreviewTool(project_connection_id="sales-connection", server_label="wwi_sales_data")
+    market = FabricIQPreviewTool(project_connection_id="market-connection", server_label="real_world_market_data")
+
+    assert _tool_fingerprint([sales]) != _tool_fingerprint([market])
+    assert _tool_fingerprint([sales, market]) == _tool_fingerprint([market, sales])
+    assert _tool_fingerprint([sales]) == [
+        {"type": "fabric_iq_preview", "name": "None", "server_label": "wwi_sales_data"}
+    ]
+    sales.server_label = "renamed_sales_data"
+    assert _tool_fingerprint([sales])[0]["server_label"] == "renamed_sales_data"
+
+
 def test_get_or_create_agent_reuses_matching_fingerprint() -> None:
     """Matching registered agents are reused to avoid version buildup."""
     module = _load_module("src.orchestrator.foundry_agent")
@@ -746,44 +785,44 @@ def test_find_matching_agent_returns_none_when_no_versions_exist() -> None:
 
 @pytest.mark.asyncio
 async def test_mcp_rejects_invalid_format(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """MCP server rejects unsupported report formats or falls back safely."""
-    report_mcp = _load_module("src.agents.report_generator.mcp_server")
+    """The registered MCP boundary rejects unsupported formats before generation."""
+    report_mcp = importlib.import_module("src.agents.report_generator.mcp_server")
     monkeypatch.chdir(tmp_path)
 
-    with patch.object(report_mcp, "generate_docx", side_effect=_stub_generate_file):
-        result = await report_mcp.call_tool(
-            "generate_report",
-            {
-                "title": "Test",
-                "customer_name": "Test",
-                "format": "pdf",
-            },
+    with patch.object(report_mcp, "generate_docx", side_effect=_stub_generate_file) as generate:
+        result = await report_mcp.handle_call_tool(
+            MagicMock(spec=ServerRequestContext),
+            CallToolRequestParams(
+                name="generate_report",
+                arguments={"title": "Test", "customer_name": "Test", "format": "pdf"},
+            ),
         )
 
-    assert len(result) == 1
-    response = json.loads(result[0].text)
-    assert "error" in response, f"Expected error for unsupported format 'pdf', got: {response}"
-    assert "format" in response["error"].lower() or "unsupported" in response["error"].lower()
+    assert result.is_error
+    assert len(result.content) == 1
+    assert result.content[0].text.startswith("Input validation error: ")
+    generate.assert_not_called()
+    assert not (tmp_path / "output").exists()
 
 
 @pytest.mark.asyncio
 async def test_mcp_generates_docx(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """MCP server generates DOCX successfully."""
-    report_mcp = _load_module("src.agents.report_generator.mcp_server")
+    report_mcp = importlib.import_module("src.agents.report_generator.mcp_server")
     monkeypatch.chdir(tmp_path)
 
     with patch.object(report_mcp, "generate_docx", side_effect=_stub_generate_file):
-        result = await report_mcp.call_tool(
-            "generate_report",
-            {
-                "title": "MCP Test Report",
-                "customer_name": "Contoso",
-                "format": "docx",
-            },
+        result = await report_mcp.handle_call_tool(
+            MagicMock(spec=ServerRequestContext),
+            CallToolRequestParams(
+                name="generate_report",
+                arguments={"title": "MCP Test Report", "customer_name": "Contoso", "format": "docx"},
+            ),
         )
 
-    assert len(result) == 1
-    response = json.loads(result[0].text)
+    assert not result.is_error
+    assert len(result.content) == 1
+    response = json.loads(result.content[0].text)
     assert response.get("status") == "success"
     assert response.get("format") == "docx"
     assert Path(response["file_path"]).exists()
