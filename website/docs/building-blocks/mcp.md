@@ -26,11 +26,15 @@ This means you can write a tool server once and connect it to any MCP-compatible
 
 | Server | Transport | What it does |
 |---|---|---|
+| `fabric-core` | HTTP | Fabric workspace and item operations |
 | `wwi-sales-data` | HTTP | Fabric Data Agent — WWI sales Lakehouse |
-| `market-data-agent` | HTTP | Fabric Data Agent — SEC EDGAR financials |
-| `workiq` | npm (stdio) | M365 activity signals |
-| `researcher` | stdio | Web search for market intelligence |
+| `market-data` | HTTP | Fabric Data Agent — SEC EDGAR financials |
+| `researcher-agent` | stdio | Web search for market intelligence |
 | `sharepoint-agent` | stdio | SharePoint / Graph document access |
+| `report-generator` | stdio | DOCX and PPTX reports with citations |
+| `quota-estimator` | stdio | XLSX, HTML, and PDF quota reports |
+
+These names match the repository's three MCP registries. WorkIQ is an optional user-scoped integration; the demo tenant uses mocked M365 activity context.
 
 ### Registration
 
@@ -41,7 +45,7 @@ Tools are registered in `.github/mcp.json` (workspace-scoped) or via `copilot mc
   "mcpServers": {
     "wwi-sales-data": {
       "type": "http",
-      "url": "api.fabric.microsoft.com/v1/mcp/workspaces/{id}/dataagent"
+      "url": "https://api.fabric.microsoft.com/v1/mcp/workspaces/<WORKSPACE_ID>/dataagents/<DATA_AGENT_ID>/agent"
     }
   }
 }
@@ -62,39 +66,96 @@ The Fabric Data Agent uses HTTP (it's a cloud service). WorkIQ uses stdio via np
 
 ## Writing your own MCP server
 
-If you want to add a new tool to the agent, you write an MCP server. The simplest approach:
+The local servers use the [MCP Python SDK 2 migration API](https://github.com/modelcontextprotocol/python-sdk/blob/v2.2.0/docs/migration.md): typed callbacks passed to `Server`, rather than the SDK 1 decorators. In Python, tool schemas use `input_schema`; discovery responses still serialize the protocol field as `inputSchema`.
+
+SDK 2 does not automatically validate tool arguments against the advertised JSON Schema. Inside this repository, reuse `validate_tool_call` so malformed inputs are rejected **before** your handler creates files, acquires tokens, or calls external services:
 
 ```python
-# Example: a minimal MCP server using the Python SDK
-from mcp.server import Server
-from mcp.types import Tool, TextContent
+import asyncio
 
-server = Server("my-tool")
+from mcp.server import Server, ServerRequestContext
+from mcp.server.stdio import stdio_server
+from mcp.types import (
+    CallToolRequestParams,
+    CallToolResult,
+    ListToolsResult,
+    PaginatedRequestParams,
+    TextContent,
+    Tool,
+)
+
+from src.agents.mcp_validation import validate_tool_call
+
+TOOLS = [
+    Tool(
+        name="lookup_customer",
+        description="Echo a demo customer name without contacting a backend",
+        input_schema={
+            "type": "object",
+            "properties": {"name": {"type": "string", "description": "Customer name"}},
+            "required": ["name"],
+            "additionalProperties": False,
+        },
+    )
+]
 
 
-@server.list_tools()
-async def list_tools():
-    return [
-        Tool(
-            name="lookup_customer",
-            description="Look up customer information by name",
-            inputSchema={
-                "type": "object",
-                "properties": {"name": {"type": "string", "description": "Customer name"}},
-                "required": ["name"],
-            },
-        )
-    ]
+async def list_tools(ctx: ServerRequestContext, params: PaginatedRequestParams | None) -> ListToolsResult:
+    return ListToolsResult(tools=TOOLS)
 
 
-@server.call_tool()
-async def call_tool(name: str, arguments: dict):
-    if name == "lookup_customer":
-        # Your logic here
-        return [TextContent(type="text", text=f"Customer: {arguments['name']}")]
+async def call_tool(ctx: ServerRequestContext, params: CallToolRequestParams) -> CallToolResult:
+    arguments = validate_tool_call(params, TOOLS)
+    if isinstance(arguments, CallToolResult):
+        return arguments
+    return CallToolResult(content=[TextContent(type="text", text=f"Customer: {arguments['name']}")])
+
+
+server = Server("my-tool", on_list_tools=list_tools, on_call_tool=call_tool)
+
+
+async def main() -> None:
+    async with stdio_server() as (read_stream, write_stream):
+        await server.run(read_stream, write_stream, server.create_initialization_options())
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
 > 📖 [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) · [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk) · [Build with MCP agent skills](https://modelcontextprotocol.io/docs/develop/build-with-agent-skills.md)
+
+## Compatibility and verification
+
+The project supports `mcp>=2.2.0,<3` and declares `jsonschema>=4.20,<5` directly. The validator preserves the existing schemas, including open nested objects and tools that allow extra properties. It does not insert JSON Schema defaults into arguments.
+
+| Boundary | Expected behavior |
+|---|---|
+| Missing, null, or empty argument map | Validate as an empty object; missing required properties return a tool result with `isError: true`. |
+| Wrong property type or disallowed extra property | Return `Input validation error: ...` without entering the business handler. |
+| Unknown tool name | Return `Unknown tool: ...` with `isError: true`, even before tool discovery. |
+| Scalar/list argument map or invalid tool-name type | JSON-RPC invalid-parameters error (`-32602`), not a tool result. |
+| Unknown JSON-RPC method | SDK 2 returns method-not-found (`-32601`); SDK 1 returned `-32602`. This SDK behavior change is intentional. |
+| Malformed JSON or malformed outer envelope | Reject at the transport boundary. Tests verify recovery to subsequent valid requests rather than waiting for a correlated reply to a malformed envelope. |
+
+The raw-wire tests cover both `2024-11-05` and the SDK's latest **handshake** version. The latest per-request protocol version is not interchangeable with the handshake version. Python `CallToolResult` dumps can contain `resultType`; older negotiated wire formats omit that field.
+
+```powershell
+uv sync --locked --extra dev
+uv run --no-sync pytest tests/unit/test_mcp_validation.py tests/integration/test_mcp_servers.py
+uv run --no-sync python scripts/demo_check.py
+```
+
+Readiness checks verify registry consistency, start all four local entrypoints with the installed interpreter, and discover their five tools through the real SDK client. Research and SharePoint startup checks use mock mode; this does not prove live Fabric, Databricks, Graph, or Foundry connectivity. CI keeps fresh pip installation checks alongside a locked-uv lane.
+
+The optional Databricks managed-MCP transport requires `databricks-mcp>=0.9.2`; the previously locked 0.9.0 client imports the SDK 1 transport name removed in MCP 2. Its explicit smoke target uses the real installed client and auth/transport code with controlled HTTP responses and synthetic credentials, not live workspace access:
+
+```powershell
+uv sync --locked --extra dev --extra databricks-mcp
+uv run --no-sync pytest tests/optional/databricks_mcp_smoke.py
+```
+
+Optional smoke targets fail on missing dependencies instead of silently skipping. The SDK-direct Genie path does not require this extra. The [Foundry architecture guide](../architecture/foundry-surface) documents the separate Agent Framework extra and its real-client construction check.
 
 ## MCP vs Foundry tools
 
