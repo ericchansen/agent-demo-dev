@@ -7,8 +7,9 @@ dependencies = [
     "azure-ai-projects >= 2.2.0",
     "azure-identity >= 1.17",
     "databricks-sdk >= 0.59",
+    "jsonschema >= 4.20, < 5",
     "matplotlib >= 3.8",
-    "mcp >= 1.0",
+    "mcp >= 2.2.0, < 3",
     "openai >= 1.40",
     "openpyxl >= 3.1",
     "pandas >= 2.0",
@@ -29,12 +30,13 @@ dev = [
 # Optional: enables the Databricks managed MCP Genie transport
 # (DATABRICKS_GENIE_MCP_URL). The SDK-direct Genie path needs no extras.
 databricks-mcp = [
-    "databricks-mcp >= 0.2",
+    "databricks-mcp >= 0.9.2",
 ]
 # Optional: enables the Microsoft Agent Framework multi-agent runtime path.
 # The deterministic local pipeline remains the default and needs no Azure credentials.
 agent-framework = [
     "agent-framework-foundry >= 1.0",
+    "agent-framework-orchestrations >= 1.0.0, < 2",
 ]
 
 [tool.ruff]

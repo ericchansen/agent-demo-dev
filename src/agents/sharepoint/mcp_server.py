@@ -7,10 +7,13 @@ import logging
 import os
 from typing import Any
 
-from mcp.server import Server
+from aiohttp import ClientError
+from azure.core.exceptions import ClientAuthenticationError, ServiceRequestError, ServiceResponseError
+from mcp.server import Server, ServerRequestContext
 from mcp.server.stdio import stdio_server
-from mcp.types import TextContent, Tool
+from mcp.types import CallToolRequestParams, CallToolResult, ListToolsResult, PaginatedRequestParams, TextContent, Tool
 
+from src.agents.mcp_validation import tool_error, validate_tool_call
 from src.agents.sharepoint.tools import get_document_content, search_documents
 
 logger = logging.getLogger(__name__)
@@ -19,10 +22,7 @@ logger = logging.getLogger(__name__)
 # Server setup
 # ---------------------------------------------------------------------------
 
-server = Server("sharepoint-agent")
 
-
-@server.list_tools()  # type: ignore[no-untyped-call, untyped-decorator]
 async def list_tools() -> list[Tool]:
     """Advertise available tools to the MCP client."""
     return [
@@ -32,7 +32,7 @@ async def list_tools() -> list[Tool]:
                 "Search SharePoint for documents matching a query string. "
                 "Returns a list of matching documents with name, URL, excerpt, and last-modified date."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "query": {
@@ -53,7 +53,7 @@ async def list_tools() -> list[Tool]:
                 "Retrieve the full text content of a specific SharePoint document "
                 "identified by its drive ID and item ID."
             ),
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "drive_id": {
@@ -71,7 +71,6 @@ async def list_tools() -> list[Tool]:
     ]
 
 
-@server.call_tool()  # type: ignore[untyped-decorator]
 async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     """Dispatch MCP tool calls to the appropriate handler."""
     import json  # noqa: PLC0415
@@ -89,6 +88,23 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
     raise ValueError(f"Unknown tool: {name}")
+
+
+async def handle_list_tools(ctx: ServerRequestContext, params: PaginatedRequestParams | None) -> ListToolsResult:
+    return ListToolsResult(tools=await list_tools())
+
+
+async def handle_call_tool(ctx: ServerRequestContext, params: CallToolRequestParams) -> CallToolResult:
+    arguments = validate_tool_call(params, await list_tools())
+    if isinstance(arguments, CallToolResult):
+        return arguments
+    try:
+        return CallToolResult(content=[*await call_tool(params.name, arguments)])
+    except (ClientError, ClientAuthenticationError, ServiceRequestError, ServiceResponseError, TimeoutError) as exc:
+        return tool_error(str(exc))
+
+
+server = Server("sharepoint-agent", on_list_tools=handle_list_tools, on_call_tool=handle_call_tool)
 
 
 # ---------------------------------------------------------------------------

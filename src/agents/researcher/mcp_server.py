@@ -8,13 +8,12 @@ from typing import Any
 
 import mcp.server.stdio
 import mcp.types as types
-from mcp.server import Server
+from mcp.server import Server, ServerRequestContext
 from mcp.server.lowlevel import NotificationOptions
 from mcp.server.models import InitializationOptions
 
+from src.agents.mcp_validation import validate_tool_call
 from src.agents.researcher.tools import research_company
-
-server = Server("researcher-agent")
 
 # ---------------------------------------------------------------------------
 # Tool registry
@@ -26,7 +25,7 @@ _RESEARCH_TOOL = types.Tool(
         "Research a company on the open web. Returns a summary, recent articles, "
         "and key metrics sourced from news and financial data."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "company_name": {
@@ -43,14 +42,14 @@ _RESEARCH_TOOL = types.Tool(
 )
 
 
-@server.list_tools()  # type: ignore[no-untyped-call, untyped-decorator]
-async def handle_list_tools() -> list[types.Tool]:
+async def handle_list_tools(
+    ctx: ServerRequestContext, params: types.PaginatedRequestParams | None
+) -> types.ListToolsResult:
     """Advertise available tools."""
-    return [_RESEARCH_TOOL]
+    return types.ListToolsResult(tools=[_RESEARCH_TOOL])
 
 
-@server.call_tool()  # type: ignore[untyped-decorator]
-async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextContent]:
+async def call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextContent]:
     """Dispatch tool calls."""
     if name == "research_company":
         result = await research_company(
@@ -60,6 +59,16 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.T
         return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
 
     raise ValueError(f"Unknown tool: {name}")
+
+
+async def handle_call_tool(ctx: ServerRequestContext, params: types.CallToolRequestParams) -> types.CallToolResult:
+    arguments = validate_tool_call(params, [_RESEARCH_TOOL])
+    if isinstance(arguments, types.CallToolResult):
+        return arguments
+    return types.CallToolResult(content=[*await call_tool(params.name, arguments)])
+
+
+server = Server("researcher-agent", on_list_tools=handle_list_tools, on_call_tool=handle_call_tool)
 
 
 # ---------------------------------------------------------------------------

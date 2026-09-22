@@ -175,7 +175,7 @@ threads/runs API and its agents cannot be referenced from prompt agents. The new
 |---|---|---|---|
 | **A2A tool** (`A2APreviewTool`) | One prompt agent calls another agent exposed as an A2A endpoint; one tool per sub-agent. | Each sub-agent needs an A2A **connection created in the Foundry portal** — no SDK-only path. | Public Preview |
 | **Foundry Workflows** (`WorkflowAgentDefinition`) | Declarative sequential / group-chat / human-in-the-loop graph, authored as Power Fx **YAML** in the portal or VS Code Foundry Toolkit, invoked by name. | Portal/VS Code authoring; YAML is portal-proprietary. | Portal feature |
-| **Microsoft Agent Framework** | Pure-Python orchestration (`SequentialBuilder`, `HandoffBuilder`) over `FoundryChatClient`, runs against the same Responses API. | `pip install agent-framework agent-framework-foundry`; no portal A2A setup. | Recommended code path |
+| **Microsoft Agent Framework** | Pure-Python orchestration (`SequentialBuilder`, `HandoffBuilder`) over `FoundryChatClient`, runs against the same Responses API. | `pip install -e ".[agent-framework]"`; no portal A2A setup. | Recommended code path |
 | **Foundry Local** | On-device model runtime with an OpenAI-compatible local endpoint. | Install the Foundry Local CLI and download a compatible model. | Local model runtime, not portal agent chaining |
 
 `src/orchestrator/multi_agent/agent_framework_runtime.py` is the runnable optional bridge for Microsoft Agent
@@ -192,6 +192,14 @@ uv run python -m src.orchestrator.multi_agent "Generate a quota report for Tails
 The adapter builds a `SequentialBuilder` workflow with planner → data → research → work-context → analysis → report
 participants, and a matching `HandoffBuilder` topology for routing-oriented labs. Offline unit tests mock the framework
 classes so the handoff shape and sequential output collection stay validated without Azure credentials.
+
+The optional extra includes the separately distributed `agent-framework-orchestrations` package as well as the Foundry client. Check the actual installed client and both workflow builders, without making model calls:
+
+```powershell
+uv run --extra dev --extra agent-framework pytest tests/optional/agent_framework_smoke.py
+```
+
+This explicit smoke target fails on missing or incompatible runtime packages and forbids network access and token acquisition during construction. It is not part of the default base-dependency suite; CI installs the optional extra and runs it separately. Successful construction is not proof of live workflow execution or Azure readiness.
 
 For cloud-blocked workshops, [Foundry Local and DevUI](../workshop/foundry-local-devui) shows the offline path:
 run the deterministic multi-agent pipeline as a JSON trace, optionally install Foundry Local for local model prompt
