@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import os
 import shutil
@@ -25,6 +26,12 @@ EXPECTED_MCP_SERVERS = {
     "sharepoint-agent",
     "report-generator",
     "quota-estimator",
+}
+LOCAL_MCP_SERVERS = {
+    "researcher-agent": ("src.agents.researcher.mcp_server", {"research_company"}),
+    "sharepoint-agent": ("src.agents.sharepoint.mcp_server", {"search_documents", "get_document_content"}),
+    "report-generator": ("src.agents.report_generator.mcp_server", {"generate_report"}),
+    "quota-estimator": ("src.agents.quota_estimator.mcp_server", {"generate_quota_estimation_report"}),
 }
 EXPECTED_FOUNDRY_HANDLERS = {
     "databricks_query",
@@ -176,6 +183,7 @@ def main() -> int:
 
     checks: list[tuple[str, Callable[[], str]]] = [
         ("MCP config", check_mcp_configs),
+        ("Local MCP startup", check_local_mcp_servers),
         ("Foundry tools", check_foundry_tools),
         ("Quota artifacts", check_quota_artifacts),
         ("Hosted runtime", check_hosted_runtime),
@@ -234,6 +242,14 @@ def check_mcp_configs() -> str:
                 raise ValueError(f"{path}:{server_name} stdio server is missing command.")
             if server_type not in {"http", "stdio"}:
                 raise ValueError(f"{path}:{server_name} has unsupported type {server_type!r}.")
+            if server_name in LOCAL_MCP_SERVERS:
+                module, _ = LOCAL_MCP_SERVERS[server_name]
+                if (
+                    server_type != "stdio"
+                    or server.get("command") != "python"
+                    or server.get("args") != ["-m", module]
+                ):
+                    raise ValueError(f"{path}:{server_name} must launch python -m {module}.")
 
         server_sets[str(path.relative_to(ROOT))] = names
 
@@ -242,7 +258,48 @@ def check_mcp_configs() -> str:
     return f"{len(paths)} registries include {len(EXPECTED_MCP_SERVERS)} servers"
 
 
+def check_local_mcp_servers() -> str:
+    """Verify the configured local entrypoints using the installed interpreter, without cloud calls."""
+    check_mcp_configs()
+    return asyncio.run(_check_local_mcp_servers())
+
+
+async def _check_local_mcp_servers() -> str:
+    from mcp import Client
+    from mcp.client.stdio import StdioServerParameters, get_default_environment, stdio_client
+
+    env = get_default_environment()
+    env.update(
+        PYTHONPATH=str(ROOT),
+        PYTHONDONTWRITEBYTECODE="1",
+        SEARCH_PROVIDER="mock",
+        SHAREPOINT_MODE="mock",
+    )
+    tool_count = 0
+    with tempfile.TemporaryDirectory(prefix="mcp-readiness-") as directory:
+        for name, (module, expected_tools) in LOCAL_MCP_SERVERS.items():
+            params = StdioServerParameters(
+                command=sys.executable,
+                args=["-m", module],
+                env=env,
+                cwd=directory,
+            )
+            async with asyncio.timeout(15), Client(stdio_client(params)) as client:
+                result = await client.list_tools()
+                names = {tool.name for tool in result.tools}
+                if names != expected_tools:
+                    raise ValueError(
+                        f"{name} tool discovery mismatch: expected {sorted(expected_tools)}, got {names}."
+                    )
+                if any(tool.input_schema.get("type") != "object" for tool in result.tools):
+                    raise ValueError(f"{name} advertised a non-object input schema.")
+                tool_count += len(result.tools)
+    return f"{len(LOCAL_MCP_SERVERS)} local servers started and advertised {tool_count} tools"
+
+
 def check_foundry_tools() -> str:
+    from azure.ai.projects.models import FabricIQPreviewTool
+
     from src.orchestrator.config import OrchestratorConfig
     from src.orchestrator.foundry_agent import _build_tools
 
@@ -261,9 +318,15 @@ def check_foundry_tools() -> str:
     missing_tools = EXPECTED_FOUNDRY_HANDLERS - tool_names
     if missing_tools:
         raise ValueError(f"Missing Foundry tool registrations: {sorted(missing_tools)}")
-    if "real_world_market_data" not in tool_names:
-        raise ValueError("Market-data FabricIQPreviewTool is not registered.")
-    return f"{len(tool_names)} tools registered, {len(handlers)} local handlers"
+    fabric_connections = {
+        tool.server_label: tool.project_connection_id for tool in tools if isinstance(tool, FabricIQPreviewTool)
+    }
+    if fabric_connections != {
+        "wwi_sales_data": config.fabric_iq_connection_id,
+        "real_world_market_data": config.market_data_connection_id,
+    }:
+        raise ValueError("FabricIQPreviewTool labels do not match the configured sales and market connections.")
+    return f"{len(tools)} tools registered, {len(handlers)} local handlers"
 
 
 def check_quota_artifacts() -> str:

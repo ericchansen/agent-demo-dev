@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+from types import SimpleNamespace
+
 import pytest
 
-from scripts.demo_check import live_backend_readiness
+from scripts import demo_check
+from scripts.demo_check import check_foundry_tools, live_backend_readiness
 
 _ALL_BACKEND_ENV_VARS = (
     "AZURE_CLIENT_ID",
@@ -35,6 +39,69 @@ def _clear(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def _row(rows: list, name: str):
     return next(row for row in rows if row.name == name)
+
+
+@pytest.mark.parametrize("field,value", [("command", "node"), ("args", ["-m", "missing_server"])])
+def test_mcp_readiness_rejects_drifted_entrypoint(
+    monkeypatch: pytest.MonkeyPatch, field: str, value: object
+) -> None:
+    load_json = demo_check._load_json_without_duplicate_keys
+
+    def drifted_config(path: Path):
+        payload = load_json(path)
+        if path == demo_check.ROOT / "src" / "cli" / "mcp-config.json":
+            payload["mcpServers"]["report-generator"][field] = value
+        return payload
+
+    monkeypatch.setattr(demo_check, "_load_json_without_duplicate_keys", drifted_config)
+    with pytest.raises(ValueError, match="must launch python -m"):
+        demo_check.check_mcp_configs()
+
+
+def test_local_mcp_readiness_rejects_wrong_advertised_tools(monkeypatch: pytest.MonkeyPatch) -> None:
+    class WrongToolsClient:
+        def __init__(self, transport):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        async def list_tools(self):
+            return SimpleNamespace(tools=[SimpleNamespace(name="unexpected_tool")])
+
+    monkeypatch.setattr("mcp.Client", WrongToolsClient)
+    monkeypatch.setattr("mcp.client.stdio.stdio_client", lambda params: object())
+    with pytest.raises(ValueError, match="researcher-agent tool discovery mismatch"):
+        demo_check.check_local_mcp_servers()
+
+
+def test_foundry_tool_readiness_uses_fabric_server_labels() -> None:
+    assert check_foundry_tools() == "9 tools registered, 7 local handlers"
+
+
+def test_foundry_tool_readiness_rejects_swapped_fabric_connections(monkeypatch: pytest.MonkeyPatch) -> None:
+    from azure.ai.projects.models import FabricIQPreviewTool
+
+    from src.orchestrator import foundry_agent
+    from src.orchestrator.config import OrchestratorConfig
+
+    build_tools = foundry_agent._build_tools
+
+    def swapped_tools(config: OrchestratorConfig):
+        tools, handlers = build_tools(config)
+        for tool in tools:
+            if isinstance(tool, FabricIQPreviewTool):
+                tool.server_label = (
+                    "real_world_market_data" if tool.server_label == "wwi_sales_data" else "wwi_sales_data"
+                )
+        return tools, handlers
+
+    monkeypatch.setattr(foundry_agent, "_build_tools", swapped_tools)
+    with pytest.raises(ValueError, match="labels do not match"):
+        check_foundry_tools()
 
 
 def test_readiness_all_skipped_when_unconfigured(monkeypatch: pytest.MonkeyPatch) -> None:

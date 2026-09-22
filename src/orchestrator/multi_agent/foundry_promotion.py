@@ -35,7 +35,7 @@ API landscape (verified 2026):
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, cast
+from typing import Any
 
 from azure.ai.projects.models import (
     A2APreviewTool,
@@ -68,7 +68,9 @@ def build_a2a_orchestrator_definition(
     ``sub_agent_connection_ids`` maps a sub-agent slot name (e.g. ``"fsa-data"``) to the
     Foundry **project connection id** of that sub-agent's A2A endpoint. Create those
     connections in the Foundry portal first; there is no SDK-only path to register them as of
-    2026 (see module docstring).
+    2026 (see module docstring). Each endpoint's agent card must advertise the slot name and
+    stage description used by the orchestrator instructions. These are agent-card metadata,
+    not constructor arguments on current versions of ``A2APreviewTool``.
 
     The returned definition uses the exact same ``PromptAgentDefinition`` shape the single
     agent uses in ``foundry_agent.py``, so it registers with
@@ -81,22 +83,16 @@ def build_a2a_orchestrator_definition(
     if not sub_agent_connection_ids:
         raise ValueError("sub_agent_connection_ids must contain at least one sub-agent connection.")
 
-    tools: list[A2APreviewTool] = []
+    tools: list[Tool] = []
     for slot_name, connection_id in sub_agent_connection_ids.items():
         if not connection_id:
             raise ValueError(f"Connection id for sub-agent '{slot_name}' must not be empty.")
-        tools.append(
-            A2APreviewTool(
-                name=slot_name,
-                description=f"A2A sub-agent for the '{slot_name}' stage of the quota pipeline.",
-                project_connection_id=connection_id,
-            )
-        )
+        tools.append(A2APreviewTool(project_connection_id=connection_id))
 
     return PromptAgentDefinition(
         model=model,
         instructions=instructions,
-        tools=cast(list[Tool], tools),
+        tools=tools,
     )
 
 
